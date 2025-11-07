@@ -3,6 +3,7 @@ import React from 'react';
 import { View, Text, Image, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
+
 const SplashScreen = () => {
   const navigation = useNavigation();
 
@@ -15,7 +16,7 @@ const SplashScreen = () => {
       {/* Logo */}
       <View className="mb-8">
         <Image
-          source={require('../assets/logo.png')}
+          source={require('../../assets/logo.png')}
           className="w-32 h-32"
           resizeMode="contain"
         />
