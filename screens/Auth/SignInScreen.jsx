@@ -293,68 +293,43 @@
 
 // export default SignInScreen
 
-import { View, Text, TextInput, TouchableOpacity, StatusBar, Dimensions, ScrollView, Modal, Animated, Image } from 'react-native'
-import React, { useState, useEffect } from 'react'
-import { useNavigation } from '@react-navigation/native'
-import { AntDesign, FontAwesome, Ionicons } from '@expo/vector-icons'
-import Header from '../../components/Header'
-import CustomInput from '../../components/Inputfield' 
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StatusBar,
+  Dimensions,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { AntDesign, FontAwesome, Ionicons } from '@expo/vector-icons';
+import Header from '../../components/Header';
+import CustomInput from '../../components/Inputfield';
 
-const { width, height } = Dimensions.get('window')
+const { width, height } = Dimensions.get('window');
 
 const SignInScreen = () => {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [rememberMe, setRememberMe] = useState(false)
-  const [modalVisible, setModalVisible] = useState(false)
-  const [fadeAnim] = useState(new Animated.Value(0))
-  const [scaleAnim] = useState(new Animated.Value(0.8))
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
-  const navigation = useNavigation()
+  const navigation = useNavigation();
 
   const handleLogin = () => {
     if (email && password) {
-      setModalVisible(true)
-      // navigation.replace("MainTabs") // Remove or comment this if you want modal to show first
+      navigation.navigate('Dashboard');
     } else {
-      console.log('Please fill in all fields')
+      console.log('Please fill in all fields');
     }
-  }
+  };
 
-  useEffect(() => {
-    if (modalVisible) {
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          tension: 50,
-          friction: 7,
-          useNativeDriver: true,
-        }),
-      ]).start()
+const handleSocialLogin = (provider) => {
+  console.log(`${provider} login attempted`);
+};
 
-      const timer = setTimeout(() => {
-        setModalVisible(false)
-        navigation.navigate('Dashboard') // Navigate after modal
-      }, 2000)
-
-      return () => clearTimeout(timer)
-    } else {
-      fadeAnim.setValue(0)
-      scaleAnim.setValue(0.8)
-    }
-  }, [modalVisible])
-
-  const handleSocialLogin = (provider) => {
-    console.log(`${provider} login attempted`)
-  }
-
-  const handlereset = () => navigation.navigate('ResetPassword')
+  const handlereset = () => navigation.navigate('ResetPassword');
 
   return (
     <View className="flex-1 bg-white">
@@ -377,8 +352,7 @@ const SignInScreen = () => {
             style={{ elevation: 3, minHeight: height * 0.5 }}
           >
             <View className="p-6 flex-1">
-
-              {/* Email Field */}
+              {/* Email */}
               <CustomInput
                 label="Email"
                 placeholder="Enter your email"
@@ -389,7 +363,7 @@ const SignInScreen = () => {
                 icon={<Text className="text-gray-400 text-lg">✉️</Text>}
               />
 
-              {/* Password Field */}
+              {/* Password */}
               <CustomInput
                 label="Password"
                 placeholder="Enter your password"
@@ -407,7 +381,7 @@ const SignInScreen = () => {
                 }
               />
 
-              {/* Remember Me & Forgot Password */}
+              {/* Remember Me & Forgot */}
               <View className="flex-row items-center justify-between mb-8">
                 <View className="flex-row items-center">
                   <TouchableOpacity
@@ -428,21 +402,27 @@ const SignInScreen = () => {
                 </View>
 
                 <TouchableOpacity onPress={handlereset}>
-                  <Text className="text-blue-600 text-sm font-medium">Forgot password?</Text>
+                  <Text className="text-blue-600 text-sm font-medium">
+                    Forgot password?
+                  </Text>
                 </TouchableOpacity>
               </View>
 
               <View className="w-full h-px bg-gray-200 my-6" />
 
-              {/* Sign Up Link */}
+              {/* Sign-up link */}
               <View className="flex-row justify-center mb-6">
-                <Text className="text-gray-500 text-sm">Don't have an account? </Text>
+                <Text className="text-gray-500 text-sm">
+                  Don't have an account?{' '}
+                </Text>
                 <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-                  <Text className="text-blue-600 text-sm font-medium">Sign up</Text>
+                  <Text className="text-blue-600 text-sm font-medium">
+                    Sign up
+                  </Text>
                 </TouchableOpacity>
               </View>
 
-              {/* Social Login Divider */}
+              {/* Social divider */}
               <View className="flex-row items-center w-full mt-6 mb-6">
                 <View className="flex-1 h-px bg-gray-300" />
                 <Text className="font-urbanist text-sm font-medium text-gray-600 mx-4">
@@ -451,7 +431,7 @@ const SignInScreen = () => {
                 <View className="flex-1 h-px bg-gray-300" />
               </View>
 
-              {/* Social Icons */}
+              {/* Social icons */}
               <View className="flex-row justify-between w-full mb-8 px-4">
                 <TouchableOpacity
                   className="w-16 h-16 rounded-full items-center justify-center border border-gray-300 bg-white shadow-sm"
@@ -481,7 +461,7 @@ const SignInScreen = () => {
 
               <View className="w-full h-px bg-gray-200 mt-6" />
 
-              {/* Sign In Button */}
+              {/* Sign-in button */}
               <View className="mt-6">
                 <TouchableOpacity
                   className="bg-blue-600 rounded-2xl items-center shadow-lg"
@@ -489,7 +469,9 @@ const SignInScreen = () => {
                   onPress={handleLogin}
                 >
                   <View className="flex-1 items-center justify-center">
-                    <Text className="text-white text-base font-semibold">Sign in</Text>
+                    <Text className="text-white text-base font-semibold">
+                      Sign in
+                    </Text>
                   </View>
                 </TouchableOpacity>
               </View>
@@ -497,74 +479,8 @@ const SignInScreen = () => {
           </View>
         </View>
       </View>
-
-      {/* Success Modal */}
-      <Modal
-        visible={modalVisible}
-        transparent={true}
-        animationType="none"
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View
-          className="flex-1 justify-center items-center"
-          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
-        >
-          <Animated.View
-            style={{
-              opacity: fadeAnim,
-              transform: [{ scale: scaleAnim }],
-            }}
-          >
-            <View
-              style={{
-                width: 320,
-                height: 420,
-                backgroundColor: '#fff',
-                borderRadius: 30,
-                alignItems: 'center',
-                justifyContent: 'flex-start',
-                elevation: 15,
-                overflow: 'hidden',
-                paddingHorizontal: 24,
-                paddingTop: 60,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 22,
-                  fontWeight: '700',
-                  color: '#235DFF',
-                  textAlign: 'center',
-                  marginBottom: 8,
-                }}
-              >
-                Sign in Successful!
-              </Text>
-              <Text
-                style={{
-                  fontSize: 16,
-                  color: '#6B7280',
-                  textAlign: 'center',
-                  marginBottom: 6,
-                }}
-              >
-                Please wait...
-              </Text>
-              <Text
-                style={{
-                  fontSize: 15,
-                  color: '#6B7280',
-                  textAlign: 'center',
-                }}
-              >
-                You will be directed to the homepage.
-              </Text>
-            </View>
-          </Animated.View>
-        </View>
-      </Modal>
     </View>
-  )
-}
+  );
+};
 
-export default SignInScreen
+export default SignInScreen;
