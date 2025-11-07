@@ -13,7 +13,9 @@ import Onboarding from './screens/Auth/OnboardingScreen';
 import Welcome from './screens/Auth/WelcomeScreen';
 import SignIn from './screens/Auth/SignInScreen';
 import SignUpScreen from './screens/Auth/SignUpScreen';
-
+import ResetPasswordScreen from 'screens/Auth/ResetPasswordScreen';
+import OTPVerificationScreen from 'screens/Auth/OTPVerificationScreen';
+import CreatePasswordScreen from 'screens/Auth/ChangePasswordScreen';
 import "./global.css";
 
 const Stack = createNativeStackNavigator();
@@ -63,6 +65,9 @@ export default function App() {
             <Stack.Screen name="Welcome" component={Welcome} />
             <Stack.Screen name="SignIn" component={SignIn} />
             <Stack.Screen name="SignUp" component={SignUpScreen} options={{headerShown:false}}/>
+            <Stack.Screen name ="ResetPassword" component={ResetPasswordScreen} />
+            <Stack.Screen name ="OTPVerification" component={OTPVerificationScreen} />
+            <Stack.Screen name ="CreatePassword" component={CreatePasswordScreen} />
           </Stack.Navigator>
         </NavigationContainer>
       </SafeAreaWrapper>
