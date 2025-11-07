@@ -1,7 +1,8 @@
-import { View, Text, TextInput, TouchableOpacity, SafeAreaView, StatusBar, Dimensions, ScrollView, Modal, Animated, Image } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, StatusBar, Dimensions, ScrollView, Modal, Animated, Image } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import { useNavigation } from '@react-navigation/native'
 import { AntDesign, FontAwesome, Ionicons } from '@expo/vector-icons'
+import Header from '../../components/Header'
 
 const { width, height } = Dimensions.get('window')
 
@@ -60,25 +61,27 @@ const SignInScreen = () => {
   const handlereset = () => navigation.navigate('ResetPassword')
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <StatusBar barStyle="light-content" backgroundColor="#4F46E5" />
+    <View className="flex-1 bg-white">
+      {/* StatusBar with dark content but white background */}
+      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      
+      {/* Header Component */}
+      <Header />
+      
+      {/* Light header area with dark text */}
+      <View className="bg-white pt-4 pb-4 px-6"> {/* Reduced pt-12 to pt-4 since Header is now used */}
+        <Text className="text-gray-900 text-2xl font-bold mb-2">
+          Welcome back 👋
+        </Text>
+        <Text className="text-gray-600 text-base leading-6">
+          Please enter your email & password to sign in.
+        </Text>
+      </View>
 
       <View className="flex-1">
-        <View className="flex-1 px-6 pt-6" style={{ minHeight: height }}>
+        <View className="flex-1 px-6" style={{ minHeight: height }}>
           <View
-            className="bg-white rounded-3xl p-6 shadow-lg border border-gray-100 mb-6"
-            style={{ elevation: 3 }}
-          >
-            <Text className="text-3xl font-medium text-gray-900 mb-3">
-              Welcome back 👋
-            </Text>
-            <Text className="text-gray-500 text-base leading-6">
-              Please enter your email & password to sign in.
-            </Text>
-          </View>
-
-          <View
-            className="flex-1 bg-white rounded-3xl shadow-lg border border-gray-100"
+            className="flex-1 bg-white rounded-t-3xl shadow-lg border border-gray-100"
             style={{ elevation: 3, minHeight: height * 0.5 }}
           >
             <View className="p-6 flex-1">
@@ -248,15 +251,6 @@ const SignInScreen = () => {
                 paddingTop: 60,
               }}
             >
-              <Image
-                source={require('../../../assets/signsuccess.png')}
-                style={{
-                  width: 150,
-                  height: 150,
-                  resizeMode: 'contain',
-                  marginBottom: 30,
-                }}
-              />
               <Text
                 style={{
                   fontSize: 22,
@@ -291,7 +285,7 @@ const SignInScreen = () => {
           </Animated.View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   )
 }
 

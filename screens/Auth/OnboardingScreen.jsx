@@ -16,19 +16,19 @@ const Onboarding = () => {
       id: 1,
       title: 'Manage Your Villa, Interior & Building Projects',
       description: 'Streamline villa interior, and building management with real-time insights.',
-      image: require('../assets/splash/splash3.png'), // Replace with your actual image
+      image: require('../../assets/splash/splash3.png'), // Replace with your actual image
     },
     {
       id: 2,
       title: 'Stay in Control of Every Project Task',
       description: 'Monitor progress, assign tasks, and approve updates seamlessly, effortlessly.',
-      image: require('../assets/splash/splash2.png'), // Replace with your actual image
+      image: require('../../assets/splash/splash2.png'), // Replace with your actual image
     },
     {
       id: 3,
       title: 'Connect, Collaborate & Simplify Your Project',
       description: 'Work with teams, share designs, and manage projects all in one place',
-      image: require('../assets/splash/splash1.png'), // Replace with your actual image
+      image: require('../../assets/splash/splash1.png'), // Replace with your actual image
     }
   ];
 

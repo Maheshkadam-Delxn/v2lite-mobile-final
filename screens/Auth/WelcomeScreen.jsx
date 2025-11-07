@@ -25,7 +25,7 @@ const WelcomeScreen = () => {
         {/* Logo */}
         <View className="items-center mb-12 mt-8">
           <Image
-            source={require('../assets/logo.png')}
+            source={require('../../assets/logo.png')}
             className="w-40 h-40"
             resizeMode="contain"
           />
@@ -91,7 +91,7 @@ const WelcomeScreen = () => {
             activeOpacity={0.7}
           >
             <Image
-              source={require('../assets/google.png')}
+              source={require('../../assets/google.png')}
               className="w-8 h-8"
               resizeMode="contain"
             />

@@ -49,7 +49,7 @@ export default function App() {
       <SafeAreaWrapper>
         {/* ✅ Expo StatusBar: Solid blue bg, light text; handles Android translucency */}
         <StatusBar 
-          style="light" 
+          style="dark" 
           backgroundColor="blue"
           networkActivityIndicatorVisible={false} // Optional: Hides spinner if not needed
         />
