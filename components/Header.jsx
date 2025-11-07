@@ -47,7 +47,7 @@ const Header = ({
                 <Ionicons name="arrow-back" size={24} color={iconColor} />
               </TouchableOpacity>
             )}
-          </View>
+          </View>       
 
           {/* Center Section - Title */}
           <View className="flex-1 mx-2">

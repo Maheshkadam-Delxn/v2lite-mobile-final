@@ -1,3 +1,4 @@
+// screens/Dashboard.jsx
 import React from 'react';
 import {
   View,
@@ -11,6 +12,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons, Feather } from '@expo/vector-icons';
+import BottomNavBar from '../../components/BottomNavbar';
 
 const { width } = Dimensions.get('window');
 
@@ -48,25 +50,13 @@ const Dashboard = () => {
             <Text className="text-2xl">A</Text>
           </TouchableOpacity>
         </View>
-
-        {/* Balance Card */}
-        <View className="mt-6 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-3xl p-6 shadow-lg">
-          <Text className="text-blue-100 text-sm">Total Balance</Text>
-          <Text className="text-white text-3xl font-bold mt-2">₹1,24,560.00</Text>
-          <View className="flex-row mt-4">
-            <View className="flex-1">
-              <Text className="text-blue-100 text-xs">Income</Text>
-              <Text className="text-white text-lg font-semibold">₹65,000</Text>
-            </View>
-            <View className="flex-1">
-              <Text className="text-blue-100 text-xs">Expenses</Text>
-              <Text className="text-white text-lg font-semibold">₹18,420</Text>
-            </View>
-          </View>
-        </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        // Add bottom padding so content isn't hidden behind the fixed nav bar
+        contentContainerStyle={{ paddingBottom: 90 }}
+      >
         {/* Quick Actions */}
         <View className="px-6 mt-8">
           <Text className="text-lg font-semibold text-gray-800 mb-4">Quick Actions</Text>
@@ -120,51 +110,10 @@ const Dashboard = () => {
             </TouchableOpacity>
           ))}
         </View>
-
-        {/* Promo Banner */}
-        <View className="mx-6 mt-8 mb-10">
-          <View className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl p-6 shadow-lg">
-            <View className="flex-row items-center">
-              <View className="flex-1">
-                <Text className="text-white text-xl font-bold">Get 5% Cashback</Text>
-                <Text className="text-purple-100 text-sm mt-1">
-                  On your first recharge above ₹500
-                </Text>
-                <TouchableOpacity className="mt-4 bg-white/20 rounded-full px-5 py-2 self-start">
-                  <Text className="text-white text-sm font-medium">Claim Now</Text>
-                </TouchableOpacity>
-              </View>
-              <Image
-                source={{ uri: 'https://i.ibb.co.com/5kB0Y3F/gift.png' }}
-                className="w-24 h-24"
-                resizeMode="contain"
-              />
-            </View>
-          </View>
-        </View>
       </ScrollView>
 
-      {/* Bottom Tab Placeholder */}
-      <View className="bg-white border-t border-gray-200 px-6 py-3">
-        <View className="flex-row justify-around">
-          {['home', 'wallet', 'cards', 'profile'].map((tab) => (
-            <TouchableOpacity key={tab} className="items-center">
-              <Feather
-                name={tab === 'home' ? 'home' : tab === 'profile' ? 'user' : tab}
-                size={24}
-                color={tab === 'home' ? '#3B82F6' : '#9CA3AF'}
-              />
-              <Text
-                className={`text-xs mt-1 ${
-                  tab === 'home' ? 'text-blue-600 font-medium' : 'text-gray-500'
-                }`}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
+      {/* Reusable Bottom Navigation */}
+      <BottomNavBar />
     </SafeAreaView>
   );
 };
