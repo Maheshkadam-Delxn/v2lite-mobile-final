@@ -17,6 +17,7 @@ import ProjectListScreen from './screens/Projects/ProjectsListScreen';
 import ViewDetailsScreen from './screens/Projects/ViewDetailsScreen';
 import CreateProjectScreen from './screens/Projects/CreateProjectScreen';
 import FilterScreen from './screens/Projects/FilterScreen';
+import ProposalsListScreen from './screens/Proposals/ProposalsListScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -63,6 +64,7 @@ export default function App() {
             <Stack.Screen name="ViewDetails" component={ViewDetailsScreen} />
             <Stack.Screen name="CreateProjectScreen" component={CreateProjectScreen} />
             <Stack.Screen name="FilterScreen" component={FilterScreen} />
+            <Stack.Screen name="ProposalsListScreen" component={ProposalsListScreen} />
             {/* Add more screens later: Transactions, Profile, etc. */}
           </Stack.Navigator>
         </NavigationContainer>

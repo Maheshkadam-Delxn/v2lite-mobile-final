@@ -195,7 +195,9 @@ const ProjectsListScreen = () => {
           </View>
         ))}
       </ScrollView>
-      <BottomNavBar/>
+      <View className="absolute bottom-0 left-0 right-0">
+          <BottomNavBar />
+        </View>
     </View>
   );
 };
