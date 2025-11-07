@@ -25,6 +25,10 @@ import FilterScreen from './screens/Projects/FilterScreen';
 import ProposalsListScreen from './screens/Proposals/ProposalsListScreen';
 import CreateProposalScreen from 'screens/Proposals/CreateProposal';
 import SubmitProposal from 'screens/Proposals/SubmitProposal';
+import ViewProposal from 'screens/Proposals/ViewProposal';
+import ReviewProposalScreen from 'screens/Proposals/ChooseTemplate';
+import ChooseTemplate from 'screens/Proposals/ChooseTemplate';
+
 
 const Stack = createNativeStackNavigator();
 
@@ -78,6 +82,11 @@ export default function App() {
             <Stack.Screen name="ProposalsListScreen" component={ProposalsListScreen} />
             <Stack.Screen name="CreateProposalScreen" component={CreateProposalScreen} />
             <Stack.Screen name="SubmitProposal" component={SubmitProposal} />
+            <Stack.Screen name="ViewProposal" component={ViewProposal} />
+            <Stack.Screen name="ChooseTemplate" component={ChooseTemplate} />
+
+
+
 
             {/* Add more screens later: Transactions, Profile, etc. */}
           </Stack.Navigator>

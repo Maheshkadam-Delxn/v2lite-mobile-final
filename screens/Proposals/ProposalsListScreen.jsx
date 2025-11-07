@@ -444,51 +444,59 @@ const ProposalsListScreen = ({ navigation }) => {
           }}>
             Proposals Actions
           </Text>
+  <TouchableOpacity
+        style={{
+          backgroundColor: '#0066FF',
+          borderRadius: 12,
+          paddingVertical: 16,
+          paddingHorizontal: 20,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 12,
+        }}
+        onPress={() => navigation.navigate('ViewProposal')}
+      >
+        <Text
+          style={{
+            fontFamily: 'Urbanist-SemiBold',
+            fontSize: 15,
+            color: 'white',
+          }}
+        >
+          View Proposal
+        </Text>
+        <Feather name="arrow-right" size={20} color="white" />
+      </TouchableOpacity>
 
-          {/* View Proposal Button */}
-          <TouchableOpacity style={{
-            backgroundColor: '#0066FF',
-            borderRadius: 12,
-            paddingVertical: 16,
-            paddingHorizontal: 20,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: 12
-          }}>
-            <Text style={{
-              fontFamily: 'Urbanist-SemiBold',
-              fontSize: 15,
-              color: 'white'
-            }}>
-              View Proposal
-            </Text>
-            <Feather name="arrow-right" size={20} color="white" />
-          </TouchableOpacity>
-
-          {/* Approve Proposal Button */}
-          <TouchableOpacity style={{
-            backgroundColor: '#0066FF',
-            borderRadius: 12,
-            paddingVertical: 16,
-            paddingHorizontal: 20,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: 12
-          }}>
-            <Text style={{
-              fontFamily: 'Urbanist-SemiBold',
-              fontSize: 15,
-              color: 'white'
-            }}>
-              Approve Proposal
-            </Text>
-            <Feather name="arrow-right" size={20} color="white" />
-          </TouchableOpacity>
+      {/* Approve Proposal Button */}
+      <TouchableOpacity
+        style={{
+          backgroundColor: '#0066FF',
+          borderRadius: 12,
+          paddingVertical: 16,
+          paddingHorizontal: 20,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 12,
+        }}
+        onPress={() => navigation.navigate('ChooseTemplate')}
+      >
+        <Text
+          style={{
+            fontFamily: 'Urbanist-SemiBold',
+            fontSize: 15,
+            color: 'white',
+          }}
+        >
+          Choose Template
+        </Text>
+        <Feather name="arrow-right" size={20} color="white" />
+      </TouchableOpacity>
 
           {/* Reject Proposal Button */}
-          <TouchableOpacity style={{
+          {/* <TouchableOpacity style={{
             backgroundColor: '#0066FF',
             borderRadius: 12,
             paddingVertical: 16,
@@ -505,7 +513,7 @@ const ProposalsListScreen = ({ navigation }) => {
               Reject Proposal
             </Text>
             <Feather name="arrow-right" size={20} color="white" />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       </View>
     </Modal>
