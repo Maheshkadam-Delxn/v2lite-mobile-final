@@ -9,8 +9,10 @@ const BottomNavBar = () => {
   const route = useRoute();
 
   const tabs = [
-    { label: "Home", icon: "home-outline", route: "Dashboard" },
+    // { label: "Home", icon: "home-outline", route: "Dashboard" },
     { label: "Projects", icon: "apps-sharp", route: "ProjectListScreen" },
+     { label: "Templates", icon: "document-text-outline", route: "ProposalsListScreen" },
+      // { label: "Roles", icon: "apps-sharp", route: "ProjectListScreen" },
     { label: "Payments", icon: "credit-card-outline", route: "Payments" },
     { label: "Tasks", icon: "clipboard-outline", route: "Tasks" },
     { label: "Account", icon: "person-outline", route: "ProfilePageScreen" },

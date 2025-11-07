@@ -10,6 +10,7 @@ import React from 'react';
 import { useNavigation } from '@react-navigation/native';
 import Header from 'components/Header';
 import { Ionicons } from '@expo/vector-icons';
+import BottomNavBar from 'components/BottomNavbar';
 
 const ProjectsListScreen = () => {
   const navigation = useNavigation();
@@ -194,6 +195,9 @@ const ProjectsListScreen = () => {
           </View>
         ))}
       </ScrollView>
+      <View className="absolute bottom-0 left-0 right-0">
+          <BottomNavBar />
+        </View>
     </View>
   );
 };

@@ -1,16 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  SafeAreaView,
-  StatusBar,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, SafeAreaView, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import Header from 'components/Header';
-
+import BottomNavBar from 'components/BottomNavbar';
 
 const FilterScreen = () => {
   const [selectedSort, setSelectedSort] = useState('Default');
@@ -36,7 +29,7 @@ const FilterScreen = () => {
   useEffect(() => {
     StatusBar.setBackgroundColor('#0066FF');
     StatusBar.setBarStyle('light-content');
-    
+
     return () => {
       StatusBar.setBackgroundColor('#ffffff');
       StatusBar.setBarStyle('dark-content');
@@ -112,7 +105,7 @@ const FilterScreen = () => {
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Sort By */}
-        <View className="mx-5 mt-5 mb-4 rounded-2xl bg-white p-5 shadow-md">
+        <View className="mx-5 mb-4 mt-5 rounded-2xl bg-white p-5 shadow-md">
           <Text className="mb-4 text-lg font-semibold text-gray-900">Sort by</Text>
           <View className="flex-row flex-wrap gap-2">
             {sortOptions.map((option) => (
@@ -120,9 +113,7 @@ const FilterScreen = () => {
                 key={option}
                 onPress={() => setSelectedSort(option)}
                 className={`rounded-lg px-4 py-3 ${
-                  selectedSort === option
-                    ? 'bg-blue-500'
-                    : 'bg-gray-100'
+                  selectedSort === option ? 'bg-blue-500' : 'bg-gray-100'
                 }`}>
                 <Text
                   className={`text-sm font-medium ${
@@ -135,71 +126,71 @@ const FilterScreen = () => {
           </View>
         </View>
 
-       {/* Budget Range */}
-<View className="mx-5 mb-4 rounded-2xl bg-white p-5 shadow-md">
-  <Text className="mb-4 text-lg font-semibold text-gray-900">Budget Range</Text>
+        {/* Budget Range */}
+        <View className="mx-5 mb-4 rounded-2xl bg-white p-5 shadow-md">
+          <Text className="mb-4 text-lg font-semibold text-gray-900">Budget Range</Text>
 
-  {/* Min & Max Value Display */}
-  <View className="mb-6 flex-row justify-between">
-    <View className="min-w-20 rounded-lg bg-gray-100 px-4 py-3">
-      <Text className="text-center text-sm font-semibold text-gray-600">
-        ${budgetRange.min}
-      </Text>
-    </View>
-    <View className="min-w-20 rounded-lg bg-gray-100 px-4 py-3">
-      <Text className="text-center text-sm font-semibold text-gray-600">
-        ${budgetRange.max}
-      </Text>
-    </View>
-  </View>
+          {/* Min & Max Value Display */}
+          <View className="mb-6 flex-row justify-between">
+            <View className="min-w-20 rounded-lg bg-gray-100 px-4 py-3">
+              <Text className="text-center text-sm font-semibold text-gray-600">
+                ${budgetRange.min}
+              </Text>
+            </View>
+            <View className="min-w-20 rounded-lg bg-gray-100 px-4 py-3">
+              <Text className="text-center text-sm font-semibold text-gray-600">
+                ${budgetRange.max}
+              </Text>
+            </View>
+          </View>
 
-  {/* Dual Slider Container */}
-  <View className="relative h-16 justify-center">
-    {/* Background Track */}
-    <View className="absolute left-0 right-0 top-8 h-1 rounded-full bg-gray-200" />
+          {/* Dual Slider Container */}
+          <View className="relative h-16 justify-center">
+            {/* Background Track */}
+            <View className="absolute left-0 right-0 top-8 h-1 rounded-full bg-gray-200" />
 
-    {/* Active Track (between min and max) */}
-    <View
-      className="absolute top-8 h-1 rounded-full bg-blue-500"
-      style={{
-        left: `${(budgetRange.min / 1000) * 100}%`,
-        right: `${100 - (budgetRange.max / 1000) * 100}%`,
-      }}
-    />
+            {/* Active Track (between min and max) */}
+            <View
+              className="absolute top-8 h-1 rounded-full bg-blue-500"
+              style={{
+                left: `${(budgetRange.min / 1000) * 100}%`,
+                right: `${100 - (budgetRange.max / 1000) * 100}%`,
+              }}
+            />
 
-    {/* Min Slider */}
-    <Slider
-      style={{ width: '100%', height: 40, position: 'absolute' }}
-      minimumValue={0}
-      maximumValue={1000}
-      value={budgetRange.min}
-      onValueChange={(value) => {
-        const newMin = Math.min(value, budgetRange.max - 25);
-        setBudgetRange((prev) => ({ ...prev, min: Math.round(newMin / 25) * 25 }));
-      }}
-      minimumTrackTintColor="transparent"
-      maximumTrackTintColor="transparent"
-      thumbTintColor="#3B82F6"
-      step={25}
-    />
+            {/* Min Slider */}
+            <Slider
+              style={{ width: '100%', height: 40, position: 'absolute' }}
+              minimumValue={0}
+              maximumValue={1000}
+              value={budgetRange.min}
+              onValueChange={(value) => {
+                const newMin = Math.min(value, budgetRange.max - 25);
+                setBudgetRange((prev) => ({ ...prev, min: Math.round(newMin / 25) * 25 }));
+              }}
+              minimumTrackTintColor="transparent"
+              maximumTrackTintColor="transparent"
+              thumbTintColor="#3B82F6"
+              step={25}
+            />
 
-    {/* Max Slider - Offset to avoid overlap */}
-    <Slider
-      style={{ width: '100%', height: 40, position: 'absolute' }}
-      minimumValue={0}
-      maximumValue={1000}
-      value={budgetRange.max}
-      onValueChange={(value) => {
-        const newMax = Math.max(value, budgetRange.min + 25);
-        setBudgetRange((prev) => ({ ...prev, max: Math.round(newMax / 25) * 25 }));
-      }}
-      minimumTrackTintColor="transparent"
-      maximumTrackTintColor="transparent"
-      thumbTintColor="#3B82F6"
-      step={25}
-    />
-  </View>
-</View>
+            {/* Max Slider - Offset to avoid overlap */}
+            <Slider
+              style={{ width: '100%', height: 40, position: 'absolute' }}
+              minimumValue={0}
+              maximumValue={1000}
+              value={budgetRange.max}
+              onValueChange={(value) => {
+                const newMax = Math.max(value, budgetRange.min + 25);
+                setBudgetRange((prev) => ({ ...prev, max: Math.round(newMax / 25) * 25 }));
+              }}
+              minimumTrackTintColor="transparent"
+              maximumTrackTintColor="transparent"
+              thumbTintColor="#3B82F6"
+              step={25}
+            />
+          </View>
+        </View>
 
         {/* Assigned Team */}
         <View className="mx-5 mb-4 rounded-2xl bg-white p-5 shadow-md">
@@ -257,18 +248,19 @@ const FilterScreen = () => {
 
       {/* Bottom Buttons */}
       <View className="bg-white px-5 py-4 shadow-lg">
-       <View className="flex-row gap-3">
-  <TouchableOpacity
-    onPress={handleReset}
-    className="flex-1 items-center rounded-lg border-blue-200 bg-blue-50 py-4 shadow-sm">
-    <Text className="font-semibold text-blue-600">Reset</Text>
-  </TouchableOpacity>
-  <TouchableOpacity
-    onPress={handleApply}
-    className="flex-1 items-center rounded-lg bg-blue-500 py-4 shadow-md">
-    <Text className="font-semibold text-white">Apply</Text>
-  </TouchableOpacity>
-</View>
+        <View className="flex-row gap-3">
+          <TouchableOpacity
+            onPress={handleReset}
+            className="flex-1 items-center rounded-lg border-blue-200 bg-blue-50 py-4 shadow-sm">
+            <Text className="font-semibold text-blue-600">Reset</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleApply}
+            className="flex-1 items-center rounded-lg bg-blue-500 py-4 shadow-md">
+            <Text className="font-semibold text-white">Apply</Text>
+          </TouchableOpacity>
+        </View>
+        <BottomNavBar/>
       </View>
     </SafeAreaView>
   );
