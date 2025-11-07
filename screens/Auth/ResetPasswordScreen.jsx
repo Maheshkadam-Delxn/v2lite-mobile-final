@@ -1,7 +1,9 @@
-import { View, Text, TextInput, TouchableOpacity, StatusBar, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StatusBar, Dimensions } from 'react-native';
 import React, { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
+import { MaterialIcons } from '@expo/vector-icons';
 import Header from '../../components/Header';
+import Inputfield from '../../components/Inputfield';
 
 const { width, height } = Dimensions.get('window');
 
@@ -23,7 +25,7 @@ const ResetPasswordScreen = () => {
       <Header />
       
       {/* Light header area with dark text - reduced padding */}
-      <View className="bg-white pt-6 pb-3 px-6 ">
+      <View className="bg-white pt-6 pb-3 px-6">
         <Text className="text-gray-900 text-3xl font-bold mb-1">
           Reset your password
         </Text>
@@ -41,28 +43,17 @@ const ResetPasswordScreen = () => {
             style={{ elevation: 3 }}
           >
             <View className="p-6 flex-1 justify-between">
-              {/* Email Input Section */}
-              <View className="flex-1 max-h-32">
-                <Text className="text-gray-800 text-base font-medium mb-3">Email</Text>
-                <View
-                  className="flex-row items-center bg-gray-50 rounded-2xl border border-gray-200"
-                  style={{ height: 56 }}
-                >
-                  <TextInput
-                    className="flex-1 px-5 text-gray-800 text-base"
-                    placeholder="Enter your email"
-                    placeholderTextColor="#9CA3AF"
-                    value={email}
-                    onChangeText={setEmail}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                  />
-                  <View className="pr-4">
-                    <View className="w-6 h-6 items-center justify-center">
-                      <Text className="text-gray-400 text-lg">✉️</Text>
-                    </View>
-                  </View>
-                </View>
+              {/* Email Input Section using Inputfield component */}
+              <View className="flex-1">
+                <Inputfield
+                  label="Email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  icon={<MaterialIcons name="email" size={24} color="#9CA3AF" />}
+                />
               </View>
 
               {/* Bottom section with button */}

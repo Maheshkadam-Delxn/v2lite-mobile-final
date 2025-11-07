@@ -1,7 +1,9 @@
-import { View, Text, TouchableOpacity, StatusBar, TextInput, Modal, Animated, Image, Dimensions } from 'react-native'
+import { View, Text, TouchableOpacity, StatusBar, Modal, Animated, Image, Dimensions } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import { useNavigation } from '@react-navigation/native'
+import { MaterialIcons } from '@expo/vector-icons'
 import Header from '../../components/Header'
+import Inputfield from '../../components/Inputfield'
 
 const { width, height } = Dimensions.get('window')
 
@@ -82,73 +84,55 @@ const CreatePasswordScreen = () => {
             <View className="p-6 flex-1 justify-between">
               {/* Password Input Section */}
               <View className="flex-1">
-                {/* New Password Input */}
-                <View className="mb-6">
-                  <Text className="text-gray-800 text-base font-medium mb-3">New Password</Text>
-                  <View
-                    className="flex-row items-center bg-gray-50 rounded-2xl border border-gray-200"
-                    style={{ height: 56 }}
-                  >
-                    <TextInput
-                      className="flex-1 px-5 text-gray-800 text-base"
-                      placeholder="Enter new password"
-                      placeholderTextColor="#9CA3AF"
-                      secureTextEntry={!showNewPassword}
-                      value={newPassword}
-                      onChangeText={setNewPassword}
-                    />
-                    <TouchableOpacity
-                      className="pr-4"
-                      onPress={() => setShowNewPassword(!showNewPassword)}
-                    >
-                      <View className="w-8 h-8 bg-blue-100 rounded-full items-center justify-center">
-                        <Text className="text-blue-600 text-xs font-bold">
-                          {showNewPassword ? '👁️' : '👁️‍🗨️'}
-                        </Text>
-                      </View>
+                {/* New Password Input using Inputfield component */}
+                <Inputfield
+                  label="New Password"
+                  placeholder="Enter new password"
+                  value={newPassword}
+                  onChangeText={setNewPassword}
+                  secureTextEntry={!showNewPassword}
+                  icon={
+                    <TouchableOpacity onPress={() => setShowNewPassword(!showNewPassword)}>
+                      <MaterialIcons 
+                        name={showNewPassword ? "visibility" : "visibility-off"} 
+                        size={24} 
+                        color="#2563EB" 
+                      />
                     </TouchableOpacity>
-                  </View>
-                </View>
+                  }
+                  onIconPress={() => setShowNewPassword(!showNewPassword)}
+                />
 
-                {/* Confirm Password Input */}
-                <View className="mb-6">
-                  <Text className="text-gray-800 text-base font-medium mb-3">Confirm New Password</Text>
-                  <View
-                    className="flex-row items-center bg-gray-50 rounded-2xl border border-gray-200"
-                    style={{ height: 56 }}
-                  >
-                    <TextInput
-                      className="flex-1 px-5 text-gray-800 text-base"
-                      placeholder="Confirm new password"
-                      placeholderTextColor="#9CA3AF"
-                      secureTextEntry={!showConfirmPassword}
-                      value={confirmPassword}
-                      onChangeText={setConfirmPassword}
-                    />
-                    <TouchableOpacity
-                      className="pr-4"
-                      onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                    >
-                      <View className="w-8 h-8 bg-blue-100 rounded-full items-center justify-center">
-                        <Text className="text-blue-600 text-xs font-bold">
-                          {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
-                        </Text>
-                      </View>
+                {/* Confirm Password Input using Inputfield component */}
+                <Inputfield
+                  label="Confirm New Password"
+                  placeholder="Confirm new password"
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry={!showConfirmPassword}
+                  icon={
+                    <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+                      <MaterialIcons 
+                        name={showConfirmPassword ? "visibility" : "visibility-off"} 
+                        size={24} 
+                        color="#2563EB" 
+                      />
                     </TouchableOpacity>
-                  </View>
+                  }
+                  onIconPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                />
 
-                  {/* Password match validation */}
-                  {confirmPassword && newPassword !== confirmPassword && (
-                    <Text className="text-red-500 text-sm mt-2">
-                      Passwords do not match
-                    </Text>
-                  )}
-                  {confirmPassword && newPassword === confirmPassword && (
-                    <Text className="text-green-500 text-sm mt-2">
-                      Passwords match
-                    </Text>
-                  )}
-                </View>
+                {/* Password match validation */}
+                {confirmPassword && newPassword !== confirmPassword && (
+                  <Text className="text-red-500 text-sm mt-2 ml-1">
+                    Passwords do not match
+                  </Text>
+                )}
+                {confirmPassword && newPassword === confirmPassword && (
+                  <Text className="text-green-500 text-sm mt-2 ml-1">
+                    Passwords match
+                  </Text>
+                )}
               </View>
 
               {/* Bottom section with button */}
@@ -203,15 +187,15 @@ const CreatePasswordScreen = () => {
               }}
             >
               {/* Success Image */}
-              {/* <Image
-                source={require('../../../assets/resetsuccesful.png')}
+              <Image
+                source={require('../../assets/resetsuccesful.png')}
                 style={{
                   width: 160,
                   height: 160,
                   resizeMode: 'contain',
                   marginBottom: 30,
                 }}
-              /> */}
+              />
 
               {/* Text Content */}
               <Text
