@@ -8,11 +8,11 @@ import { ActivityIndicator, View, Platform } from 'react-native'; // Removed Sta
 import { StatusBar } from 'expo-status-bar'; // ✅ New import
 
 // Your screens (unchanged)
-import Splash1 from './screens/SplashScreen';
-import Onboarding from './screens/OnboardingScreen';
-import Welcome from './screens/WelcomeScreen';
-import SignIn from './screens/SignInScreen';
-import SignUpScreen from './screens/SignUpScreen';
+import Splash1 from './screens/Auth/SplashScreen';
+import Onboarding from './screens/Auth/OnboardingScreen';
+import Welcome from './screens/Auth/WelcomeScreen';
+import SignIn from './screens/Auth/SignInScreen';
+import SignUpScreen from './screens/Auth/SignUpScreen';
 
 import "./global.css";
 
