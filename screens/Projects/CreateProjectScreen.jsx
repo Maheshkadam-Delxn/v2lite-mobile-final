@@ -2,6 +2,7 @@ import { View, Text, TextInput, ScrollView, TouchableOpacity, Image } from 'reac
 import React, { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import Header from 'components/Header';
+import BottomNavBar from 'components/BottomNavbar';
 
 const CreateProjectScreen = () => {
   const navigation = useNavigation();
@@ -288,11 +289,12 @@ const CreateProjectScreen = () => {
         <TouchableOpacity
           className="mb-14 items-center rounded-xl bg-[#235DFF] py-4"
           onPress={handleCreateProject}>
-          <Text style={{ fontFamily: 'Urbanist-Bold' }} className="text-base text-white">
+          <Text style={{ fontFamily: 'Urbanist-Bold' }} className="text-base text-white ">
             Create Project
           </Text>
         </TouchableOpacity>
       </ScrollView>
+      <BottomNavBar/>
     </View>
   );
 };
