@@ -2,6 +2,7 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, Moda
 import React, { useState } from 'react';
 import { Feather } from '@expo/vector-icons';
 import BottomNavbar from '../../components/BottomNavbar';
+import Header from '../../components/Header'; // Import the Header component
 
 const ProposalsListScreen = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -402,7 +403,9 @@ const ProposalsListScreen = ({ navigation }) => {
       </View>
     </Modal>
   );
-
+   const handleFilter = () => {
+    console.log('Filter pressed');
+  };
   // Actions Modal
   const ActionsModal = () => (
     <Modal
@@ -522,51 +525,17 @@ const ProposalsListScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F5F5F5' }}>
       <View style={{ flex: 1 }}>
-        {/* Custom Header with Back and Filter buttons - BLUE BACKGROUND */}
-        <View style={{
-          backgroundColor: '#0066FF', // Changed to blue
-          paddingHorizontal: 16,
-          paddingVertical: 16,
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
-          <TouchableOpacity
-            onPress={() => navigation?.goBack()}
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 20,
-              backgroundColor: 'rgba(255, 255, 255, 0.2)', // Semi-transparent white
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            <Feather name="arrow-left" size={20} color="#FFFFFF" /> {/* White icon */}
-          </TouchableOpacity>
-
-          <Text style={{
-            fontFamily: 'Urbanist-Bold',
-            fontSize: 18,
-            color: '#FFFFFF' // White text
-          }}>
-            Proposals
-          </Text>
-
-          <TouchableOpacity
-            onPress={() => setShowFilterModal(true)}
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 20,
-              backgroundColor: 'rgba(255, 255, 255, 0.2)', // Semi-transparent white
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            <Feather name="filter" size={20} color="#FFFFFF" /> {/* White icon */}
-          </TouchableOpacity>
-        </View>
+        {/* Use the Header component */}
+         <Header
+          title="Proposals Templates"
+          showBackButton={true}
+          rightIcon="filter-outline"
+          onRightIconPress={handleFilter}
+          backgroundColor="#0066FF"
+          titleColor="white"
+          iconColor="white"
+        />
+ 
 
         {/* Search and Add Button */}
         <View style={{
@@ -604,18 +573,18 @@ const ProposalsListScreen = ({ navigation }) => {
           </View>
 
           <TouchableOpacity 
-  style={{
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#0066FF',
-    alignItems: 'center',
-    justifyContent: 'center'
-  }}
-  onPress={() => navigation.navigate('CreateProposalScreen')}
->
-  <Feather name="plus" size={24} color="white" />
-</TouchableOpacity>
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: 24,
+              backgroundColor: '#0066FF',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+            onPress={() => navigation.navigate('CreateProposalScreen')}
+          >
+            <Feather name="plus" size={24} color="white" />
+          </TouchableOpacity>
         </View>
 
         {/* Manage Proposals Button */}
