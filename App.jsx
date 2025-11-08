@@ -12,12 +12,24 @@ import Onboarding from './screens/Auth/OnboardingScreen';
 import Welcome from './screens/Auth/WelcomeScreen';
 import SignIn from './screens/Auth/SignInScreen';
 import SignUpScreen from './screens/Auth/SignUpScreen';
+import ResetPasswordScreen from 'screens/Auth/ResetPasswordScreen';
+import OTPVerificationScreen from 'screens/Auth/OTPVerificationScreen';
+import CreatePasswordScreen from 'screens/Auth/ChangePasswordScreen';
+import "./global.css";
+import Dashboard from './screens/Dashboard/DashboardScreen';  
+
 // import Dashboard from './screens/Dashboard/DashboardScreen'; 
 import ProjectListScreen from './screens/Projects/ProjectsListScreen'; 
 import ViewDetailsScreen from './screens/Projects/ViewDetailsScreen';
 import CreateProjectScreen from './screens/Projects/CreateProjectScreen';
 import FilterScreen from './screens/Projects/FilterScreen';
 import ProposalsListScreen from './screens/Proposals/ProposalsListScreen';
+import CreateProposalScreen from 'screens/Proposals/CreateProposal';
+import SubmitProposal from 'screens/Proposals/SubmitProposal';
+import ViewProposal from 'screens/Proposals/ViewProposal';
+import ReviewProposalScreen from 'screens/Proposals/ChooseTemplate';
+import ChooseTemplate from 'screens/Proposals/ChooseTemplate';
+
 import TaskScreen from 'screens/Projects/TaskScreen';
 
 const Stack = createNativeStackNavigator();
@@ -57,7 +69,11 @@ export default function App() {
             <Stack.Screen name="Onboarding" component={Onboarding} />
             <Stack.Screen name="Welcome" component={Welcome} />
             <Stack.Screen name="SignIn" component={SignIn} />
-            <Stack.Screen name="SignUp" component={SignUpScreen} />
+            <Stack.Screen name="SignUp" component={SignUpScreen} options={{headerShown:false}}/>
+            <Stack.Screen name ="ResetPassword" component={ResetPasswordScreen} />
+            <Stack.Screen name ="OTPVerification" component={OTPVerificationScreen} />
+            <Stack.Screen name ="CreatePassword" component={CreatePasswordScreen} />
+            {/* <Stack.Screen name="SignUp" component={SignUpScreen} /> */}
 
             {/* Main App */}
             {/* <Stack.Screen name="Dashboard" component={Dashboard} /> */}
@@ -66,6 +82,10 @@ export default function App() {
             <Stack.Screen name="CreateProjectScreen" component={CreateProjectScreen} />
             <Stack.Screen name="FilterScreen" component={FilterScreen} />
             <Stack.Screen name="ProposalsListScreen" component={ProposalsListScreen} />
+            <Stack.Screen name="CreateProposalScreen" component={CreateProposalScreen} />
+            <Stack.Screen name="SubmitProposal" component={SubmitProposal} />
+            <Stack.Screen name="ViewProposal" component={ViewProposal} />
+            <Stack.Screen name="ChooseTemplate" component={ChooseTemplate} />
             <Stack.Screen name="TaskScreen" component={TaskScreen} />
             {/* Add more screens later: Transactions, Profile, etc. */}
           </Stack.Navigator>
