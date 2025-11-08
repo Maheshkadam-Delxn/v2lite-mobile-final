@@ -29,38 +29,38 @@ const PaymentsTransaction = () => {
   const transactions = [
     {
       id: 1,
-      date: '10 Mar 2025',
+      date: '19 Mar 2025',
       type: 'Incoming Payment',
       person: 'Arun Mishra',
-      amount: '₹5000',
+      amount: '❤️ 5000',
       status: 'paid',
       isIncoming: true,
     },
     {
       id: 2,
-      date: '10 Mar 2025',
+      date: '19 Mar 2025',
       type: 'Outgoing Payment',
       person: 'Arun Mishra',
-      amount: '₹1000',
+      amount: '❤️ 1000',
       status: 'unpaid',
       isIncoming: false,
     },
     {
       id: 3,
-      date: '10 Mar 2025',
+      date: '19 Mar 2025',
       type: 'Incoming Payment',
       person: 'Arun Mishra',
-      amount: '₹5000',
+      amount: '❤️ 5000',
       status: 'paid',
       isIncoming: true,
     },
     {
       id: 4,
-      date: '10 Mar 2025',
+      date: '19 Mar 2025',
       type: 'Outgoing Payment',
       person: 'Arun Mishra',
-      amount: '₹1000',
-      status: 'unpaid',
+      amount: '❤️ 1000',
+      status: 'paid',
       isIncoming: false,
     },
   ];
@@ -108,53 +108,17 @@ const PaymentsTransaction = () => {
 
   const renderTransactionCard = ({ item }) => (
     <View style={styles.transactionCard}>
-      <View style={styles.transactionIcon}>
-        <View
-          style={[
-            styles.iconCircle,
-            { backgroundColor: item.isIncoming ? '#E8F9F3' : '#FFE8E8' },
-          ]}
-        >
-          <Ionicons
-            name={item.isIncoming ? 'arrow-down' : 'arrow-up'}
-            size={20}
-            color={item.isIncoming ? '#10B981' : '#EF4444'}
-          />
-        </View>
-      </View>
       <View style={styles.transactionDetails}>
-        <Text style={styles.transactionDate}>{item.date}</Text>
-        <Text style={styles.transactionType}>{item.type}</Text>
+        <Text style={styles.transactionDate}>{item.date}, {item.type}</Text>
         <Text style={styles.transactionPerson}>{item.person}</Text>
       </View>
       <View style={styles.transactionRight}>
-        <Text
-          style={[
-            styles.transactionAmount,
-            { color: item.isIncoming ? '#10B981' : '#EF4444' },
-          ]}
-        >
+        <Text style={styles.transactionAmount}>
           {item.amount}
         </Text>
-        <View
-          style={[
-            styles.statusBadge,
-            {
-              backgroundColor: item.status === 'paid' ? '#E8F9F3' : '#FFE8E8',
-            },
-          ]}
-        >
-          <Text
-            style={[
-              styles.statusText,
-              {
-                color: item.status === 'paid' ? '#10B981' : '#EF4444',
-              },
-            ]}
-          >
-            {item.status === 'paid' ? 'Paid' : 'Unpaid'}
-          </Text>
-        </View>
+        {item.status === 'unpaid' && (
+          <Text style={styles.unpaidText}>Unpaid</Text>
+        )}
       </View>
     </View>
   );
@@ -190,44 +154,54 @@ const PaymentsTransaction = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Stats Cards */}
-        <View style={styles.statsContainer}>
-          <View style={styles.statsRow}>
-            <View style={styles.statCard}>
-              <Text style={styles.statLabel}>TOTAL INVOICES</Text>
-              <Text style={styles.statValue}>₹ 4,000</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statLabel}>TOTAL PAYMENTS</Text>
-              <Text style={styles.statValue}>₹ 5,000</Text>
+        {/* Stats Section - Matches screenshot layout */}
+        <View style={styles.statsSection}>
+          {/* Details Card */}
+          <View style={styles.statCard}>
+            <Text style={styles.statMainLabel}>BALANCE</Text>
+            <View style={styles.amountRow}>
+              <Text style={styles.plusSign}>+</Text>
+              <Text style={styles.statMainValue}>4,000</Text>
             </View>
           </View>
-          <View style={styles.statsRow}>
-            <View style={styles.statCard}>
-              <Text style={styles.statLabel}>INVOICES</Text>
-              <Text style={styles.statValue}>₹ 0</Text>
+
+          {/* Tasks Card */}
+          <View style={styles.statCard}>
+            <Text style={styles.statMainLabel}>TOTAL INCOMING</Text>
+            <Text style={styles.statMainValue}>5,000</Text>
+          </View>
+
+          {/* Transactions Card */}
+          <View style={styles.statCard}>
+            <Text style={styles.statMainLabel}>TOTAL OUTGOING</Text>
+            <Text style={styles.statMainValue}>1,000</Text>
+          </View>
+
+          {/* Two-column section */}
+          <View style={styles.twoColumnRow}>
+            <View style={[styles.statCard, styles.halfCard]}>
+              <Text style={styles.statLabel}>INVOICE</Text>
+              <View style={styles.invoiceRow}>
+                <Text style={styles.crossIcon}>❌️</Text>
+                <Text style={styles.statValue}>O</Text>
+              </View>
             </View>
-            <View style={styles.statCard}>
+            <View style={[styles.statCard, styles.halfCard]}>
               <Text style={styles.statLabel}>TOTAL EXPENSE</Text>
-              <Text style={styles.statValue}>₹ 300</Text>
+              <View style={styles.invoiceRow}>
+                <Text style={styles.crossIcon}>❌️</Text>
+                <Text style={styles.statValue}>300</Text>
+              </View>
             </View>
           </View>
         </View>
 
-        {/* Pending Entries */}
-        <View style={styles.pendingSection}>
-          <View style={styles.pendingSectionHeader}>
-            <View style={styles.pendingTitleRow}>
-              <Ionicons name="time-outline" size={20} color="#6B7280" />
-              <Text style={styles.pendingTitle}>Pending Entries</Text>
-              <View style={styles.pendingBadge}>
-                <Text style={styles.pendingBadgeText}>4</Text>
-              </View>
-            </View>
-            <TouchableOpacity>
-              <Feather name="more-vertical" size={20} color="#6B7280" />
-            </TouchableOpacity>
-          </View>
+        {/* Divider */}
+        <View style={styles.divider} />
+
+        {/* Pending Entries Header */}
+        <View style={styles.pendingHeader}>
+          <Text style={styles.pendingTitle}>Pending Entries</Text>
         </View>
 
         {/* Transactions List */}
@@ -305,67 +279,79 @@ const styles = StyleSheet.create({
   tabTextInactive: {
     color: '#6B7280',
   },
-  statsContainer: {
+  statsSection: {
     paddingHorizontal: 16,
     paddingTop: 16,
   },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 12,
-  },
   statCard: {
-    flex: 1,
     backgroundColor: 'white',
     borderRadius: 12,
-    padding: 14,
+    padding: 16,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },
+  twoColumnRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  halfCard: {
+    flex: 1,
+  },
+  statMainLabel: {
+    fontFamily: 'Urbanist-Bold',
+    fontSize: 14,
+    color: '#000000',
+    marginBottom: 8,
+  },
+  statMainValue: {
+    fontFamily: 'Urbanist-Bold',
+    fontSize: 24,
+    color: '#000000',
+  },
   statLabel: {
-    fontFamily: 'Urbanist-Medium',
-    fontSize: 10,
-    color: '#9CA3AF',
-    marginBottom: 6,
-    letterSpacing: 0.5,
+    fontFamily: 'Urbanist-Bold',
+    fontSize: 12,
+    color: '#666666',
+    marginBottom: 8,
   },
   statValue: {
     fontFamily: 'Urbanist-Bold',
     fontSize: 18,
-    color: '#111827',
+    color: '#000000',
   },
-  pendingSection: {
+  amountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  plusSign: {
+    fontFamily: 'Urbanist-Bold',
+    fontSize: 24,
+    color: '#000000',
+    marginRight: 4,
+  },
+  invoiceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  crossIcon: {
+    fontSize: 16,
+    marginRight: 8,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#E5E7EB',
+    marginVertical: 20,
+    marginHorizontal: 16,
+  },
+  pendingHeader: {
     paddingHorizontal: 16,
-    paddingTop: 20,
-    paddingBottom: 12,
-  },
-  pendingSectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  pendingTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    marginBottom: 12,
   },
   pendingTitle: {
-    fontFamily: 'Urbanist-SemiBold',
-    fontSize: 15,
-    color: '#111827',
-  },
-  pendingBadge: {
-    backgroundColor: '#0066FF',
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    minWidth: 20,
-    alignItems: 'center',
-  },
-  pendingBadgeText: {
     fontFamily: 'Urbanist-Bold',
-    fontSize: 11,
-    color: 'white',
+    fontSize: 18,
+    color: '#000000',
   },
   transactionsContainer: {
     paddingHorizontal: 16,
@@ -373,42 +359,27 @@ const styles = StyleSheet.create({
   transactionCard: {
     backgroundColor: 'white',
     borderRadius: 12,
-    padding: 14,
-    marginBottom: 12,
+    padding: 16,
+    marginBottom: 8,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     borderWidth: 1,
     borderColor: '#E5E7EB',
-  },
-  transactionIcon: {
-    marginRight: 12,
-  },
-  iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   transactionDetails: {
     flex: 1,
   },
   transactionDate: {
-    fontFamily: 'Urbanist-Regular',
-    fontSize: 11,
-    color: '#9CA3AF',
-    marginBottom: 2,
-  },
-  transactionType: {
     fontFamily: 'Urbanist-SemiBold',
-    fontSize: 13,
-    color: '#111827',
-    marginBottom: 2,
+    fontSize: 14,
+    color: '#000000',
+    marginBottom: 4,
   },
   transactionPerson: {
     fontFamily: 'Urbanist-Regular',
-    fontSize: 13,
-    color: '#6B7280',
+    fontSize: 14,
+    color: '#666666',
   },
   transactionRight: {
     alignItems: 'flex-end',
@@ -416,16 +387,13 @@ const styles = StyleSheet.create({
   transactionAmount: {
     fontFamily: 'Urbanist-Bold',
     fontSize: 16,
+    color: '#000000',
     marginBottom: 4,
   },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  statusText: {
+  unpaidText: {
     fontFamily: 'Urbanist-Medium',
-    fontSize: 11,
+    fontSize: 12,
+    color: '#FF4444',
   },
   addButton: {
     backgroundColor: '#0066FF',
@@ -437,8 +405,8 @@ const styles = StyleSheet.create({
   },
   addButtonText: {
     fontFamily: 'Urbanist-SemiBold',
-    fontSize: 15,
-    color: 'white',
+    fontSize: 16,
+    color: 'white', 
   },
   bottomNav: {
     position: 'absolute',
