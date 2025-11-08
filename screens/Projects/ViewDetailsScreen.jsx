@@ -1,207 +1,3 @@
-// import React, { useState } from 'react';
-// import { View, Text, ScrollView, Image, TouchableOpacity, FlatList } from 'react-native';
-// import { useRoute, useNavigation } from '@react-navigation/native';
-// import Header from 'components/Header';
-
-// const ViewDetailsScreen = () => {
-//   const route = useRoute();
-//   const navigation = useNavigation();
-//   const { project } = route.params;
-//   const [activeTab, setActiveTab] = useState('Details');
-
-//   const handleBack = () => {
-//     navigation.goBack();
-//   };
-
-//   const handleEdit = () => {
-//     console.log('Edit project:', project.id);
-//     navigation.navigate('CreateProjectScreen');
-//   };
-
-//   const tabs = [
-//     { id: 'Details', label: 'Details' },
-//     { id: 'Task', label: 'Task' },
-//     { id: 'Transaction', label: 'Transaction' },
-//     { id: 'Attendance', label: 'Attendance' },
-//   ];
-
-//   // Container component for consistent styling
-//   const SectionContainer = ({ children, title }) => (
-//     <View className="mb-4 rounded-2xl border-l-4 border-blue-600 bg-white p-4"
-//       style={{
-//         shadowColor: '#000',
-//         shadowOffset: {
-//           width: 0,
-//           height: 1,
-//         },
-//         shadowOpacity: 0.05,
-//         shadowRadius: 2,
-//         elevation: 1,
-//       }}
-//     >
-//       <Text style={{ fontFamily: 'Urbanist-Bold' }} className="text-xl text-gray-900 mb-4">
-//         {title}
-//       </Text>
-//       {children}
-//     </View>
-//   );
-
-//   // Detail row component for consistent item styling
-//   const DetailRow = ({ label, value }) => (
-//     <View className="flex-row justify-between py-3 border-b border-gray-100 last:border-b-0">
-//       <Text style={{ fontFamily: 'Urbanist-Medium' }} className="text-gray-500 text-base flex-1">
-//         {label}
-//       </Text>
-//       <Text style={{ fontFamily: 'Urbanist-Regular' }} className="text-gray-900 text-base flex-1 text-right">
-//         {value}
-//       </Text>
-//     </View>
-//   );
-
-//   const renderTabContent = () => {
-//     switch (activeTab) {
-//       case 'Details':
-//         return (
-//           <>
-//             {/* Basic Project Details */}
-//             <SectionContainer title="Basic Project Details">
-//               <View className="space-y-1">
-//                 <DetailRow label="Project Name" value="Luxury Vale Point Bay" />
-//                 <DetailRow label="Project Type" value="Vale Construction" />
-//                 <DetailRow label="Project ID" value="SRT-00325" />
-//                 <DetailRow label="Location" value="Palm Jummel's Dubai Gulf" />
-//                 <DetailRow label="Start Date" value="10 Jan 2024" />
-//                 <DetailRow label="End Date" value="10 Dec 2024" />
-//                 <DetailRow label="Project Status" value="-" />
-//               </View>
-//             </SectionContainer>
-
-//             {/* Project Team */}
-//             <SectionContainer title="Project Team">
-//               <View className="space-y-1">
-//                 <DetailRow label="Project Manager" value="John Dan" />
-//                 <DetailRow label="Consular" value="RFC No Horizon" />
-//                 <DetailRow label="Main Controller" value="Elkin Bullerin LLC" />
-//                 <DetailRow label="Subcommittee" value="-" />
-//               </View>
-//             </SectionContainer>
-
-//             {/* Financial Overview */}
-//             <SectionContainer title="Financial Overview">
-//               <View className="space-y-1">
-//                 <DetailRow label="Trade Budget" value="$5,000,000" />
-//                 <DetailRow label="Amount Spent" value="$2,250,000" />
-//                 <DetailRow label="Servicing Budget" value="$2,350,000" />
-//                 <DetailRow label="ECO Approval Status" value="-" />
-//               </View>
-//             </SectionContainer>
-
-//             {/* Client & Approach */}
-//             <SectionContainer title="Client & Approach">
-//               <View className="space-y-1">
-//                 <DetailRow label="Client Name" value="Mr. Ahmed al-Farot" />
-//                 <DetailRow label="Approval Status" value="Pruning Client That Review" />
-//                 <DetailRow label="Docs List" value="$ Home Notebook 2 Printing" />
-//               </View>
-//             </SectionContainer>
-//           </>
-//         );
-      
-//       case 'Task':
-//         return (
-//           <SectionContainer title="Tasks">
-//             <View className="space-y-4">
-//               <Text style={{ fontFamily: 'Urbanist-Regular' }} className="text-gray-600 text-center py-8">
-//                 Task content will be displayed here
-//               </Text>
-//             </View>
-//           </SectionContainer>
-//         );
-      
-//       case 'Transaction':
-//         return (
-//           <SectionContainer title="Transactions">
-//             <View className="space-y-4">
-//               <Text style={{ fontFamily: 'Urbanist-Regular' }} className="text-gray-600 text-center py-8">
-//                 Transaction content will be displayed here
-//               </Text>
-//             </View>
-//           </SectionContainer>
-//         );
-      
-//       case 'Attendance':
-//         return (
-//           <SectionContainer title="Attendance">
-//             <View className="space-y-4">
-//               <Text style={{ fontFamily: 'Urbanist-Regular' }} className="text-gray-600 text-center py-8">
-//                 Attendance content will be displayed here
-//               </Text>
-//             </View>
-//           </SectionContainer>
-//         );
-      
-//       default:
-//         return null;
-//     }
-//   };
-
-//   const renderTabItem = ({ item }) => (
-//     <TouchableOpacity
-//       onPress={() => setActiveTab(item.id)}
-//       className={`px-6 py-3 rounded-full mx-1 ${
-//         activeTab === item.id ? 'bg-blue-600' : 'bg-gray-100'
-//       }`}
-//     >
-//       <Text
-//         style={{ fontFamily: 'Urbanist-SemiBold' }}
-//         className={`text-base ${
-//           activeTab === item.id ? 'text-white' : 'text-gray-600'
-//         }`}
-//       >
-//         {item.label}
-//       </Text>
-//     </TouchableOpacity>
-//   );
-
-//   return (
-//     <View className="flex-1 bg-gray-50">
-//       <Header
-//         title="Project Details"
-//         showBackButton={true}
-//         onBackPress={handleBack}
-//         onRightIconPress={handleEdit}
-//         backgroundColor="#0066FF"
-//         titleColor="white"
-//         iconColor="white"
-//       />
-
-//       {/* Horizontal Tabs */}
-//       <View className="bg-white py-3 border-b border-gray-200">
-//         <FlatList
-//           data={tabs}
-//           renderItem={renderTabItem}
-//           keyExtractor={(item) => item.id}
-//           horizontal
-//           showsHorizontalScrollIndicator={false}
-//           contentContainerStyle={{ paddingHorizontal: 12 }}
-//         />
-//       </View>
-
-//       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-//         {/* Project Info */}
-//         <View className="px-5 py-6">
-         
-//           {/* Tab Content */}
-//           {renderTabContent()}
-//         </View>
-//       </ScrollView>
-//     </View>
-//   );
-// };
-
-// export default ViewDetailsScreen;
-
-
 import React, { useState } from 'react';
 import {
   View,
@@ -215,118 +11,55 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import Header from 'components/Header';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import BottomNavBar from 'components/BottomNavbar';
+import TaskScreen from './TaskScreen';
+import PaymentsTransaction from 'screens/AccountingPayement/PaymentsTransaction';
+
 const ViewDetailsScreen = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const { project } = route.params || {};
   const [activeTab, setActiveTab] = useState('Task');
-  const [activeView, setActiveView] = useState('Calendar'); // Calendar = Activities, Activity = Calendar
+  const [activeView, setActiveView] = useState('Calendar');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
+
   const handleBack = () => navigation.goBack();
+  
   const handleEdit = () => {
     console.log('Edit project:', project?.id);
     navigation.navigate('CreateProjectScreen');
   };
+
+  const handleTabSelect = (tab) => {
+    setActiveTab(tab);
+    // Only navigate to other screens for Transaction and Attendance
+    // For Details and Task, we handle it within this component
+    if (tab === 'Transaction') {
+      navigation.navigate('Transaction');
+    // } else if (tab === 'Attendance') {
+    //   navigation.navigate('Attendance');
+    }
+    else if (tab === 'Transaction') {
+    navigation.navigate('Payments', {
+      screen: 'PaymentsTransaction',
+      params: { project },              
+    });
+  }
+    // For 'Details' and 'Task', just set the active tab (no navigation)
+  };
+
   const tabs = [
     { id: 'Details', label: 'Details' },
     { id: 'Task', label: 'Task' },
     { id: 'Transaction', label: 'Transaction' },
     { id: 'Attendance', label: 'Attendance' },
   ];
+
   const viewTabs = [
-    { id: 'Calendar', label: 'Calendar' }, // Shows Activities
-    { id: 'Activity', label: 'Activity' }, // Shows Calendar
+    { id: 'Calendar', label: 'Calendar' },
+    { id: 'Activity', label: 'Activity' },
   ];
-  // Project Status
-  const projectStatus = [
-    { label: 'Completed (110)', color: '#1DD1A1', icon: 'checkmark-circle' },
-    { label: 'In Progress (80)', color: '#0066FF', icon: 'time' },
-    { label: 'Ongoing (40)', color: '#FFA800', icon: 'play-circle' },
-    { label: 'Cancelled (10)', color: '#FF3B30', icon: 'close-circle' },
-  ];
-  // Activity Data
-  const activities = [
-    {
-      id: 1,
-      title: 'Documenting',
-      description: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
-      priority: 'High',
-      assignees: 3,
-      time: '09:00 AM',
-    },
-    {
-      id: 2,
-      title: 'Onboarding',
-      description: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
-      priority: 'High',
-      assignees: 3,
-      time: '10:30 AM',
-    },
-    {
-      id: 3,
-      title: 'Team Meeting',
-      description: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
-      priority: 'Low',
-      assignees: 5,
-      time: '02:00 PM',
-    },
-    {
-      id: 4,
-      title: 'Client Call',
-      description: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
-      priority: 'High',
-      assignees: 2,
-      time: '04:15 PM',
-    },
-  ];
-  // Calendar Logic
-  const generateWeekDates = (startDate) => {
-    const dates = [];
-    const current = new Date(startDate);
-    const dayOfWeek = current.getDay();
-    const diff = current.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 4);
-    current.setDate(diff);
-    const dayNames = ['Thu', 'Fri', 'Sat', 'Sun', 'Mon', 'Tue', 'Wed'];
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(current);
-      dates.push({
-        date: date.getDate(),
-        day: dayNames[i],
-        fullDate: new Date(date),
-        isCurrentMonth: date.getMonth() === currentMonth.getMonth(),
-        isToday: isToday(date),
-      });
-      current.setDate(current.getDate() + 1);
-    }
-    return dates;
-  };
-  const isToday = (date) => {
-    const today = new Date();
-    return (
-      date.getDate() === today.getDate() &&
-      date.getMonth() === today.getMonth() &&
-      date.getFullYear() === today.getFullYear()
-    );
-  };
-  const formatMonthYear = (date) => {
-    const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
-    ];
-    return months[date.getMonth()] + ' ' + date.getFullYear().toString().slice(2);
-  };
-  const handlePreviousWeek = () => {
-    const newDate = new Date(currentMonth);
-    newDate.setDate(newDate.getDate() - 7);
-    setCurrentMonth(newDate);
-  };
-  const handleNextWeek = () => {
-    const newDate = new Date(currentMonth);
-    newDate.setDate(newDate.getDate() + 7);
-    setCurrentMonth(newDate);
-  };
-  const weekDates = generateWeekDates(currentMonth);
+
   // Reusable Components
   const SectionContainer = ({ children, title }) => (
     <View style={styles.sectionContainer}>
@@ -334,12 +67,14 @@ const ViewDetailsScreen = () => {
       {children}
     </View>
   );
+
   const DetailRow = ({ label, value }) => (
     <View style={styles.detailRow}>
       <Text style={styles.detailLabel}>{label}</Text>
       <Text style={styles.detailValue}>{value}</Text>
     </View>
   );
+
   // Render Tab Content
   const renderTabContent = () => {
     switch (activeTab) {
@@ -382,29 +117,22 @@ const ViewDetailsScreen = () => {
             </SectionContainer>
           </>
         );
-       case 'Task':
-  navigation.navigate('TaskScreen');
-  return null;
+      
+      case 'Task':
+        // Render the TaskScreen component inline
+        return <TaskScreen project={project} />;
 
-      case 'Transaction':
-        return (
-          <SectionContainer title="Transactions">
-            <Text style={styles.placeholder}>Transaction content will be displayed here</Text>
-          </SectionContainer>
-        );
-      case 'Attendance':
-        return (
-          <SectionContainer title="Attendance">
-            <Text style={styles.placeholder}>Attendance content will be displayed here</Text>
-          </SectionContainer>
-        );
+        // case 'Transaction':
+        // return <PaymentsTransaction project={project} />;
+      
       default:
         return null;
     }
   };
+
   const renderMainTabItem = ({ item }) => (
     <TouchableOpacity
-      onPress={() => setActiveTab(item.id)}
+      onPress={() => handleTabSelect(item.id)}
       style={[
         styles.mainTab,
         activeTab === item.id ? styles.mainTabActive : styles.mainTabInactive,
@@ -420,6 +148,7 @@ const ViewDetailsScreen = () => {
       </Text>
     </TouchableOpacity>
   );
+
   return (
     <View style={styles.container}>
       <Header
@@ -450,7 +179,8 @@ const ViewDetailsScreen = () => {
     </View>
   );
 };
-// Styles (Tailwind-like via StyleSheet)
+
+// Styles remain the same as in your original code
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f9fafb' },
   mainTabBar: {
@@ -719,7 +449,5 @@ const styles = StyleSheet.create({
     right: 0,
   },
 });
+
 export default ViewDetailsScreen;
- 
-
-

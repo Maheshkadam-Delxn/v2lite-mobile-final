@@ -1,26 +1,13 @@
-// TaskScreen.js
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import Header from 'components/Header';
 import { Ionicons, Feather } from '@expo/vector-icons';
-import BottomNavBar from 'components/BottomNavbar';
 
 const TaskScreen = () => {
   const navigation = useNavigation();
-
-  // ------------------------------------------------------------------
-  // State & data (same as before)
-  // ------------------------------------------------------------------
   const [activeView, setActiveView] = useState('Calendar');
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
   const projectStatus = [
     { label: 'Completed (110)', color: '#1DD1A1', icon: 'checkmark-circle' },
@@ -29,42 +16,100 @@ const TaskScreen = () => {
     { label: 'Cancelled (10)', color: '#FF3B30', icon: 'close-circle' },
   ];
 
-  const activities = [
+  const scheduleActivities = [
     {
       id: 1,
-      title: 'Documenting',
-      description:
-        'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
+      title: 'Daily Design Request Report',
+      startTime: '12:00 PM',
+      endTime: '02:00 PM',
+      color: '#FF6B6B',
+    },
+    {
+      id: 2,
+      title: 'Daily Design Request Report',
+      startTime: '12:00 PM',
+      endTime: '02:00 PM',
+      color: '#4ECDC4',
+    },
+    {
+      id: 3,
+      title: 'Daily Design Request Report',
+      startTime: '12:00 PM',
+      endTime: '02:00 PM',
+      color: '#95E1D3',
+    },
+    {
+      id: 4,
+      title: 'Daily Design Request Report',
+      startTime: '12:00 PM',
+      endTime: '02:00 PM',
+      color: '#F3A683',
+    },
+    {
+      id: 5,
+      title: 'Daily Design Request Report',
+      startTime: '12:00 PM',
+      endTime: '02:00 PM',
+      color: '#786FA6',
+    },
+    {
+      id: 6,
+      title: 'Daily Design Request Report',
+      startTime: '12:00 PM',
+      endTime: '02:00 PM',
+      color: '#F8B500',
+    },
+    {
+      id: 7,
+      title: 'Daily Design Request Report',
+      startTime: '12:00 PM',
+      endTime: '02:00 PM',
+      color: '#FF6B9D',
+    },
+    {
+      id: 8,
+      title: 'Daily Design Request Report',
+      startTime: '12:00 PM',
+      endTime: '02:00 PM',
+      color: '#C44569',
+    },
+    {
+      id: 9,
+      title: 'Daily Design Request Report',
+      startTime: '12:00 PM',
+      endTime: '02:00 PM',
+      color: '#1B9CFC',
+    },
+  ];
+
+  const calendarActivities = [
+    {
+      id: 1,
+      title: 'Onboarding',
+      description: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
       priority: 'High',
       assignees: 3,
-      time: '09:00 AM',
     },
     {
       id: 2,
       title: 'Onboarding',
-      description:
-        'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
+      description: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
       priority: 'High',
       assignees: 3,
-      time: '10:30 AM',
     },
     {
       id: 3,
-      title: 'Team Meeting',
-      description:
-        'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
-      priority: 'Low',
-      assignees: 5,
-      time: '02:00 PM',
+      title: 'Onboarding',
+      description: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
+      priority: 'High',
+      assignees: 3,
     },
     {
       id: 4,
-      title: 'Client Call',
-      description:
-        'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
+      title: 'Onboarding',
+      description: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
       priority: 'High',
-      assignees: 2,
-      time: '04:15 PM',
+      assignees: 3,
     },
   ];
 
@@ -75,7 +120,7 @@ const TaskScreen = () => {
     const dates = [];
     const current = new Date(startDate);
     const dayOfWeek = current.getDay();
-    const diff = current.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 4);
+    const diff = current.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
     current.setDate(diff);
     const dayNames = ['Thu', 'Fri', 'Sat', 'Sun', 'Mon', 'Tue', 'Wed'];
 
@@ -87,6 +132,7 @@ const TaskScreen = () => {
         fullDate: new Date(date),
         isCurrentMonth: date.getMonth() === currentMonth.getMonth(),
         isToday: isToday(date),
+        isSelected: isSameDay(date, selectedDate),
       });
       current.setDate(current.getDate() + 1);
     }
@@ -102,12 +148,30 @@ const TaskScreen = () => {
     );
   };
 
+  const isSameDay = (date1, date2) => {
+    return (
+      date1.getDate() === date2.getDate() &&
+      date1.getMonth() === date2.getMonth() &&
+      date1.getFullYear() === date2.getFullYear()
+    );
+  };
+
   const formatMonthYear = (date) => {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
-    return `${months[date.getMonth()]} ${date.getFullYear().toString().slice(2)}`;
+    return `${months[date.getMonth()]} ${date.getDate()}`;
   };
 
   const handlePreviousWeek = () => {
@@ -120,6 +184,10 @@ const TaskScreen = () => {
     const newDate = new Date(currentMonth);
     newDate.setDate(newDate.getDate() + 7);
     setCurrentMonth(newDate);
+  };
+
+  const handleDateSelect = (date) => {
+    setSelectedDate(date);
   };
 
   const weekDates = generateWeekDates(currentMonth);
@@ -139,22 +207,17 @@ const TaskScreen = () => {
   const ActivityCard = ({ item }) => (
     <View style={styles.activityCard}>
       <View style={styles.activityHeader}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.activityTitle}>{item.title}</Text>
-          <Text style={styles.activityTime}>{item.time}</Text>
-        </View>
+        <Text style={styles.activityTitle}>{item.title}</Text>
         <View
           style={[
             styles.priorityBadge,
             item.priority === 'High' ? styles.priorityHigh : styles.priorityLow,
-          ]}
-        >
+          ]}>
           <Text
             style={[
               styles.priorityText,
               item.priority === 'High' ? styles.textHigh : styles.textLow,
-            ]}
-          >
+            ]}>
             {item.priority}
           </Text>
         </View>
@@ -163,10 +226,7 @@ const TaskScreen = () => {
       <View style={styles.assigneeRow}>
         <View style={styles.assigneeAvatars}>
           {[...Array(item.assignees)].map((_, i) => (
-            <View
-              key={i}
-              style={[styles.avatar, i > 0 && { marginLeft: -8 }]}
-            />
+            <View key={i} style={[styles.avatar, i > 0 && { marginLeft: -8 }]} />
           ))}
         </View>
         <Text style={styles.assigneeCount}>{item.assignees} people</Text>
@@ -174,21 +234,20 @@ const TaskScreen = () => {
     </View>
   );
 
-  // ------------------------------------------------------------------
-  // Main render
-  // ------------------------------------------------------------------
+  const ScheduleCard = ({ item }) => (
+    <View style={styles.scheduleCard}>
+      <View style={[styles.scheduleColorBar, { backgroundColor: item.color }]} />
+      <View style={styles.scheduleContent}>
+        <Text style={styles.scheduleTitle}>{item.title}</Text>
+        <Text style={styles.scheduleTime}>
+          {item.startTime} - {item.endTime}
+        </Text>
+      </View>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <Header
-        title="Tasks"
-        showBackButton={true}
-        onBackPress={() => navigation.goBack()}
-        backgroundColor="#0066FF"
-        titleColor="white"
-        iconColor="white"
-      />
-
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Project Status Grid */}
         <View style={styles.statusGrid}>
@@ -204,102 +263,162 @@ const TaskScreen = () => {
               <TouchableOpacity
                 key={id}
                 onPress={() => setActiveView(id)}
-                style={[
-                  styles.viewTab,
-                  activeView === id && styles.viewTabActive,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.viewTabText,
-                    activeView === id && styles.viewTabTextActive,
-                  ]}
-                >
+                style={[styles.viewTab, activeView === id && styles.viewTabActive]}>
+                <Text style={[styles.viewTabText, activeView === id && styles.viewTabTextActive]}>
                   {id}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
 
-          {/* Calendar Tab → Show Activities */}
+          {/* Calendar Tab → Show Week Calendar */}
           {activeView === 'Calendar' && (
-            <View style={styles.activityContainer}>
-              <TouchableOpacity style={styles.addButton}>
-                <Ionicons name="add-circle-outline" size={18} color="white" />
-                <Text style={styles.addButtonText}>Add New</Text>
-              </TouchableOpacity>
+            <>
+              <View style={styles.calendarContainer}>
+                <View style={styles.monthHeader}>
+                  <TouchableOpacity onPress={handlePreviousWeek}>
+                    <Feather name="chevron-left" size={20} color="#6B7280" />
+                  </TouchableOpacity>
+                  <Text style={styles.monthText}>{formatMonthYear(selectedDate)}</Text>
+                  <TouchableOpacity onPress={handleNextWeek}>
+                    <Feather name="chevron-right" size={20} color="#6B7280" />
+                  </TouchableOpacity>
+                </View>
 
-              <FlatList
-                data={activities}
-                renderItem={({ item }) => <ActivityCard item={item} />}
-                keyExtractor={(item) => item.id.toString()}
-                scrollEnabled={false}
-              />
-            </View>
-          )}
-
-          {/* Activity Tab → Show Calendar */}
-          {activeView === 'Activity' && (
-            <View style={styles.calendarContainer}>
-              <View style={styles.monthHeader}>
-                <TouchableOpacity onPress={handlePreviousWeek}>
-                  <Feather name="chevron-left" size={20} color="#6B7280" />
-                </TouchableOpacity>
-                <Text style={styles.monthText}>
-                  {formatMonthYear(currentMonth)}
-                </Text>
-                <TouchableOpacity onPress={handleNextWeek}>
-                  <Feather name="chevron-right" size={20} color="#6B7280" />
-                </TouchableOpacity>
+                <View style={styles.weekRow}>
+                  {weekDates.map((d, idx) => (
+                    <TouchableOpacity
+                      key={idx}
+                      style={styles.dayCell}
+                      onPress={() => handleDateSelect(d.fullDate)}>
+                      <Text style={[styles.dayName, !d.isCurrentMonth && styles.dayNameFaded]}>
+                        {d.day}
+                      </Text>
+                      <View
+                        style={[
+                          styles.dateCircle,
+                          d.isSelected && styles.dateSelected,
+                          !d.isSelected && d.isToday && styles.dateToday,
+                        ]}>
+                        <Text
+                          style={[
+                            styles.dateText,
+                            !d.isCurrentMonth && styles.dateTextFaded,
+                            d.isSelected && styles.dateTextSelected,
+                            !d.isSelected && d.isToday && styles.dateTextToday,
+                            !d.isSelected && !d.isToday && styles.dateTextNormal,
+                          ]}>
+                          {d.date}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
 
-              <View style={styles.weekRow}>
-                {weekDates.map((d, idx) => (
-                  <TouchableOpacity key={idx} style={styles.dayCell}>
-                    <Text
-                      style={[
-                        styles.dayName,
-                        !d.isCurrentMonth && styles.dayNameFaded,
-                      ]}
-                    >
-                      {d.day}
-                    </Text>
-                    <View
-                      style={[
-                        styles.dateCircle,
-                        d.isToday && styles.dateToday,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.dateText,
-                          !d.isCurrentMonth && styles.dateTextFaded,
-                          d.isToday && styles.dateTextToday,
-                        ]}
-                      >
-                        {d.date}
-                      </Text>
-                    </View>
+              {/* Add New Button and All Tasks */}
+              <View style={styles.tasksContainer}>
+                <View style={styles.tasksHeader}>
+                  <TouchableOpacity
+                    style={styles.addNewButton}
+                    onPress={() => navigation.navigate('AddNewTask')}>
+                    <Ionicons name="add-circle-outline" size={18} color="#0066FF" />
+                    <Text style={styles.addNewText}>Add New</Text>
                   </TouchableOpacity>
-                ))}
+                  <TouchableOpacity style={styles.allTasksButton}>
+                    <Text style={styles.allTasksText}>All Tasks</Text>
+                    <Feather name="chevron-down" size={16} color="#6B7280" />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Activity List */}
+                <FlatList
+                  data={calendarActivities}
+                  renderItem={({ item }) => <ActivityCard item={item} />}
+                  keyExtractor={(item) => item.id.toString()}
+                  scrollEnabled={false}
+                  showsVerticalScrollIndicator={false}
+                />
+              </View>
+            </>
+          )}
+
+          {/* Activity Tab → Show Schedule List */}
+          {activeView === 'Activity' && (
+            <View style={styles.activityContainer}>
+              {/* Calendar Header */}
+              <View style={styles.calendarContainer}>
+                <View style={styles.monthHeader}>
+                  <TouchableOpacity onPress={handlePreviousWeek}>
+                    <Feather name="chevron-left" size={20} color="#6B7280" />
+                  </TouchableOpacity>
+                  <Text style={styles.monthText}>{formatMonthYear(selectedDate)}</Text>
+                  <TouchableOpacity onPress={handleNextWeek}>
+                    <Feather name="chevron-right" size={20} color="#6B7280" />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.weekRow}>
+                  {weekDates.map((d, idx) => (
+                    <TouchableOpacity
+                      key={idx}
+                      style={styles.dayCell}
+                      onPress={() => handleDateSelect(d.fullDate)}>
+                      <Text style={[styles.dayName, !d.isCurrentMonth && styles.dayNameFaded]}>
+                        {d.day}
+                      </Text>
+                      <View
+                        style={[
+                          styles.dateCircle,
+                          d.isSelected && styles.dateSelected,
+                          !d.isSelected && d.isToday && styles.dateToday,
+                        ]}>
+                        <Text
+                          style={[
+                            styles.dateText,
+                            !d.isCurrentMonth && styles.dateTextFaded,
+                            d.isSelected && styles.dateTextSelected,
+                            !d.isSelected && d.isToday && styles.dateTextToday,
+                            !d.isSelected && !d.isToday && styles.dateTextNormal,
+                          ]}>
+                          {d.date}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Schedule Section */}
+              <View style={styles.scheduleSection}>
+                <View style={styles.scheduleSectionHeader}>
+                  <Text style={styles.scheduleSectionTitle}>Your Schedule</Text>
+                  <TouchableOpacity style={styles.selectMemberButton}>
+                    <Text style={styles.selectMemberText}>Select Member</Text>
+                    <Feather name="chevron-down" size={16} color="#6B7280" />
+                  </TouchableOpacity>
+                </View>
+
+                <FlatList
+                  data={scheduleActivities}
+                  renderItem={({ item }) => <ScheduleCard item={item} />}
+                  keyExtractor={(item) => item.id.toString()}
+                  scrollEnabled={false}
+                  showsVerticalScrollIndicator={false}
+                />
               </View>
             </View>
           )}
         </View>
 
-        <View style={{ height: 80 }} />
+        <View style={{ height: 100 }} />
       </ScrollView>
-
-      {/* Bottom Nav */}
-      <View style={styles.bottomNav}>
-        <BottomNavBar />
-      </View>
     </View>
   );
 };
 
 /* --------------------------------------------------------------
-   Styles – identical to the ones you used in ViewDetailsScreen
+   Styles
    -------------------------------------------------------------- */
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f9fafb' },
@@ -320,6 +439,11 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 10,
     marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   statusIcon: {
     width: 32,
@@ -342,6 +466,11 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   viewTabRow: {
     flexDirection: 'row',
@@ -352,14 +481,14 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 16,
     alignItems: 'center',
-    borderBottomWidth: 2,
+    borderBottomWidth: 3,
     borderBottomColor: 'transparent',
   },
   viewTabActive: { borderBottomColor: '#0066FF' },
   viewTabText: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: 'Urbanist-SemiBold',
-    color: '#6b7280',
+    color: '#9ca3af',
   },
   viewTabTextActive: { color: '#0066FF', fontFamily: 'Urbanist-Bold' },
 
@@ -372,71 +501,96 @@ const styles = StyleSheet.create({
   },
   monthText: {
     fontFamily: 'Urbanist-Bold',
-    fontSize: 15,
+    fontSize: 16,
     color: '#111827',
   },
   weekRow: { flexDirection: 'row', justifyContent: 'space-between' },
   dayCell: { flex: 1, alignItems: 'center' },
   dayName: {
-    fontFamily: 'Urbanist-Regular',
-    fontSize: 11,
-    color: '#9ca3af',
+    fontFamily: 'Urbanist-Medium',
+    fontSize: 12,
+    color: '#6b7280',
     marginBottom: 8,
   },
   dayNameFaded: { color: '#d1d5db' },
   dateCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  dateSelected: { backgroundColor: '#0066FF' },
   dateToday: { backgroundColor: '#dbeafe' },
   dateText: {
     fontFamily: 'Urbanist-SemiBold',
     fontSize: 14,
   },
+  dateTextSelected: { color: 'white' },
   dateTextToday: { color: '#0066FF' },
+  dateTextNormal: { color: '#111827' },
   dateTextFaded: { color: '#d1d5db' },
 
-  activityContainer: { padding: 16 },
-  addButton: {
-    backgroundColor: '#0066FF',
-    paddingVertical: 14,
-    borderRadius: 10,
+  activityContainer: {
+    paddingBottom: 16,
+  },
+
+  tasksContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  tasksHeader: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
   },
-  addButtonText: {
-    color: 'white',
+  addNewButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  addNewText: {
     fontFamily: 'Urbanist-SemiBold',
     fontSize: 14,
-    marginLeft: 8,
+    color: '#0066FF',
+    marginLeft: 6,
   },
+  allTasksButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  allTasksText: {
+    fontFamily: 'Urbanist-Medium',
+    fontSize: 13,
+    color: '#6b7280',
+    marginRight: 4,
+  },
+
   activityCard: {
-    backgroundColor: 'white',
-    padding: 16,
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
+    padding: 14,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#f3f4f6',
   },
   activityHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: 8,
   },
   activityTitle: {
     fontFamily: 'Urbanist-SemiBold',
     fontSize: 15,
     color: '#111827',
-  },
-  activityTime: {
-    fontFamily: 'Urbanist-Medium',
-    fontSize: 12,
-    color: '#0066FF',
-    marginTop: 4,
   },
   priorityBadge: {
     paddingHorizontal: 10,
@@ -445,22 +599,30 @@ const styles = StyleSheet.create({
   },
   priorityHigh: { backgroundColor: '#fee2e2' },
   priorityLow: { backgroundColor: '#ecfdf5' },
-  priorityText: { fontFamily: 'Urbanist-Medium', fontSize: 11 },
+  priorityText: {
+    fontFamily: 'Urbanist-Medium',
+    fontSize: 11,
+  },
   textHigh: { color: '#ef4444' },
   textLow: { color: '#10b981' },
   activityDesc: {
     fontFamily: 'Urbanist-Regular',
-    fontSize: 12,
+    fontSize: 13,
     color: '#6b7280',
     lineHeight: 18,
     marginBottom: 12,
   },
-  assigneeRow: { flexDirection: 'row', alignItems: 'center' },
-  assigneeAvatars: { flexDirection: 'row' },
+  assigneeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  assigneeAvatars: {
+    flexDirection: 'row',
+  },
   avatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     backgroundColor: '#e5e7eb',
     borderWidth: 2,
     borderColor: 'white',
@@ -472,7 +634,64 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 
-  bottomNav: { position: 'absolute', bottom: 0, left: 0, right: 0 },
+  scheduleSection: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  scheduleSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  scheduleSectionTitle: {
+    fontFamily: 'Urbanist-Bold',
+    fontSize: 16,
+    color: '#111827',
+  },
+  selectMemberButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  selectMemberText: {
+    fontFamily: 'Urbanist-Medium',
+    fontSize: 13,
+    color: '#6b7280',
+    marginRight: 4,
+  },
+
+  scheduleCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    marginBottom: 12,
+    flexDirection: 'row',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#f3f4f6',
+  },
+  scheduleColorBar: {
+    width: 4,
+  },
+  scheduleContent: {
+    flex: 1,
+    padding: 14,
+  },
+  scheduleTitle: {
+    fontFamily: 'Urbanist-SemiBold',
+    fontSize: 14,
+    color: '#111827',
+    marginBottom: 4,
+  },
+  scheduleTime: {
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 12,
+    color: '#6b7280',
+  },
 });
 
 export default TaskScreen;
