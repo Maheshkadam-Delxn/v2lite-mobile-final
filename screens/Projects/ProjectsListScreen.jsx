@@ -121,7 +121,6 @@ const ProjectsListScreen = () => {
                   source={{ uri: project.imageUrl }}
                   className="h-full w-full"
                   resizeMode="cover"
-                //   defaultSource={require('../../assets/splash/logo.png')}
                 />
               </View>
 

@@ -12,12 +12,13 @@ import Onboarding from './screens/Auth/OnboardingScreen';
 import Welcome from './screens/Auth/WelcomeScreen';
 import SignIn from './screens/Auth/SignInScreen';
 import SignUpScreen from './screens/Auth/SignUpScreen';
-import Dashboard from './screens/Dashboard/DashboardScreen'; 
+// import Dashboard from './screens/Dashboard/DashboardScreen'; 
 import ProjectListScreen from './screens/Projects/ProjectsListScreen'; 
 import ViewDetailsScreen from './screens/Projects/ViewDetailsScreen';
 import CreateProjectScreen from './screens/Projects/CreateProjectScreen';
 import FilterScreen from './screens/Projects/FilterScreen';
 import ProposalsListScreen from './screens/Proposals/ProposalsListScreen';
+import TaskScreen from 'screens/Projects/TaskScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -59,12 +60,13 @@ export default function App() {
             <Stack.Screen name="SignUp" component={SignUpScreen} />
 
             {/* Main App */}
-            <Stack.Screen name="Dashboard" component={Dashboard} />
+            {/* <Stack.Screen name="Dashboard" component={Dashboard} /> */}
             <Stack.Screen name="ProjectListScreen" component={ProjectListScreen} />
             <Stack.Screen name="ViewDetails" component={ViewDetailsScreen} />
             <Stack.Screen name="CreateProjectScreen" component={CreateProjectScreen} />
             <Stack.Screen name="FilterScreen" component={FilterScreen} />
             <Stack.Screen name="ProposalsListScreen" component={ProposalsListScreen} />
+            <Stack.Screen name="TaskScreen" component={TaskScreen} />
             {/* Add more screens later: Transactions, Profile, etc. */}
           </Stack.Navigator>
         </NavigationContainer>

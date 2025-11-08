@@ -319,7 +319,7 @@ const SignInScreen = () => {
 
   const handleLogin = () => {
     if (email && password) {
-      navigation.navigate('Dashboard');
+      navigation.navigate('ProjectListScreen');
     } else {
       console.log('Please fill in all fields');
     }
