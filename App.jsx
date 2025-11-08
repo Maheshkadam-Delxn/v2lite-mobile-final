@@ -31,6 +31,17 @@ import ReviewProposalScreen from 'screens/Proposals/ChooseTemplate';
 import ChooseTemplate from 'screens/Proposals/ChooseTemplate';
 
 import TaskScreen from 'screens/Projects/TaskScreen';
+import Transaction from 'screens/AccountingPayement/Transaction';
+import TransactionAdd from 'screens/AccountingPayement/TransactionAdd';
+import IncomingPayment from 'screens/AccountingPayement/IncomingPayment';
+import OutgoingPayment from 'screens/AccountingPayement/OutgoingPayment';
+import DebitNote from 'screens/AccountingPayement/DebitNote';
+import DebitNoteAddItem from 'screens/AccountingPayement/DebitNoteAddItem';
+import CreateInvoice from 'screens/AccountingPayement/CreateInvoice';
+import InvoiceAddBoqItem from 'screens/AccountingPayement/InvoiceAddBoqItem';
+import MaterialPurchase from 'screens/AccountingPayement/MaterialPurchase';
+import TransactionFilter from 'screens/AccountingPayement/TransactionFilter';
+import TransactionApproval from 'screens/AccountingPayement/TransactionApproval';
 
 const Stack = createNativeStackNavigator();
 
@@ -88,6 +99,37 @@ export default function App() {
             <Stack.Screen name="ChooseTemplate" component={ChooseTemplate} />
             <Stack.Screen name="TaskScreen" component={TaskScreen} />
             {/* Add more screens later: Transactions, Profile, etc. */}
+
+            {/* Accounting and payement*/}
+            
+            <Stack.Screen name="Transaction" component={Transaction} />
+            <Stack.Screen name="TransactionAdd" component={TransactionAdd} />
+            <Stack.Screen name="IncomingPayment" component={IncomingPayment} />
+            <Stack.Screen name="OutgoingPayment" component={OutgoingPayment} />
+            <Stack.Screen name="DebitNote" component={DebitNote} />
+            <Stack.Screen name="DebitNoteAddItem" component={DebitNoteAddItem} />
+            <Stack.Screen name="CreateInvoice" component={CreateInvoice} />
+            <Stack.Screen name="InvoiceAddBoqItem" component={InvoiceAddBoqItem} />
+            <Stack.Screen name="MaterialPurchase" component={MaterialPurchase} />
+            <Stack.Screen name="TransactionFilter" component={TransactionFilter} />
+            <Stack.Screen name="TransactionApproval" component={TransactionApproval} />
+
+
+
+
+
+
+
+
+
+            
+
+
+
+
+
+
+
           </Stack.Navigator>
         </NavigationContainer>
       </SafeAreaWrapper>
