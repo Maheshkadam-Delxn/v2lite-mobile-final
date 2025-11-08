@@ -29,6 +29,7 @@ import SubmitProposal from 'screens/Proposals/SubmitProposal';
 import ViewProposal from 'screens/Proposals/ViewProposal';
 import ReviewProposalScreen from 'screens/Proposals/ChooseTemplate';
 import ChooseTemplate from 'screens/Proposals/ChooseTemplate';
+import AddNewTask from 'screens/Projects/AddNewTask';
 
 import TaskScreen from 'screens/Projects/TaskScreen';
 
@@ -87,6 +88,7 @@ export default function App() {
             <Stack.Screen name="ViewProposal" component={ViewProposal} />
             <Stack.Screen name="ChooseTemplate" component={ChooseTemplate} />
             <Stack.Screen name="TaskScreen" component={TaskScreen} />
+            <Stack.Screen name="AddNewTask" component={AddNewTask} />
             {/* Add more screens later: Transactions, Profile, etc. */}
           </Stack.Navigator>
         </NavigationContainer>
