@@ -29,9 +29,10 @@ import SubmitProposal from 'screens/Proposals/SubmitProposal';
 import ViewProposal from 'screens/Proposals/ViewProposal';
 import ReviewProposalScreen from 'screens/Proposals/ChooseTemplate';
 import ChooseTemplate from 'screens/Proposals/ChooseTemplate';
+import AddNewTask from 'screens/Projects/AddNewTask';
 
 import TaskScreen from 'screens/Projects/TaskScreen';
-import Transaction from 'screens/AccountingPayement/Transaction';
+import PaymentsTransaction from 'screens/AccountingPayement/PaymentsTransaction';
 import TransactionAdd from 'screens/AccountingPayement/TransactionAdd';
 import IncomingPayment from 'screens/AccountingPayement/IncomingPayment';
 import OutgoingPayment from 'screens/AccountingPayement/OutgoingPayment';
@@ -98,11 +99,12 @@ export default function App() {
             <Stack.Screen name="ViewProposal" component={ViewProposal} />
             <Stack.Screen name="ChooseTemplate" component={ChooseTemplate} />
             <Stack.Screen name="TaskScreen" component={TaskScreen} />
+            <Stack.Screen name="AddNewTask" component={AddNewTask} />
             {/* Add more screens later: Transactions, Profile, etc. */}
 
             {/* Accounting and payement*/}
             
-            <Stack.Screen name="Transaction" component={Transaction} />
+            <Stack.Screen name="PaymentsTransaction" component={PaymentsTransaction} />
             <Stack.Screen name="TransactionAdd" component={TransactionAdd} />
             <Stack.Screen name="IncomingPayment" component={IncomingPayment} />
             <Stack.Screen name="OutgoingPayment" component={OutgoingPayment} />

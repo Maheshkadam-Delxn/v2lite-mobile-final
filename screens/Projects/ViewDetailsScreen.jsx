@@ -12,6 +12,7 @@ import Header from 'components/Header';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import BottomNavBar from 'components/BottomNavbar';
 import TaskScreen from './TaskScreen';
+import PaymentsTransaction from 'screens/AccountingPayement/PaymentsTransaction';
 
 const ViewDetailsScreen = () => {
   const route = useRoute();
@@ -35,9 +36,15 @@ const ViewDetailsScreen = () => {
     // For Details and Task, we handle it within this component
     if (tab === 'Transaction') {
       navigation.navigate('Transaction');
-    } else if (tab === 'Attendance') {
-      navigation.navigate('Attendance');
+    // } else if (tab === 'Attendance') {
+    //   navigation.navigate('Attendance');
     }
+    else if (tab === 'Transaction') {
+    navigation.navigate('Payments', {
+      screen: 'PaymentsTransaction',
+      params: { project },              
+    });
+  }
     // For 'Details' and 'Task', just set the active tab (no navigation)
   };
 
@@ -114,6 +121,9 @@ const ViewDetailsScreen = () => {
       case 'Task':
         // Render the TaskScreen component inline
         return <TaskScreen project={project} />;
+
+        // case 'Transaction':
+        // return <PaymentsTransaction project={project} />;
       
       default:
         return null;

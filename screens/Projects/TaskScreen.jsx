@@ -1,12 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 
@@ -93,28 +86,28 @@ const TaskScreen = () => {
     {
       id: 1,
       title: 'Onboarding',
-      description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
+      description: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
       priority: 'High',
       assignees: 3,
     },
     {
       id: 2,
       title: 'Onboarding',
-      description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
+      description: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
       priority: 'High',
       assignees: 3,
     },
     {
       id: 3,
       title: 'Onboarding',
-      description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
+      description: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
       priority: 'High',
       assignees: 3,
     },
     {
       id: 4,
       title: 'Onboarding',
-      description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
+      description: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
       priority: 'High',
       assignees: 3,
     },
@@ -165,8 +158,18 @@ const TaskScreen = () => {
 
   const formatMonthYear = (date) => {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return `${months[date.getMonth()]} ${date.getDate()}`;
   };
@@ -209,14 +212,12 @@ const TaskScreen = () => {
           style={[
             styles.priorityBadge,
             item.priority === 'High' ? styles.priorityHigh : styles.priorityLow,
-          ]}
-        >
+          ]}>
           <Text
             style={[
               styles.priorityText,
               item.priority === 'High' ? styles.textHigh : styles.textLow,
-            ]}
-          >
+            ]}>
             {item.priority}
           </Text>
         </View>
@@ -225,10 +226,7 @@ const TaskScreen = () => {
       <View style={styles.assigneeRow}>
         <View style={styles.assigneeAvatars}>
           {[...Array(item.assignees)].map((_, i) => (
-            <View
-              key={i}
-              style={[styles.avatar, i > 0 && { marginLeft: -8 }]}
-            />
+            <View key={i} style={[styles.avatar, i > 0 && { marginLeft: -8 }]} />
           ))}
         </View>
         <Text style={styles.assigneeCount}>{item.assignees} people</Text>
@@ -265,17 +263,8 @@ const TaskScreen = () => {
               <TouchableOpacity
                 key={id}
                 onPress={() => setActiveView(id)}
-                style={[
-                  styles.viewTab,
-                  activeView === id && styles.viewTabActive,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.viewTabText,
-                    activeView === id && styles.viewTabTextActive,
-                  ]}
-                >
+                style={[styles.viewTab, activeView === id && styles.viewTabActive]}>
+                <Text style={[styles.viewTabText, activeView === id && styles.viewTabTextActive]}>
                   {id}
                 </Text>
               </TouchableOpacity>
@@ -290,9 +279,7 @@ const TaskScreen = () => {
                   <TouchableOpacity onPress={handlePreviousWeek}>
                     <Feather name="chevron-left" size={20} color="#6B7280" />
                   </TouchableOpacity>
-                  <Text style={styles.monthText}>
-                    {formatMonthYear(selectedDate)}
-                  </Text>
+                  <Text style={styles.monthText}>{formatMonthYear(selectedDate)}</Text>
                   <TouchableOpacity onPress={handleNextWeek}>
                     <Feather name="chevron-right" size={20} color="#6B7280" />
                   </TouchableOpacity>
@@ -300,17 +287,11 @@ const TaskScreen = () => {
 
                 <View style={styles.weekRow}>
                   {weekDates.map((d, idx) => (
-                    <TouchableOpacity 
-                      key={idx} 
+                    <TouchableOpacity
+                      key={idx}
                       style={styles.dayCell}
-                      onPress={() => handleDateSelect(d.fullDate)}
-                    >
-                      <Text
-                        style={[
-                          styles.dayName,
-                          !d.isCurrentMonth && styles.dayNameFaded,
-                        ]}
-                      >
+                      onPress={() => handleDateSelect(d.fullDate)}>
+                      <Text style={[styles.dayName, !d.isCurrentMonth && styles.dayNameFaded]}>
                         {d.day}
                       </Text>
                       <View
@@ -318,8 +299,7 @@ const TaskScreen = () => {
                           styles.dateCircle,
                           d.isSelected && styles.dateSelected,
                           !d.isSelected && d.isToday && styles.dateToday,
-                        ]}
-                      >
+                        ]}>
                         <Text
                           style={[
                             styles.dateText,
@@ -327,8 +307,7 @@ const TaskScreen = () => {
                             d.isSelected && styles.dateTextSelected,
                             !d.isSelected && d.isToday && styles.dateTextToday,
                             !d.isSelected && !d.isToday && styles.dateTextNormal,
-                          ]}
-                        >
+                          ]}>
                           {d.date}
                         </Text>
                       </View>
@@ -340,7 +319,9 @@ const TaskScreen = () => {
               {/* Add New Button and All Tasks */}
               <View style={styles.tasksContainer}>
                 <View style={styles.tasksHeader}>
-                  <TouchableOpacity style={styles.addNewButton}>
+                  <TouchableOpacity
+                    style={styles.addNewButton}
+                    onPress={() => navigation.navigate('AddNewTask')}>
                     <Ionicons name="add-circle-outline" size={18} color="#0066FF" />
                     <Text style={styles.addNewText}>Add New</Text>
                   </TouchableOpacity>
@@ -371,9 +352,7 @@ const TaskScreen = () => {
                   <TouchableOpacity onPress={handlePreviousWeek}>
                     <Feather name="chevron-left" size={20} color="#6B7280" />
                   </TouchableOpacity>
-                  <Text style={styles.monthText}>
-                    {formatMonthYear(selectedDate)}
-                  </Text>
+                  <Text style={styles.monthText}>{formatMonthYear(selectedDate)}</Text>
                   <TouchableOpacity onPress={handleNextWeek}>
                     <Feather name="chevron-right" size={20} color="#6B7280" />
                   </TouchableOpacity>
@@ -381,17 +360,11 @@ const TaskScreen = () => {
 
                 <View style={styles.weekRow}>
                   {weekDates.map((d, idx) => (
-                    <TouchableOpacity 
-                      key={idx} 
+                    <TouchableOpacity
+                      key={idx}
                       style={styles.dayCell}
-                      onPress={() => handleDateSelect(d.fullDate)}
-                    >
-                      <Text
-                        style={[
-                          styles.dayName,
-                          !d.isCurrentMonth && styles.dayNameFaded,
-                        ]}
-                      >
+                      onPress={() => handleDateSelect(d.fullDate)}>
+                      <Text style={[styles.dayName, !d.isCurrentMonth && styles.dayNameFaded]}>
                         {d.day}
                       </Text>
                       <View
@@ -399,8 +372,7 @@ const TaskScreen = () => {
                           styles.dateCircle,
                           d.isSelected && styles.dateSelected,
                           !d.isSelected && d.isToday && styles.dateToday,
-                        ]}
-                      >
+                        ]}>
                         <Text
                           style={[
                             styles.dateText,
@@ -408,8 +380,7 @@ const TaskScreen = () => {
                             d.isSelected && styles.dateTextSelected,
                             !d.isSelected && d.isToday && styles.dateTextToday,
                             !d.isSelected && !d.isToday && styles.dateTextNormal,
-                          ]}
-                        >
+                          ]}>
                           {d.date}
                         </Text>
                       </View>
@@ -560,7 +531,7 @@ const styles = StyleSheet.create({
   dateTextNormal: { color: '#111827' },
   dateTextFaded: { color: '#d1d5db' },
 
-  activityContainer: { 
+  activityContainer: {
     paddingBottom: 16,
   },
 
@@ -628,9 +599,9 @@ const styles = StyleSheet.create({
   },
   priorityHigh: { backgroundColor: '#fee2e2' },
   priorityLow: { backgroundColor: '#ecfdf5' },
-  priorityText: { 
-    fontFamily: 'Urbanist-Medium', 
-    fontSize: 11 
+  priorityText: {
+    fontFamily: 'Urbanist-Medium',
+    fontSize: 11,
   },
   textHigh: { color: '#ef4444' },
   textLow: { color: '#10b981' },
@@ -641,12 +612,12 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     marginBottom: 12,
   },
-  assigneeRow: { 
-    flexDirection: 'row', 
-    alignItems: 'center' 
+  assigneeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  assigneeAvatars: { 
-    flexDirection: 'row' 
+  assigneeAvatars: {
+    flexDirection: 'row',
   },
   avatar: {
     width: 26,
