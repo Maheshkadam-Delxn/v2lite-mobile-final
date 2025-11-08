@@ -15,8 +15,7 @@ import SignUpScreen from './screens/Auth/SignUpScreen';
 import ResetPasswordScreen from 'screens/Auth/ResetPasswordScreen';
 import OTPVerificationScreen from 'screens/Auth/OTPVerificationScreen';
 import CreatePasswordScreen from 'screens/Auth/ChangePasswordScreen';
-import "./global.css";
-import Dashboard from './screens/Dashboard/DashboardScreen';  
+import "./global.css"; 
 
 // import Dashboard from './screens/Dashboard/DashboardScreen'; 
 import ProjectListScreen from './screens/Projects/ProjectsListScreen'; 
@@ -44,6 +43,11 @@ import MaterialPurchase from 'screens/AccountingPayement/MaterialPurchase';
 import TransactionFilter from 'screens/AccountingPayement/TransactionFilter';
 import TransactionApproval from 'screens/AccountingPayement/TransactionApproval';
 import AddMembers from 'screens/Projects/AddMembers';
+import ApproveSurveyScreen from 'screens/Surveys/ApproveSurveyScreen';
+import SurveyRequestScreen from 'screens/Surveys/SurveyRequestScreen';
+import SurveyApprovalScreen from 'screens/Surveys/SurveyApprovalScreen';
+import NewSurveyScreen from 'screens/Surveys/NewSurveyScreen';
+import SurveyDetailScreen from 'screens/Surveys/SurveyDetailScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -116,6 +120,13 @@ export default function App() {
             <Stack.Screen name="TransactionFilter" component={TransactionFilter} />
             <Stack.Screen name="TransactionApproval" component={TransactionApproval} />
             <Stack.Screen name="AddMembers" component={AddMembers} />
+
+            {/* site survey */}
+            <Stack.Screen name="ApproveSurveyScreen" component={ApproveSurveyScreen} />
+            <Stack.Screen name="SurveyRequestScreen" component={SurveyRequestScreen} /> 
+            <Stack.Screen name="SurveyApprovalScreen" component={SurveyApprovalScreen} />
+            <Stack.Screen name="NewSurveyScreen" component={NewSurveyScreen} />
+            <Stack.Screen name="SurveyDetailScreen" component={SurveyDetailScreen} />
 
 
 

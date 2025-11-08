@@ -55,8 +55,6 @@ const AddMembers = () => {
       { id: 2, name: 'Priya Sharma', role: 'Developer' },
       { id: 3, name: 'Rahul Kumar', role: 'Designer' },
       { id: 4, name: 'Neha Patel', role: 'Tester' },
-      { id: 5, name: 'Sandeep Joshi', role: 'Developer' },
-      { id: 6, name: 'Anjali Singh', role: 'Designer' },
     ],
   };
 

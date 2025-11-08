@@ -13,6 +13,7 @@ import { Ionicons, Feather } from '@expo/vector-icons';
 import BottomNavBar from 'components/BottomNavbar';
 import TaskScreen from './TaskScreen';
 import PaymentsTransaction from 'screens/AccountingPayement/Transaction';
+import ApproveSurveyScreen from 'screens/Surveys/ApproveSurveyScreen';
 
 const ViewDetailsScreen = () => {
   const route = useRoute();
@@ -44,6 +45,7 @@ const ViewDetailsScreen = () => {
     { id: 'Details', label: 'Details' },
     { id: 'Task', label: 'Task' },
     { id: 'Transaction', label: 'Transaction' },
+    { id: 'Sites', label: 'Sites' },
     { id: 'Attendance', label: 'Attendance' },
   ];
 
@@ -117,6 +119,10 @@ const ViewDetailsScreen = () => {
       case 'Transaction':
         // Render the PaymentsTransaction component inline
         return <PaymentsTransaction project={project} />;
+
+          case 'Sites':
+        // Render the PaymentsTransaction component inline
+        return <ApproveSurveyScreen project={project} />;
       
       default:
         return null;
