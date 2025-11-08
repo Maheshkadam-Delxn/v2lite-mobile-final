@@ -32,7 +32,7 @@ import ChooseTemplate from 'screens/Proposals/ChooseTemplate';
 import AddNewTask from 'screens/Projects/AddNewTask';
 
 import TaskScreen from 'screens/Projects/TaskScreen';
-import PaymentsTransaction from 'screens/AccountingPayement/PaymentsTransaction';
+import Transaction from 'screens/AccountingPayement/Transaction';
 import TransactionAdd from 'screens/AccountingPayement/TransactionAdd';
 import IncomingPayment from 'screens/AccountingPayement/IncomingPayment';
 import OutgoingPayment from 'screens/AccountingPayement/OutgoingPayment';
@@ -43,6 +43,7 @@ import InvoiceAddBoqItem from 'screens/AccountingPayement/InvoiceAddBoqItem';
 import MaterialPurchase from 'screens/AccountingPayement/MaterialPurchase';
 import TransactionFilter from 'screens/AccountingPayement/TransactionFilter';
 import TransactionApproval from 'screens/AccountingPayement/TransactionApproval';
+import AddMembers from 'screens/Projects/AddMembers';
 
 const Stack = createNativeStackNavigator();
 
@@ -103,8 +104,7 @@ export default function App() {
             {/* Add more screens later: Transactions, Profile, etc. */}
 
             {/* Accounting and payement*/}
-            
-            <Stack.Screen name="PaymentsTransaction" component={PaymentsTransaction} />
+            <Stack.Screen name="Transaction" component={Transaction} />
             <Stack.Screen name="TransactionAdd" component={TransactionAdd} />
             <Stack.Screen name="IncomingPayment" component={IncomingPayment} />
             <Stack.Screen name="OutgoingPayment" component={OutgoingPayment} />
@@ -115,20 +115,7 @@ export default function App() {
             <Stack.Screen name="MaterialPurchase" component={MaterialPurchase} />
             <Stack.Screen name="TransactionFilter" component={TransactionFilter} />
             <Stack.Screen name="TransactionApproval" component={TransactionApproval} />
-
-
-
-
-
-
-
-
-
-            
-
-
-
-
+            <Stack.Screen name="AddMembers" component={AddMembers} />
 
 
 
