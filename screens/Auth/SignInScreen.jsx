@@ -21,7 +21,6 @@ const SignInScreen = () => {
   const handleLogin = () => {
     if (email && password) {
       setModalVisible(true)
-      // navigation.replace("MainTabs")
     } else {
       console.log('Please fill in all fields')
     }
@@ -45,7 +44,7 @@ const SignInScreen = () => {
 
       const timer = setTimeout(() => {
         setModalVisible(false)
-        navigation.navigate('Dashboard')
+        navigation.navigate('ProjectListScreen')
       }, 2000)
 
       return () => clearTimeout(timer)
