@@ -32,7 +32,7 @@ import ChooseTemplate from 'screens/Proposals/ChooseTemplate';
 import AddNewTask from 'screens/Projects/AddNewTask';
 
 import TaskScreen from 'screens/Projects/TaskScreen';
-import Transaction from 'screens/AccountingPayement/Transaction';
+import PaymentsTransaction from 'screens/AccountingPayement/PaymentsTransaction';
 import TransactionAdd from 'screens/AccountingPayement/TransactionAdd';
 import IncomingPayment from 'screens/AccountingPayement/IncomingPayment';
 import OutgoingPayment from 'screens/AccountingPayement/OutgoingPayment';
@@ -104,7 +104,7 @@ export default function App() {
 
             {/* Accounting and payement*/}
             
-            <Stack.Screen name="Transaction" component={Transaction} />
+            <Stack.Screen name="PaymentsTransaction" component={PaymentsTransaction} />
             <Stack.Screen name="TransactionAdd" component={TransactionAdd} />
             <Stack.Screen name="IncomingPayment" component={IncomingPayment} />
             <Stack.Screen name="OutgoingPayment" component={OutgoingPayment} />
