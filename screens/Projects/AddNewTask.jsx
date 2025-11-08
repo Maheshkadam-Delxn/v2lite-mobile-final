@@ -14,6 +14,7 @@ import { Ionicons, Feather } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Header from 'components/Header';
 import BottomNavBar from 'components/BottomNavbar';
+import AddMembers from './AddMembers';
 
 const AddNewTask = () => {
   const navigation = useNavigation();
@@ -45,7 +46,7 @@ const AddNewTask = () => {
     { name: 'Low', bgColor: '#ECFDF3', textColor: '#027A48' },
     { name: 'Medium', bgColor: '#FFFAEB', textColor: '#B54708' },
     { name: 'High', bgColor: '#FFF4ED', textColor: '#C4320A' },
-    { name: 'Urgent', bgColor: '#FEF3F2', textColor: '#B42318' }
+    { name: 'Urgent', bgColor: '#FEF3F2', textColor: '#B42318' },
   ];
 
   const [uploadedFiles, setUploadedFiles] = useState([
@@ -90,7 +91,7 @@ const AddNewTask = () => {
     if (Platform.OS === 'android') {
       setShowStartDatePicker(false);
     }
-    
+
     if (selectedDate) {
       setStartDate(selectedDate);
       setFormData((prev) => ({
@@ -104,7 +105,7 @@ const AddNewTask = () => {
     if (Platform.OS === 'android') {
       setShowEndDatePicker(false);
     }
-    
+
     if (selectedDate) {
       setEndDate(selectedDate);
       setFormData((prev) => ({
@@ -168,8 +169,7 @@ const AddNewTask = () => {
         <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
+          contentContainerStyle={styles.scrollContent}>
           {/* Content Container */}
           <View style={styles.contentContainer}>
             {/* Task Name */}
@@ -250,7 +250,9 @@ const AddNewTask = () => {
                       />
                     ))}
                   </View>
-                  <TouchableOpacity style={styles.addMemberButton}>
+                  <TouchableOpacity
+                    style={styles.addMemberButton}
+                    onPress={() => navigation.navigate('AddMembers')}>
                     <Ionicons name="add" size={18} color="#0066FF" />
                   </TouchableOpacity>
                 </View>
@@ -269,15 +271,13 @@ const AddNewTask = () => {
                       { backgroundColor: tag.bgColor },
                       selectedTags.includes(tag.name) && styles.tagSelected,
                     ]}
-                    onPress={() => handleTagToggle(tag.name)}
-                  >
+                    onPress={() => handleTagToggle(tag.name)}>
                     <Text
                       style={[
                         styles.tagText,
                         { color: tag.textColor },
                         selectedTags.includes(tag.name) && styles.tagTextSelected,
-                      ]}
-                    >
+                      ]}>
                       {tag.name}
                     </Text>
                   </TouchableOpacity>
@@ -289,9 +289,7 @@ const AddNewTask = () => {
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Category</Text>
               <TouchableOpacity style={styles.dropdownInput}>
-                <Text style={styles.dropdownText}>
-                  {formData.category || 'Category 1'}
-                </Text>
+                <Text style={styles.dropdownText}>{formData.category || 'Category 1'}</Text>
                 <Feather name="chevron-down" size={20} color="#6B7280" />
               </TouchableOpacity>
             </View>
@@ -313,9 +311,7 @@ const AddNewTask = () => {
                   <View key={file.id} style={styles.fileCard}>
                     <View style={styles.fileIconContainer}>
                       <View style={[styles.fileIcon, { backgroundColor: file.color }]}>
-                        <Text style={styles.fileIconText}>
-                          {file.type.toUpperCase()}
-                        </Text>
+                        <Text style={styles.fileIconText}>{file.type.toUpperCase()}</Text>
                       </View>
                     </View>
                     <View style={styles.fileInfo}>
@@ -334,8 +330,7 @@ const AddNewTask = () => {
                     </View>
                     <TouchableOpacity
                       style={styles.removeFileButton}
-                      onPress={() => handleRemoveFile(file.id)}
-                    >
+                      onPress={() => handleRemoveFile(file.id)}>
                       <Ionicons name="close-circle" size={22} color="#FF3B30" />
                     </TouchableOpacity>
                   </View>

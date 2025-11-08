@@ -12,7 +12,7 @@ import { Ionicons, Feather } from '@expo/vector-icons';
 import Header from 'components/Header';
 import BottomNavBar from 'components/BottomNavbar';
 
-const PaymentsTransaction = () => {
+const Transaction = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { project } = route.params || {};
@@ -20,10 +20,10 @@ const PaymentsTransaction = () => {
   const [activeTab, setActiveTab] = useState('Transactions');
 
   const tabs = [
-    { id: 'Details', label: 'Details' },
-    { id: 'Tasks', label: 'Tasks' },
-    { id: 'Transactions', label: 'Transactions' },
-    { id: 'Attendance', label: 'Attendance' },
+    // { id: 'Details', label: 'Details' },
+    // { id: 'Tasks', label: 'Tasks' },
+    // { id: 'Transactions', label: 'Transactions' },
+    // { id: 'Attendance', label: 'Attendance' },
   ];
 
   const transactions = [
@@ -64,6 +64,8 @@ const PaymentsTransaction = () => {
       isIncoming: false,
     },
   ];
+
+  
 
   const handleBack = () => navigation.goBack();
 
@@ -162,7 +164,7 @@ const PaymentsTransaction = () => {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <Header
+      {/* <Header
         title="Project Name"
         showBackButton={true}
         onBackPress={handleBack}
@@ -171,10 +173,10 @@ const PaymentsTransaction = () => {
         backgroundColor="#0066FF"
         titleColor="white"
         iconColor="white"
-      />
+      /> */}
 
       {/* Tabs */}
-      <View style={styles.tabBar}>
+      {/* <View style={styles.tabBar}>
         <FlatList
           data={tabs}
           renderItem={renderTabItem}
@@ -183,7 +185,7 @@ const PaymentsTransaction = () => {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.tabBarContent}
         />
-      </View>
+      </View> */}
 
       <ScrollView
         style={styles.scrollView}
@@ -448,4 +450,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default PaymentsTransaction;
+export default Transaction;
