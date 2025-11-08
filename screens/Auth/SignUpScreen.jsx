@@ -1,4 +1,5 @@
-import { View, Text, TouchableOpacity, StatusBar, Dimensions, Modal, Animated, ScrollView } from 'react-native';
+
+import { View, Text, TouchableOpacity, StatusBar, Dimensions, Modal, Animated, ScrollView, Alert, Image } from 'react-native';
 import React, { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -6,29 +7,61 @@ import Header from '../../components/Header';
 import Inputfield from '../../components/Inputfield';
 
 const { width, height } = Dimensions.get('window');
+const API_URL = 'https://skystruct-lite-backend.vercel.app/api/auth/register';
 
 export default function SignUpScreen() {
+  const [name, setName] = useState(''); // Added name state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // Added loading state for API call
   const [fadeAnim] = useState(new Animated.Value(0));
   const [scaleAnim] = useState(new Animated.Value(0.8));
 
   const navigation = useNavigation();
 
-  const handleSignup = () => {
-    if (email && password && agreeToTerms) {
-      setModalVisible(true);
-      // navigation.replace("MainTabs");
-    } else {
-      console.log('Please fill in all fields and agree to terms');
+  const handleSignup = async () => {
+    if (!name || !email || !password || !agreeToTerms) {
+      Alert.alert('Incomplete Form', 'Please fill in all fields and agree to the terms.');
+      return;
+    }
+
+    setIsLoading(true); // Start loading
+
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Signup successful:', data); // Log response for debugging
+        setModalVisible(true);
+      } else {
+        const errorData = await response.json();
+        Alert.alert('Signup Failed', errorData.message || 'An error occurred during signup.');
+      }
+    } catch (error) {
+      console.error('Network error during signup:', error);
+      Alert.alert('Network Error', 'Please check your connection and try again.');
+    } finally {
+      setIsLoading(false); // Stop loading
     }
   };
 
   const handleSocialSignup = (provider) => {
     console.log(`${provider} signup attempted`);
+    // TODO: Implement social auth (e.g., via Expo AuthSession or Firebase)
   };
 
   React.useEffect(() => {
@@ -49,7 +82,7 @@ export default function SignUpScreen() {
 
       const timer = setTimeout(() => {
         setModalVisible(false);
-        navigation.navigate('Dashboard');
+        navigation.navigate('SignIn'); // Updated to navigate to SignIn on success
       }, 2000);
 
       return () => clearTimeout(timer);
@@ -78,12 +111,24 @@ export default function SignUpScreen() {
             Hello there 👋
           </Text>
           <Text className="text-gray-600 text-base leading-6 pt-6">
-            Please enter your email & password to create an account.
+            Please enter your details to create an account.
           </Text>
         </View>
 
-        {/* Email Input - Directly on white background */}
+        {/* Name Input - Added new input field */}
         <View className="px-6 mt-8 pt-6">
+          <Inputfield
+            label="Full Name"
+            placeholder="Full Name"
+            value={name}
+            onChangeText={setName}
+            autoCapitalize="words"
+            icon={<MaterialIcons name="person" size={24} color="#9CA3AF" />}
+          />
+        </View>
+
+        {/* Email Input - Adjusted gap to match email-password spacing */}
+        <View className="px-6 pt-6">
           <Inputfield
             label="Email"
             placeholder="Email"
@@ -96,7 +141,7 @@ export default function SignUpScreen() {
         </View>
 
         {/* Password Input - Directly on white background */}
-        <View className="px-6  pt-6">
+        <View className="px-6 pt-6">
           <Inputfield
             label="Password"
             placeholder="Password"
@@ -117,7 +162,7 @@ export default function SignUpScreen() {
         </View>
 
         {/* Terms Agreement - Directly on white background */}
-        <View className="px-6 mt- pt-6">
+        <View className="px-6 mt-6 pt-6">
           <View className="flex-row items-start">
             <TouchableOpacity
               className="mr-3 mt-1"
@@ -145,9 +190,12 @@ export default function SignUpScreen() {
             className="bg-blue-600 rounded-2xl items-center shadow-lg"
             style={{ height: 56 }}
             onPress={handleSignup}
+            disabled={isLoading} // Disable during loading
           >
             <View className="flex-1 items-center justify-center">
-              <Text className="text-white text-base font-semibold">Sign up</Text>
+              <Text className="text-white text-base font-semibold">
+                {isLoading ? 'Signing up...' : 'Sign up'}
+              </Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -209,17 +257,14 @@ export default function SignUpScreen() {
         </View>
       </ScrollView>
 
-      {/* Success Modal */}
+      {/* Success Modal - Updated to match SignInScreen style with Image */}
       <Modal
         visible={modalVisible}
         transparent={true}
         animationType="none"
         onRequestClose={() => setModalVisible(false)}
       >
-        <View
-          className="flex-1 justify-center items-center"
-          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
-        >
+        <View className="flex-1 justify-center items-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <Animated.View
             style={{
               opacity: fadeAnim,
@@ -228,47 +273,63 @@ export default function SignUpScreen() {
           >
             <View
               style={{
-                width: 320,
-                height: 420,
+                width: 340,
+                height: 500,
                 backgroundColor: '#fff',
                 borderRadius: 30,
                 alignItems: 'center',
                 justifyContent: 'flex-start',
                 elevation: 15,
+                zIndex: 999,
                 overflow: 'hidden',
                 paddingHorizontal: 24,
-                paddingTop: 60,
+                paddingTop: 50,
               }}
             >
+              {/* Success Image - Using signsuccess.png (same as SignIn) */}
+              <Image
+                source={require('../../assets/signsuccess.png')}
+                style={{
+                  width: 160,
+                  height: 160,
+                  resizeMode: 'contain',
+                  marginBottom: 30,
+                }}
+              />
+
+              {/* Text Content - Updated for SignUp */}
               <Text
                 style={{
-                  fontSize: 22,
+                  fontSize: 24,
                   fontWeight: '700',
                   color: '#235DFF',
                   textAlign: 'center',
                   marginBottom: 8,
                 }}
               >
-                Sign up Successful!
+                Sign Up{'\n'}Successful!
               </Text>
+
               <Text
                 style={{
                   fontSize: 16,
                   color: '#6B7280',
                   textAlign: 'center',
-                  marginBottom: 6,
+                  marginBottom: 4,
                 }}
               >
                 Please wait...
               </Text>
+
               <Text
                 style={{
-                  fontSize: 15,
-                  color: '#6B7280',
+                  fontSize: 14,
+                  color: '#9CA3AF',
                   textAlign: 'center',
+                  marginTop: 20,
                 }}
               >
-                You will be directed to the homepage.
+                You will be redirected to the homepage
               </Text>
             </View>
           </Animated.View>

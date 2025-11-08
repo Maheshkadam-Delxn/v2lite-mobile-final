@@ -115,7 +115,20 @@ export default function App() {
             <Stack.Screen name="MaterialPurchase" component={MaterialPurchase} />
             <Stack.Screen name="TransactionFilter" component={TransactionFilter} />
             <Stack.Screen name="TransactionApproval" component={TransactionApproval} />
-            <Stack.Screen name="AddMembers" component={AddMembers} />
+
+
+
+
+
+
+
+
+
+            
+
+
+
+
 
 
 
