@@ -59,7 +59,7 @@ export default function BottomTabsLayout() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {isCustomer ? (
           <>
-            <Stack.Screen name="CustomerChooseTemplate" component={CustomerChooseTemplate} />
+            <Stack.Screen name="Overview" component={Overview} />
             <Stack.Screen name="CustomerProjects" component={CustomerProjectsScreen} />
             <Stack.Screen name="CustomerPayments" component={CustomerPaymentsScreen} />
           </>

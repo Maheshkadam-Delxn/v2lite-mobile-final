@@ -56,6 +56,7 @@ import DesignApprovals from 'screens/HomeOwner/DesignApprovals';
 import QualityChecks from 'screens/HomeOwner/QualityChecks';
 import ChangeRequests from 'screens/HomeOwner/ChangeRequests';
 import MaterialStatus from 'screens/HomeOwner/MaterialStatus';
+import Overview from 'screens/HomeOwner/Overview';
 
 const Stack = createNativeStackNavigator();
 const TOKEN_KEY = 'userToken';
@@ -172,13 +173,13 @@ export default function App() {
             <Stack.Screen name="SurveyDetailScreen" component={SurveyDetailScreen} />
 
             {/* Home Owner */}
-            <Stack.Screen name='CustomerChooseTemplate' component={ChooseTemplate} />
             <Stack.Screen name="ProjectTimeline" component={ProjectTimeline} />
             <Stack.Screen name="BudgetTracker" component={BudgetTracker} />
             <Stack.Screen name="DesignApprovals" component={DesignApprovals} />
             <Stack.Screen name="QualityChecks" component={QualityChecks} />
             <Stack.Screen name="ChangeRequests" component={ChangeRequests} />
             <Stack.Screen name="MaterialStatus" component={MaterialStatus} />
+            <Stack.Screen name="Overview" component={Overview} />
 
 
           {/* users */ }

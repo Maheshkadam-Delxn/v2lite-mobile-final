@@ -1,11 +1,13 @@
 // screens/customer/BudgetTracker.jsx
 import React from 'react';
-import { View, Text, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, ScrollView, SafeAreaView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import CustomerBottomNavBar from 'components/Project/CustomerBottomNavBar';
+import CustomerBottomNavBar from 'components/CustomerBottomNavBar';
 import Header from 'components/Header';
+import { useNavigation } from '@react-navigation/native';
 
 const BudgetTracker = () => {
+  const navigation = useNavigation();
   const topCards = [
     {
       title: 'Total Budget',
@@ -80,8 +82,7 @@ const BudgetTracker = () => {
         <View className="px-4 pt-4">
           {topCards.map((card, i) => (
             <View key={i} className="mb-3">
-              <View
-                className={`bg-white ${card.borderColor} rounded-xl p-4`}>
+              <View className={`bg-white ${card.borderColor} rounded-xl p-4`}>
                 <Text className="mb-1 text-xs text-gray-600">{card.title}</Text>
                 <Text className={`${card.valueColor} text-2xl font-bold`}>{card.value}</Text>
               </View>
@@ -91,14 +92,14 @@ const BudgetTracker = () => {
 
         {/* Overall Budget Progress - Updated Design */}
         <View className="mx-4 mt-6">
-          <View className="mb-3 flex-row items-center mx-4">
+          <View className="mx-4 mb-3 flex-row items-center">
             <Text className="text-base font-semibold text-gray-800">Overall Budget Progress</Text>
           </View>
 
           {/* Card with Left Blue Border */}
           <View className="overflow-hidden rounded-xl border-l-4 border-l-blue-500 bg-white p-4">
             {/* Progress Bar */}
-            <View className="flex-row items-center mb-4">
+            <View className="mb-4 flex-row items-center">
               <Text className="text-sm text-gray-600">75%</Text>
               <View className="mx-2 h-2 flex-1 overflow-hidden rounded-full bg-gray-200">
                 <View className="h-full bg-blue-600" style={{ width: '75%' }} />
@@ -110,20 +111,20 @@ const BudgetTracker = () => {
             <View className="flex-row justify-between">
               {/* Total Budget */}
               <View className="items-center">
-                <Text className="text-gray-600 text-xs mb-1">Total Budget</Text>
-                <Text className="text-gray-800 text-lg font-bold">QAR 650.000</Text>
+                <Text className="mb-1 text-xs text-gray-600">Total Budget</Text>
+                <Text className="text-lg font-bold text-gray-800">QAR 650.000</Text>
               </View>
 
               {/* Total Spent */}
               <View className="items-center">
-                <Text className="text-gray-600 text-xs mb-1">Total Spent</Text>
-                <Text className="text-gray-800 text-lg font-bold">QAR 485.000</Text>
+                <Text className="mb-1 text-xs text-gray-600">Total Spent</Text>
+                <Text className="text-lg font-bold text-gray-800">QAR 485.000</Text>
               </View>
 
               {/* Remaining */}
               <View className="items-center">
-                <Text className="text-gray-600 text-xs mb-1">Remaining</Text>
-                <Text className="text-gray-800 text-lg font-bold">QAR 165.000</Text>
+                <Text className="mb-1 text-xs text-gray-600">Remaining</Text>
+                <Text className="text-lg font-bold text-gray-800">QAR 165.000</Text>
               </View>
             </View>
           </View>
@@ -183,6 +184,15 @@ const BudgetTracker = () => {
             ))}
           </View>
         </View>
+
+        <TouchableOpacity
+          className="mx-4 mb-4 rounded-xl bg-blue-600 px-6 py-4 shadow-lg"
+          activeOpacity={0.8}
+          onPress={() => {
+            navigation.navigate('DesignApprovals');
+          }}>
+          <Text className="text-center text-base font-semibold text-white">Design Approvals</Text>
+        </TouchableOpacity>
       </ScrollView>
 
       {/* Bottom Navigation */}

@@ -7,7 +7,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import CustomerBottomNavBar from 'components/Project/CustomerBottomNavBar';
+import CustomerBottomNavBar from 'components/CustomerBottomNavBar';
 import Header from 'components/Header';
 
 const ProjectTimeline = () => {

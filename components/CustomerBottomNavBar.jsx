@@ -15,9 +15,10 @@ const CustomerBottomNavBar = () => {
 
   // Customer tabs – **hard-coded** (no role detection needed)
   const tabs = [
-    { label: "Home",     icon: "home-outline",     route: "CustomerChooseTemplate",          },
+    { label: "Home",     icon: "home-outline",   route: "Overview",},
     { label: "Budget", icon: "folder-outline",   route: "BudgetTracker",  },
-    { label: "Payments", icon: "cash",            route: "CustomerPayments", isMaterial: true },
+    { label: "ChangeRequest", icon: "refresh",      route: "ChangeRequests", isMaterial: true },
+     { label: "Material", icon: "status",      route: "MaterialStatus", isMaterial: true },
   ];
 
   return (
