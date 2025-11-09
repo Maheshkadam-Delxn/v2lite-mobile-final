@@ -1,11 +1,4 @@
-import {
-  View,
-  Text,
-  TextInput,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-} from 'react-native';
+import { View, Text, TextInput, ScrollView, TouchableOpacity, Image } from 'react-native';
 import React from 'react';
 import { useNavigation } from '@react-navigation/native';
 import Header from 'components/Header';
@@ -83,10 +76,7 @@ const ProjectsListScreen = () => {
         iconColor="white"
       />
 
-      <ScrollView
-        className="flex-1 px-4 pt-4"
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView className="flex-1 px-4 pt-4" showsVerticalScrollIndicator={false}>
         {/* Search + Add Button */}
         <View className="mb-5 flex-row items-center">
           <View className="mr-3 flex-1 flex-row items-center rounded-xl bg-white px-4 py-3 shadow-sm">
@@ -102,8 +92,7 @@ const ProjectsListScreen = () => {
           {/* + Button – Redirects to CreateProjectScreen */}
           <TouchableOpacity
             className="h-12 w-12 items-center justify-center rounded-full bg-blue-600 shadow-md"
-            onPress={handleAddProject}
-          >
+            onPress={handleAddProject}>
             <Text className="text-2xl font-light text-white">+</Text>
           </TouchableOpacity>
         </View>
@@ -112,8 +101,7 @@ const ProjectsListScreen = () => {
         {projects.map((project) => (
           <View
             key={project.id}
-            className="mb-4 rounded-2xl border-l-4 border-blue-600 bg-white p-4 shadow"
-          >
+            className="mb-4 rounded-2xl border-l-4 border-blue-600 bg-white p-4 shadow">
             {/* Image + Title + Edit */}
             <View className="mb-3 flex-row items-start">
               <View className="mr-3 h-12 w-12 overflow-hidden rounded-lg bg-gray-200">
@@ -125,24 +113,17 @@ const ProjectsListScreen = () => {
               </View>
 
               <View className="flex-1">
-                <Text
-                  style={{ fontFamily: 'Urbanist-Bold' }}
-                  className="mb-1 text-base text-black"
-                >
+                <Text style={{ fontFamily: 'Urbanist-Bold' }} className="mb-1 text-base text-black">
                   {project.name}
                 </Text>
                 <Text
                   style={{ fontFamily: 'Urbanist-Regular' }}
-                  className="text-xs leading-4 text-gray-500"
-                >
+                  className="text-xs leading-4 text-gray-500">
                   {project.location}
                 </Text>
               </View>
 
-              <TouchableOpacity
-                onPress={() => handleEditProject(project.id)}
-                className="p-2"
-              >
+              <TouchableOpacity onPress={() => handleEditProject(project.id)} className="p-2">
                 <Ionicons name="create-outline" size={20} color="#0066FF" />
               </TouchableOpacity>
             </View>
@@ -153,16 +134,12 @@ const ProjectsListScreen = () => {
                 <Ionicons name="calendar-outline" size={16} color="#9CA3AF" />
                 <Text
                   style={{ fontFamily: 'Urbanist-Regular' }}
-                  className="ml-2 text-xs text-gray-500"
-                >
+                  className="ml-2 text-xs text-gray-500">
                   Due date {project.dueDate}
                 </Text>
               </View>
               <View className={`${project.statusColor} rounded-full px-3 py-1`}>
-                <Text
-                  style={{ fontFamily: 'Urbanist-SemiBold' }}
-                  className="text-xs text-white"
-                >
+                <Text style={{ fontFamily: 'Urbanist-SemiBold' }} className="text-xs text-white">
                   {project.status}
                 </Text>
               </View>
@@ -181,22 +158,29 @@ const ProjectsListScreen = () => {
             {/* View Details */}
             <TouchableOpacity
               className="flex-row items-center justify-between border-t border-gray-100 pt-3"
-              onPress={() => handleViewDetails(project)}
-            >
-              <Text
-                style={{ fontFamily: 'Urbanist-Medium' }}
-                className="text-sm text-gray-600"
-              >
+              onPress={() => handleViewDetails(project)}>
+              <Text style={{ fontFamily: 'Urbanist-Medium' }} className="text-sm text-gray-600">
                 View Details
               </Text>
               <Text className="text-lg text-gray-400">›</Text>
             </TouchableOpacity>
           </View>
         ))}
+        <View>
+          <TouchableOpacity
+            onPress={() => {
+              navigation.replace('CustomerChooseTemplate', { screen: 'CustomerChooseTemplate' });
+            }}
+            className="mb-3 self-start rounded-full bg-gray-100 px-3 py-1">
+            <Text style={{ fontFamily: 'Urbanist-Medium' }} className="text-xs text-gray-700">
+              Go to Customer Dashboard
+            </Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
       <View className="absolute bottom-0 left-0 right-0">
-          <BottomNavBar />
-        </View>
+        <BottomNavBar />
+      </View>
     </View>
   );
 };

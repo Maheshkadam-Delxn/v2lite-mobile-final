@@ -3,7 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, ActivityIndicatorComponent, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 
 import "./global.css";
@@ -48,6 +48,12 @@ import SurveyRequestScreen from 'screens/Surveys/SurveyRequestScreen';
 import SurveyApprovalScreen from 'screens/Surveys/SurveyApprovalScreen';
 import NewSurveyScreen from 'screens/Surveys/NewSurveyScreen';
 import SurveyDetailScreen from 'screens/Surveys/SurveyDetailScreen';
+import ProjectTimeline from 'screens/HomeOwner/ProjectTimeline';
+import BudgetTracker from 'screens/HomeOwner/BudgetTracker';
+import DesignApprovals from 'screens/HomeOwner/DesignApprovals';
+import QualityChecks from 'screens/HomeOwner/QualityChecks';
+import ChangeRequests from 'screens/HomeOwner/ChangeRequests';
+import MaterialStatus from 'screens/HomeOwner/MaterialStatus';
 
 const Stack = createNativeStackNavigator();
 
@@ -127,6 +133,27 @@ export default function App() {
             <Stack.Screen name="SurveyApprovalScreen" component={SurveyApprovalScreen} />
             <Stack.Screen name="NewSurveyScreen" component={NewSurveyScreen} />
             <Stack.Screen name="SurveyDetailScreen" component={SurveyDetailScreen} />
+
+
+            {/* Home Owner */}
+            <Stack.Screen name='CustomerChooseTemplate' component={ChooseTemplate} />
+            <Stack.Screen name="ProjectTimeline" component={ProjectTimeline} />
+            <Stack.Screen name="BudgetTracker" component={BudgetTracker} />
+            <Stack.Screen name="DesignApprovals" component={DesignApprovals} />
+            <Stack.Screen name="QualityChecks" component={QualityChecks} />
+            <Stack.Screen name="ChangeRequests" component={ChangeRequests} />
+            <Stack.Screen name="MaterialStatus" component={MaterialStatus} />
+
+
+
+
+
+
+
+
+
+            
+
 
 
 
