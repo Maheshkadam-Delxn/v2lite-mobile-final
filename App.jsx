@@ -56,6 +56,8 @@ import DesignApprovals from 'screens/HomeOwner/DesignApprovals';
 import QualityChecks from 'screens/HomeOwner/QualityChecks';
 import ChangeRequests from 'screens/HomeOwner/ChangeRequests';
 import MaterialStatus from 'screens/HomeOwner/MaterialStatus';
+import ProfilePageScreen from 'screens/Profile/ProfilePageScreen';
+import EditProfileScreen from 'screens/Profile/EditProfileScreen';
 
 const Stack = createNativeStackNavigator();
 const TOKEN_KEY = 'userToken';
@@ -124,6 +126,12 @@ export default function App() {
           <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
           <Stack.Screen name="OTPVerification" component={OTPVerificationScreen} />
           <Stack.Screen name="CreatePassword" component={CreatePasswordScreen} />
+
+
+
+          <Stack.Screen name="ProfilePageScreen" component={ProfilePageScreen} />
+          <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
+
 
           {/* Main App */}
           <Stack.Screen name="ProjectListScreen" component={ProjectListScreen} />

@@ -147,11 +147,13 @@
 
 // export default BottomNavBar;
 // components/BottomNavBar.jsx
+
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
+
 
 const BottomNavBar = () => {
   const navigation = useNavigation();
