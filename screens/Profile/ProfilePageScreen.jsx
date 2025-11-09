@@ -342,8 +342,12 @@ const ProfilePageScreen = () => {
       <Header title="Account" />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* Profile Section */}
-        <View className="bg-white px-4 py-5 mb-2">
+        {/* Profile Section - Made clickable */}
+        <TouchableOpacity 
+          onPress={() => navigation.navigate('EditProfileScreen')}
+          activeOpacity={0.7}
+          className="bg-white px-4 py-5 mb-2"
+        >
           <View className="flex-row items-center justify-between">
             <View className="flex-row items-center flex-1">
               <Image
@@ -359,8 +363,10 @@ const ProfilePageScreen = () => {
                 </Text>
               </View>
             </View>
+            {/* Chevron icon to indicate it's clickable */}
+            <Feather name="chevron-right" size={20} color="#8E8E93" />
           </View>
-        </View>
+        </TouchableOpacity>
 
         {/* General Section */}
         <SectionHeader title="General" />
@@ -399,7 +405,7 @@ const ProfilePageScreen = () => {
           <MenuItem icon="help-circle" title="Help Center" onPress={() => navigation.navigate('HelpCenter')} />
           <View className="h-[1px] bg-[#E5E5EA] ml-12" />
 
-          <MenuItem icon="lock" title="Privacy Policy" onPress={() => navigation.navigate('PrivacyPolicy')} />
+          <MenuItem icon="lock" title="Privacy Policy" onPress={() => navigation.navigate('PrivacyPolicyScreen')} />
           <View className="h-[1px] bg-[#E5E5EA] ml-12" />
 
           <MenuItem icon="info" title="About Skystruct" onPress={() => navigation.navigate('AboutSkystruct')} />
