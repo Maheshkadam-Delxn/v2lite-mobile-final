@@ -18,11 +18,11 @@ const ViewDetailsScreen = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const { project } = route.params || {};
-  const [activeTab, setActiveTab] = useState('Task');
+  const [activeTab, setActiveTab] = useState('Details');
   const [activeView, setActiveView] = useState('Calendar');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
-
+console.log("asdfasdfasdf",project);
   const handleBack = () => navigation.goBack();
   
   const handleEdit = () => {
@@ -83,36 +83,23 @@ const ViewDetailsScreen = () => {
           <>
             <SectionContainer title="Basic Project Details">
               <View style={styles.detailList}>
-                <DetailRow label="Project Name" value="Luxury Vale Point Bay" />
-                <DetailRow label="Project Type" value="Vale Construction" />
-                <DetailRow label="Project ID" value="SRT-00325" />
-                <DetailRow label="Location" value="Palm Jummel's Dubai Gulf" />
-                <DetailRow label="Start Date" value="10 Jan 2024" />
-                <DetailRow label="End Date" value="10 Dec 2024" />
-                <DetailRow label="Project Status" value="-" />
+                <DetailRow label="Project Name" value={project?.name} />
+                <DetailRow label="Project Type" value={project.projectType.name} />
+                <DetailRow label="Project ID"  value={project.projectCode} />
+                <DetailRow label="Location" value={project.location} />
+                <DetailRow label="Start Date" value={project.startDate} />
+                <DetailRow label="End Date" value={project.endDate} />
+                <DetailRow label="Project Status" value={project.status}/>
+                  <DetailRow label="Project Budget" value={project.budget}/>
               </View>
             </SectionContainer>
-            <SectionContainer title="Project Team">
+        
+       
+            <SectionContainer title="Client Information">
               <View style={styles.detailList}>
-                <DetailRow label="Project Manager" value="John Dan" />
-                <DetailRow label="Consular" value="RFC No Horizon" />
-                <DetailRow label="Main Controller" value="Elkin Bullerin LLC" />
-                <DetailRow label="Subcommittee" value="-" />
-              </View>
-            </SectionContainer>
-            <SectionContainer title="Financial Overview">
-              <View style={styles.detailList}>
-                <DetailRow label="Trade Budget" value="$5,000,000" />
-                <DetailRow label="Amount Spent" value="$2,250,000" />
-                <DetailRow label="Servicing Budget" value="$2,350,000" />
-                <DetailRow label="ECO Approval Status" value="-" />
-              </View>
-            </SectionContainer>
-            <SectionContainer title="Client & Approach">
-              <View style={styles.detailList}>
-                <DetailRow label="Client Name" value="Mr. Ahmed al-Farot" />
-                <DetailRow label="Approval Status" value="Pruning Client That Review" />
-                <DetailRow label="Docs List" value="$ Home Notebook 2 Printing" />
+                <DetailRow label="Client Name" value={project.clientName} />
+                <DetailRow label="Client Email" value={project.clientEmail} />
+                <DetailRow label="Client Phone Number" value={project.clientPhone} />
               </View>
             </SectionContainer>
           </>

@@ -34,7 +34,7 @@ const Header = ({
         ...headerStyle,
       }}
     >
-      <View className="pb-4 px-4">
+      <View className="pb-6 px-4 pt-4">
         <View className="flex-row items-center justify-between">
           {/* Left Section - Back Button */}
           <View className="w-10">
@@ -53,7 +53,7 @@ const Header = ({
           <View className="flex-1 mx-2">
             {title && (
               <Text
-                className="text-center text-xl"
+                className="text-center text-2xl"
                 style={[
                   { 
                     color: titleColor,

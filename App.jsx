@@ -1,10 +1,11 @@
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { useFonts } from 'expo-font';
+// App.js
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import "./global.css";
 import Splash1 from './screens/Auth/SplashScreen';
@@ -15,11 +16,8 @@ import SignUpScreen from './screens/Auth/SignUpScreen';
 import ResetPasswordScreen from 'screens/Auth/ResetPasswordScreen';
 import OTPVerificationScreen from 'screens/Auth/OTPVerificationScreen';
 import CreatePasswordScreen from 'screens/Auth/ChangePasswordScreen';
-import "./global.css";
-import Dashboard from './screens/Dashboard/DashboardScreen';  
-
-// import Dashboard from './screens/Dashboard/DashboardScreen'; 
-import ProjectListScreen from './screens/Projects/ProjectsListScreen'; 
+import Dashboard from './screens/Dashboard/DashboardScreen';
+import ProjectListScreen from './screens/Projects/ProjectsListScreen';
 import ViewDetailsScreen from './screens/Projects/ViewDetailsScreen';
 import CreateProjectScreen from './screens/Projects/CreateProjectScreen';
 import FilterScreen from './screens/Projects/FilterScreen';
@@ -27,10 +25,8 @@ import ProposalsListScreen from './screens/Proposals/ProposalsListScreen';
 import CreateProposalScreen from 'screens/Proposals/CreateProposal';
 import SubmitProposal from 'screens/Proposals/SubmitProposal';
 import ViewProposal from 'screens/Proposals/ViewProposal';
-import ReviewProposalScreen from 'screens/Proposals/ChooseTemplate';
 import ChooseTemplate from 'screens/Proposals/ChooseTemplate';
 import AddNewTask from 'screens/Projects/AddNewTask';
-
 import TaskScreen from 'screens/Projects/TaskScreen';
 import PaymentsTransaction from 'screens/AccountingPayement/PaymentsTransaction';
 import TransactionAdd from 'screens/AccountingPayement/TransactionAdd';
@@ -43,12 +39,13 @@ import InvoiceAddBoqItem from 'screens/AccountingPayement/InvoiceAddBoqItem';
 import MaterialPurchase from 'screens/AccountingPayement/MaterialPurchase';
 import TransactionFilter from 'screens/AccountingPayement/TransactionFilter';
 import TransactionApproval from 'screens/AccountingPayement/TransactionApproval';
+import UsersScreen from 'screens/Users/UsersScreen';
 
 const Stack = createNativeStackNavigator();
+const TOKEN_KEY = 'userToken';
 
-const SafeAreaWrapper = ({ children }) => (
-  <SafeAreaView style={{ flex: 1 }}>{children}</SafeAreaView>
-);
+// optional nav ref for later programmatic navigation
+export const navigationRef = createNavigationContainerRef();
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -59,76 +56,89 @@ export default function App() {
     'Urbanist-Light': require('./assets/fonts/Urbanist-Light.ttf'),
   });
 
-  if (!fontsLoaded) {
+  // tracker while we check auth token
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [initialRoute, setInitialRoute] = useState(null); // will be 'ProjectListScreen' or 'SignIn' etc.
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const token = await AsyncStorage.getItem(TOKEN_KEY);
+        console.log('[App] startup token present:', !!token);
+
+        // choose initial route (no navigation dispatch here)
+        if (token) {
+          setInitialRoute('ProjectListScreen'); // or 'Dashboard' if you prefer
+          console.log('[App] initialRoute -> ProjectListScreen');
+        } else {
+          setInitialRoute('SignIn');
+          console.log('[App] initialRoute -> SignIn');
+        }
+      } catch (err) {
+        console.error('[App] auth check error:', err);
+        setInitialRoute('SignIn');
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+
+    if (fontsLoaded) checkAuth();
+  }, [fontsLoaded]);
+
+  // Wait until fonts loaded and auth checked
+  if (!fontsLoaded || isCheckingAuth || !initialRoute) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#000" />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+        <ActivityIndicator size="large" color="#0066FF" />
       </View>
     );
   }
 
   return (
-    <SafeAreaProvider>
-      <SafeAreaWrapper>
-        <StatusBar style="dark" backgroundColor="#ffffff" />
-        <NavigationContainer>
-          <Stack.Navigator
-            initialRouteName="Splash1"
-            screenOptions={{ headerShown: false }}
-          >
-            {/* Auth Flow */}
-            <Stack.Screen name="Splash1" component={Splash1} />
-            <Stack.Screen name="Onboarding" component={Onboarding} />
-            <Stack.Screen name="Welcome" component={Welcome} />
-            <Stack.Screen name="SignIn" component={SignIn} />
-            <Stack.Screen name="SignUp" component={SignUpScreen} options={{headerShown:false}}/>
-            <Stack.Screen name ="ResetPassword" component={ResetPasswordScreen} />
-            <Stack.Screen name ="OTPVerification" component={OTPVerificationScreen} />
-            <Stack.Screen name ="CreatePassword" component={CreatePasswordScreen} />
-            {/* <Stack.Screen name="SignUp" component={SignUpScreen} /> */}
+    <View style={{ flex: 1 }}>
+      <StatusBar style="light" backgroundColor="#ffffff" />
+      <NavigationContainer ref={navigationRef}>
+        <Stack.Navigator initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
+          {/* Auth Flow */}
+          <Stack.Screen name="Splash1" component={Splash1} />
+          <Stack.Screen name="Onboarding" component={Onboarding} />
+          <Stack.Screen name="Welcome" component={Welcome} />
+          <Stack.Screen name="SignIn" component={SignIn} />
+          <Stack.Screen name="SignUp" component={SignUpScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+          <Stack.Screen name="OTPVerification" component={OTPVerificationScreen} />
+          <Stack.Screen name="CreatePassword" component={CreatePasswordScreen} />
 
-            {/* Main App */}
-            {/* <Stack.Screen name="Dashboard" component={Dashboard} /> */}
-            <Stack.Screen name="ProjectListScreen" component={ProjectListScreen} />
-            <Stack.Screen name="ViewDetails" component={ViewDetailsScreen} />
-            <Stack.Screen name="CreateProjectScreen" component={CreateProjectScreen} />
-            <Stack.Screen name="FilterScreen" component={FilterScreen} />
-            <Stack.Screen name="ProposalsListScreen" component={ProposalsListScreen} />
-            <Stack.Screen name="CreateProposalScreen" component={CreateProposalScreen} />
-            <Stack.Screen name="SubmitProposal" component={SubmitProposal} />
-            <Stack.Screen name="ViewProposal" component={ViewProposal} />
-            <Stack.Screen name="ChooseTemplate" component={ChooseTemplate} />
-            <Stack.Screen name="TaskScreen" component={TaskScreen} />
-            <Stack.Screen name="AddNewTask" component={AddNewTask} />
-            {/* Add more screens later: Transactions, Profile, etc. */}
+          {/* Main App */}
+          <Stack.Screen name="ProjectListScreen" component={ProjectListScreen} />
+          <Stack.Screen name="ViewDetails" component={ViewDetailsScreen} />
+          <Stack.Screen name="CreateProjectScreen" component={CreateProjectScreen} />
+          <Stack.Screen name="FilterScreen" component={FilterScreen} />
+          <Stack.Screen name="ProposalsListScreen" component={ProposalsListScreen} />
+          <Stack.Screen name="CreateProposalScreen" component={CreateProposalScreen} />
+          <Stack.Screen name="SubmitProposal" component={SubmitProposal} />
+          <Stack.Screen name="ViewProposal" component={ViewProposal} />
+          <Stack.Screen name="ChooseTemplate" component={ChooseTemplate} />
+          <Stack.Screen name="TaskScreen" component={TaskScreen} />
+          <Stack.Screen name="AddNewTask" component={AddNewTask} />
 
-            {/* Accounting and payement*/}
-            
-            <Stack.Screen name="PaymentsTransaction" component={PaymentsTransaction} />
-            <Stack.Screen name="TransactionAdd" component={TransactionAdd} />
-            <Stack.Screen name="IncomingPayment" component={IncomingPayment} />
-            <Stack.Screen name="OutgoingPayment" component={OutgoingPayment} />
-            <Stack.Screen name="DebitNote" component={DebitNote} />
-            <Stack.Screen name="DebitNoteAddItem" component={DebitNoteAddItem} />
-            <Stack.Screen name="CreateInvoice" component={CreateInvoice} />
-            <Stack.Screen name="InvoiceAddBoqItem" component={InvoiceAddBoqItem} />
-            <Stack.Screen name="MaterialPurchase" component={MaterialPurchase} />
-            <Stack.Screen name="TransactionFilter" component={TransactionFilter} />
-            <Stack.Screen name="TransactionApproval" component={TransactionApproval} />
+          {/* Accounting & Payments */}
+          <Stack.Screen name="PaymentsTransaction" component={PaymentsTransaction} />
+          <Stack.Screen name="TransactionAdd" component={TransactionAdd} />
+          <Stack.Screen name="IncomingPayment" component={IncomingPayment} />
+          <Stack.Screen name="OutgoingPayment" component={OutgoingPayment} />
+          <Stack.Screen name="DebitNote" component={DebitNote} />
+          <Stack.Screen name="DebitNoteAddItem" component={DebitNoteAddItem} />
+          <Stack.Screen name="CreateInvoice" component={CreateInvoice} />
+          <Stack.Screen name="InvoiceAddBoqItem" component={InvoiceAddBoqItem} />
+          <Stack.Screen name="MaterialPurchase" component={MaterialPurchase} />
+          <Stack.Screen name="TransactionFilter" component={TransactionFilter} />
+          <Stack.Screen name="TransactionApproval" component={TransactionApproval} />
 
-
-
-
-
-
-
-
-
-            
-
-          </Stack.Navigator>
-        </NavigationContainer>
-      </SafeAreaWrapper>
-    </SafeAreaProvider>
+          {/* users */ }
+          <Stack.Screen name="Users" component={UsersScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </View>
   );
 }
