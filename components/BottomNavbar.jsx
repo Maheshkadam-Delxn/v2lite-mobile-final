@@ -161,6 +161,7 @@ const BottomNavBar = () => {
     { label: "Projects", icon: "apps-sharp", route: "ProjectListScreen" },
     { label: "Templates", icon: "document-text-outline", route: "ProposalsListScreen" },
     { label: "Users", icon: "people-outline", route: "Users" }, // Changed from Payments to Users
+    //  { label: "Templates", icon: "document-text-outline", route: "ProposalsListScreen" },
     { label: "Tasks", icon: "clipboard-outline", route: "Tasks" },
     { label: "Account", icon: "person-outline", route: "ProfilePageScreen" },
   ];

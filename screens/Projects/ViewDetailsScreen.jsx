@@ -12,7 +12,8 @@ import Header from 'components/Header';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import BottomNavBar from 'components/BottomNavbar';
 import TaskScreen from './TaskScreen';
-import PaymentsTransaction from 'screens/AccountingPayement/PaymentsTransaction';
+import PaymentsTransaction from 'screens/AccountingPayement/Transaction';
+import ApproveSurveyScreen from 'screens/Surveys/ApproveSurveyScreen';
 
 const ViewDetailsScreen = () => {
   const route = useRoute();
@@ -32,26 +33,19 @@ console.log("asdfasdfasdf",project);
 
   const handleTabSelect = (tab) => {
     setActiveTab(tab);
-    // Only navigate to other screens for Transaction and Attendance
-    // For Details and Task, we handle it within this component
-    if (tab === 'Transaction') {
-      navigation.navigate('Transaction');
-    // } else if (tab === 'Attendance') {
-    //   navigation.navigate('Attendance');
+    // Only navigate to other screens for Attendance (if needed)
+    // For Details, Task, and Transaction, handle it within this component
+    if (tab === 'Attendance') {
+      navigation.navigate('Attendance');
     }
-    else if (tab === 'Transaction') {
-    navigation.navigate('Payments', {
-      screen: 'PaymentsTransaction',
-      params: { project },              
-    });
-  }
-    // For 'Details' and 'Task', just set the active tab (no navigation)
+    // For 'Details', 'Task', and 'Transaction', just set the active tab (no navigation)
   };
 
   const tabs = [
     { id: 'Details', label: 'Details' },
     { id: 'Task', label: 'Task' },
     { id: 'Transaction', label: 'Transaction' },
+    { id: 'Sites', label: 'Sites' },
     { id: 'Attendance', label: 'Attendance' },
   ];
 
@@ -109,8 +103,13 @@ console.log("asdfasdfasdf",project);
         // Render the TaskScreen component inline
         return <TaskScreen project={project} />;
 
-        // case 'Transaction':
-        // return <PaymentsTransaction project={project} />;
+      case 'Transaction':
+        // Render the PaymentsTransaction component inline
+        return <PaymentsTransaction project={project} />;
+
+          case 'Sites':
+        // Render the PaymentsTransaction component inline
+        return <ApproveSurveyScreen project={project} />;
       
       default:
         return null;
@@ -157,7 +156,7 @@ console.log("asdfasdfasdf",project);
           contentContainerStyle={{ paddingHorizontal: 12 }}
         />
       </View>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
         <View style={styles.content}>{renderTabContent()}</View>
       </ScrollView>
       <View style={styles.bottomNav}>
@@ -167,9 +166,15 @@ console.log("asdfasdfasdf",project);
   );
 };
 
-// Styles remain the same as in your original code
+// Updated Styles
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb' },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#f9fafb' 
+  },
+  scrollView: {
+    flex: 1,
+  },
   mainTabBar: {
     backgroundColor: 'white',
     paddingVertical: 12,
@@ -197,7 +202,10 @@ const styles = StyleSheet.create({
   },
   mainTabTextActive: { color: 'white' },
   mainTabTextInactive: { color: '#4b5563' },
-  content: { paddingHorizontal: 0 },
+  content: { 
+    paddingHorizontal: 0,
+    flex: 1,
+  },
   sectionContainer: {
     marginHorizontal: 16,
     marginBottom: 16,
@@ -238,196 +246,6 @@ const styles = StyleSheet.create({
     color: '#111827',
     flex: 1,
     textAlign: 'right',
-  },
-  // Task Tab
-  statusGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-  },
-  statusItem: {
-    width: '48%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'white',
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 12,
-  },
-  statusIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-  },
-  statusLabel: {
-    fontFamily: 'Urbanist-SemiBold',
-    fontSize: 11,
-    color: '#374151',
-    flex: 1,
-  },
-  viewTabContainer: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  viewTabRow: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  viewTab: {
-    flex: 1,
-    paddingVertical: 16,
-    alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  viewTabActive: {
-    borderBottomColor: '#0066FF',
-  },
-  viewTabText: {
-    fontSize: 16,
-    fontFamily: 'Urbanist-SemiBold',
-    color: '#6b7280',
-  },
-  viewTabTextActive: {
-    color: '#0066FF',
-    fontFamily: 'Urbanist-Bold',
-  },
-  calendarContainer: { padding: 16 },
-  monthHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  monthText: {
-    fontFamily: 'Urbanist-Bold',
-    fontSize: 15,
-    color: '#111827',
-  },
-  weekRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  dayCell: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  dayName: {
-    fontFamily: 'Urbanist-Regular',
-    fontSize: 11,
-    color: '#9ca3af',
-    marginBottom: 8,
-  },
-  dayNameFaded: { color: '#d1d5db' },
-  dateCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  dateSelected: { backgroundColor: '#0066FF' },
-  dateToday: { backgroundColor: '#dbeafe' },
-  dateText: {
-    fontFamily: 'Urbanist-SemiBold',
-    fontSize: 14,
-  },
-  dateTextSelected: { color: 'white' },
-  dateTextToday: { color: '#0066FF' },
-  dateTextNormal: { color: '#111827' },
-  dateTextFaded: { color: '#d1d5db' },
-  activityContainer: { padding: 16 },
-  addButton: {
-    backgroundColor: '#0066FF',
-    paddingVertical: 14,
-    borderRadius: 10,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  addButtonText: {
-    color: 'white',
-    fontFamily: 'Urbanist-SemiBold',
-    fontSize: 14,
-    marginLeft: 8,
-  },
-  activityCard: {
-    backgroundColor: 'white',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  activityHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  activityTitle: {
-    fontFamily: 'Urbanist-SemiBold',
-    fontSize: 15,
-    color: '#111827',
-  },
-  activityTime: {
-    fontFamily: 'Urbanist-Medium',
-    fontSize: 12,
-    color: '#0066FF',
-    marginTop: 4,
-  },
-  priorityBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  priorityHigh: { backgroundColor: '#fee2e2' },
-  priorityLow: { backgroundColor: '#ecfdf5' },
-  priorityText: {
-    fontFamily: 'Urbanist-Medium',
-    fontSize: 11,
-  },
-  textHigh: { color: '#ef4444' },
-  textLow: { color: '#10b981' },
-  activityDesc: {
-    fontFamily: 'Urbanist-Regular',
-    fontSize: 12,
-    color: '#6b7280',
-    lineHeight: 18,
-    marginBottom: 12,
-  },
-  assigneeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  assigneeAvatars: {
-    flexDirection: 'row',
-  },
-  avatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#e5e7eb',
-    borderWidth: 2,
-    borderColor: 'white',
-  },
-  assigneeCount: {
-    fontFamily: 'Urbanist-Medium',
-    fontSize: 11,
-    color: '#6b7280',
-    marginLeft: 8,
-  },
-  placeholder: {
-    fontFamily: 'Urbanist-Regular',
-    color: '#9ca3af',
-    textAlign: 'center',
-    paddingVertical: 32,
-    fontSize: 15,
   },
   bottomNav: {
     position: 'absolute',

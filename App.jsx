@@ -16,8 +16,12 @@ import SignUpScreen from './screens/Auth/SignUpScreen';
 import ResetPasswordScreen from 'screens/Auth/ResetPasswordScreen';
 import OTPVerificationScreen from 'screens/Auth/OTPVerificationScreen';
 import CreatePasswordScreen from 'screens/Auth/ChangePasswordScreen';
-import Dashboard from './screens/Dashboard/DashboardScreen';
-import ProjectListScreen from './screens/Projects/ProjectsListScreen';
+// import Dashboard from './screens/Dashboard/DashboardScreen';
+// import ProjectListScreen from './screens/Projects/ProjectsListScreen';
+import "./global.css"; 
+
+// import Dashboard from './screens/Dashboard/DashboardScreen'; 
+import ProjectListScreen from './screens/Projects/ProjectsListScreen'; 
 import ViewDetailsScreen from './screens/Projects/ViewDetailsScreen';
 import CreateProjectScreen from './screens/Projects/CreateProjectScreen';
 import FilterScreen from './screens/Projects/FilterScreen';
@@ -28,7 +32,7 @@ import ViewProposal from 'screens/Proposals/ViewProposal';
 import ChooseTemplate from 'screens/Proposals/ChooseTemplate';
 import AddNewTask from 'screens/Projects/AddNewTask';
 import TaskScreen from 'screens/Projects/TaskScreen';
-import PaymentsTransaction from 'screens/AccountingPayement/PaymentsTransaction';
+import Transaction from 'screens/AccountingPayement/Transaction';
 import TransactionAdd from 'screens/AccountingPayement/TransactionAdd';
 import IncomingPayment from 'screens/AccountingPayement/IncomingPayment';
 import OutgoingPayment from 'screens/AccountingPayement/OutgoingPayment';
@@ -40,6 +44,12 @@ import MaterialPurchase from 'screens/AccountingPayement/MaterialPurchase';
 import TransactionFilter from 'screens/AccountingPayement/TransactionFilter';
 import TransactionApproval from 'screens/AccountingPayement/TransactionApproval';
 import UsersScreen from 'screens/Users/UsersScreen';
+import AddMembers from 'screens/Projects/AddMembers';
+import ApproveSurveyScreen from 'screens/Surveys/ApproveSurveyScreen';
+import SurveyRequestScreen from 'screens/Surveys/SurveyRequestScreen';
+import SurveyApprovalScreen from 'screens/Surveys/SurveyApprovalScreen';
+import NewSurveyScreen from 'screens/Surveys/NewSurveyScreen';
+import SurveyDetailScreen from 'screens/Surveys/SurveyDetailScreen';
 
 const Stack = createNativeStackNavigator();
 const TOKEN_KEY = 'userToken';
@@ -122,8 +132,8 @@ export default function App() {
           <Stack.Screen name="TaskScreen" component={TaskScreen} />
           <Stack.Screen name="AddNewTask" component={AddNewTask} />
 
-          {/* Accounting & Payments */}
-          <Stack.Screen name="PaymentsTransaction" component={PaymentsTransaction} />
+          {/* Accounting & Payments
+          <Stack.Screen name="PaymentsTransaction" component={Payme} />
           <Stack.Screen name="TransactionAdd" component={TransactionAdd} />
           <Stack.Screen name="IncomingPayment" component={IncomingPayment} />
           <Stack.Screen name="OutgoingPayment" component={OutgoingPayment} />
@@ -133,12 +143,35 @@ export default function App() {
           <Stack.Screen name="InvoiceAddBoqItem" component={InvoiceAddBoqItem} />
           <Stack.Screen name="MaterialPurchase" component={MaterialPurchase} />
           <Stack.Screen name="TransactionFilter" component={TransactionFilter} />
-          <Stack.Screen name="TransactionApproval" component={TransactionApproval} />
+          <Stack.Screen name="TransactionApproval" component={TransactionApproval} /> */}
+ {/* Accounting and payement*/}
+            <Stack.Screen name="Transaction" component={Transaction} />
+            <Stack.Screen name="TransactionAdd" component={TransactionAdd} />
+            <Stack.Screen name="IncomingPayment" component={IncomingPayment} />
+            <Stack.Screen name="OutgoingPayment" component={OutgoingPayment} />
+            <Stack.Screen name="DebitNote" component={DebitNote} />
+            <Stack.Screen name="DebitNoteAddItem" component={DebitNoteAddItem} />
+            <Stack.Screen name="CreateInvoice" component={CreateInvoice} />
+            <Stack.Screen name="InvoiceAddBoqItem" component={InvoiceAddBoqItem} />
+            <Stack.Screen name="MaterialPurchase" component={MaterialPurchase} />
+            <Stack.Screen name="TransactionFilter" component={TransactionFilter} />
+            <Stack.Screen name="TransactionApproval" component={TransactionApproval} />
+            <Stack.Screen name="AddMembers" component={AddMembers} />
+
+            {/* site survey */}
+            <Stack.Screen name="ApproveSurveyScreen" component={ApproveSurveyScreen} />
+            <Stack.Screen name="SurveyRequestScreen" component={SurveyRequestScreen} /> 
+            <Stack.Screen name="SurveyApprovalScreen" component={SurveyApprovalScreen} />
+            <Stack.Screen name="NewSurveyScreen" component={NewSurveyScreen} />
+            <Stack.Screen name="SurveyDetailScreen" component={SurveyDetailScreen} />
 
           {/* users */ }
           <Stack.Screen name="Users" component={UsersScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </View>
+           
+
+
   );
 }
