@@ -1,11 +1,15 @@
-// import { View, Text, TouchableOpacity, StatusBar, Dimensions, Modal, Animated, ScrollView, Image } from 'react-native'
+
+// import { View, Text, TouchableOpacity, StatusBar, Dimensions, Modal, Animated, ScrollView, Image, Alert } from 'react-native'
 // import React, { useState, useEffect } from 'react'
 // import { useNavigation } from '@react-navigation/native'
 // import { MaterialIcons } from '@expo/vector-icons'
+// import AsyncStorage from '@react-native-async-storage/async-storage'
 // import Header from '../../components/Header'
 // import Inputfield from '../../components/Inputfield'
-// import AsyncSorage from "../../context/AsyncStorage"
+
 // const { width, height } = Dimensions.get('window')
+
+// const API_URL = 'https://skystruct-lite-backend.vercel.app/api/auth/login'
 
 // const SignInScreen = () => {
 //   const [email, setEmail] = useState('')
@@ -13,18 +17,141 @@
 //   const [showPassword, setShowPassword] = useState(false)
 //   const [rememberMe, setRememberMe] = useState(false)
 //   const [modalVisible, setModalVisible] = useState(false)
+//   const [isLoading, setIsLoading] = useState(false)
 //   const [fadeAnim] = useState(new Animated.Value(0))
 //   const [scaleAnim] = useState(new Animated.Value(0.8))
 
 //   const navigation = useNavigation()
 
-//   const handleLogin = () => {
-//     if (email && password) {
+//   // const handleLogin = async () => {
+//   //   if (!email || !password) {
+//   //     Alert.alert('Incomplete Form', 'Please fill in all fields.')
+//   //     return
+//   //   }
+
+//   //   setIsLoading(true)
+
+//   //   try {
+//   //     const response = await fetch(API_URL, {
+//   //       method: 'POST',
+//   //       headers: {
+//   //         'Content-Type': 'application/json',
+//   //       },
+//   //       body: JSON.stringify({
+//   //         email,
+//   //         password,
+//   //       }),
+//   //     })
+
+//   //     if (response.ok) {
+//   //       const data = await response.json()
+//   //       console.log('Login successful:', data)
+
+//   //       // Store token in AsyncStorage (assuming API returns { token: '...' })
+//   //       // Adjust 'token' key if your API uses a different field (e.g., 'accessToken')
+//   //       if (data.token) {
+//   //         await AsyncStorage.setItem('userToken', data.token)
+//   //       }
+
+//   //       // Optionally store user data if returned
+//   //       if (data.user) {
+//   //         await AsyncStorage.setItem('userData', JSON.stringify(data.user))
+//   //       }
+
+//   //       // Store remembered email if checked
+//   //       if (rememberMe) {
+//   //         await AsyncStorage.setItem('rememberedEmail', email)
+//   //       }
+
+//   //       setModalVisible(true)
+//   //     } else {
+//   //       const errorData = await response.json().catch(() => ({}))
+//   //       Alert.alert('Login Failed', errorData.message || 'Invalid email or password.')
+//   //     }
+//   //   } catch (error) {
+//   //     console.error('Network error during login:', error)
+//   //     Alert.alert('Network Error', 'Please check your connection and try again.')
+//   //   } finally {
+//   //     setIsLoading(false)
+//   //   }
+//   // }
+// const handleLogin = async () => {
+//   if (!email || !password) {
+//     Alert.alert('Incomplete Form', 'Please fill in all fields.')
+//     return
+//   }
+
+//   setIsLoading(true)
+
+//   try {
+//     const response = await fetch(API_URL, {
+//       method: 'POST',
+//       headers: {
+//         'Content-Type': 'application/json',
+//       },
+//       body: JSON.stringify({
+//         email,
+//         password,
+//       }),
+//     })
+
+//     if (response.ok) {
+//       const data = await response.json()
+//       console.log('Login successful:', data)
+
+//       // Log token if present
+//       if (data.token) {
+//         console.log('Received token from API:', data.token)
+//         await AsyncStorage.setItem('userToken', data.token)
+
+//         // Verify token was saved correctly
+//         const savedToken = await AsyncStorage.getItem('userToken')
+//         console.log('Token saved in AsyncStorage:', savedToken)
+//       } else {
+//         console.log('No token field in response data.')
+//       }
+
+//       // Optionally store user data if returned
+//       if (data.user) {
+//         await AsyncStorage.setItem('userData', JSON.stringify(data.user))
+//         console.log('User data saved:', data.user)
+//       }
+
+//       // Store remembered email if checked
+//       if (rememberMe) {
+//         await AsyncStorage.setItem('rememberedEmail', email)
+//         console.log('Email remembered:', email)
+//       }
+
 //       setModalVisible(true)
 //     } else {
-//       console.log('Please fill in all fields')
+//       const errorData = await response.json().catch(() => ({}))
+//       Alert.alert('Login Failed', errorData.message || 'Invalid email or password.')
+//       console.log('Login failed, response status:', response.status, errorData)
 //     }
+//   } catch (error) {
+//     console.error('Network error during login:', error)
+//     Alert.alert('Network Error', 'Please check your connection and try again.')
+//   } finally {
+//     setIsLoading(false)
 //   }
+// }
+
+//   // Load remembered email on mount
+//   useEffect(() => {
+//     const loadRememberedEmail = async () => {
+//       try {
+//         const rememberedEmail = await AsyncStorage.getItem('rememberedEmail')
+//         if (rememberedEmail) {
+//           setEmail(rememberedEmail)
+//           setRememberMe(true)
+//         }
+//       } catch (error) {
+//         console.error('Error loading remembered email:', error)
+//       }
+//     }
+//     loadRememberedEmail()
+//   }, [])
 
 //   useEffect(() => {
 //     if (modalVisible) {
@@ -56,6 +183,7 @@
 
 //   const handleSocialLogin = (provider) => {
 //     console.log(`${provider} login attempted`)
+//     // TODO: Implement social auth
 //   }
 
 //   const handlereset = () => navigation.navigate('ResetPassword')
@@ -150,9 +278,12 @@
 //             className="bg-blue-600 rounded-2xl items-center shadow-lg"
 //             style={{ height: 56 }}
 //             onPress={handleLogin}
+//             disabled={isLoading}
 //           >
 //             <View className="flex-1 items-center justify-center">
-//               <Text className="text-white text-base font-semibold">Sign in</Text>
+//               <Text className="text-white text-base font-semibold">
+//                 {isLoading ? 'Signing in...' : 'Sign in'}
+//               </Text>
 //             </View>
 //           </TouchableOpacity>
 //         </View>
@@ -345,26 +476,35 @@ const SignInScreen = () => {
         const data = await response.json()
         console.log('Login successful:', data)
 
-        // Store token in AsyncStorage (assuming API returns { token: '...' })
-        // Adjust 'token' key if your API uses a different field (e.g., 'accessToken')
-        if (data.token) {
-          await AsyncStorage.setItem('userToken', data.token)
+        // Log token if present (nested under data.data)
+        if (data.data?.token) {
+          console.log('Received token from API:', data.data.token)
+          await AsyncStorage.setItem('userToken', data.data.token)
+
+          // Verify token was saved correctly
+          const savedToken = await AsyncStorage.getItem('userToken')
+          console.log('Token saved in AsyncStorage:', savedToken)
+        } else {
+          console.log('No token field in response data.')
         }
 
         // Optionally store user data if returned
-        if (data.user) {
-          await AsyncStorage.setItem('userData', JSON.stringify(data.user))
+        if (data.data?.user) {
+          await AsyncStorage.setItem('userData', JSON.stringify(data.data.user))
+          console.log('User data saved:', data.data.user)
         }
 
         // Store remembered email if checked
         if (rememberMe) {
           await AsyncStorage.setItem('rememberedEmail', email)
+          console.log('Email remembered:', email)
         }
 
         setModalVisible(true)
       } else {
         const errorData = await response.json().catch(() => ({}))
         Alert.alert('Login Failed', errorData.message || 'Invalid email or password.')
+        console.log('Login failed, response status:', response.status, errorData)
       }
     } catch (error) {
       console.error('Network error during login:', error)

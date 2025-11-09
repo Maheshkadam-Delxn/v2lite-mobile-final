@@ -3,13 +3,6 @@ import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, StyleSheet } fr
 import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native'; 
 
-import {
-  useFonts,
-  Urbanist_400Regular,
-  Urbanist_500Medium,
-  Urbanist_600SemiBold,
-  Urbanist_700Bold,
-} from '@expo-google-fonts/urbanist';
 
 const ApproveSurveyScreen = () => {
   const navigation = useNavigation(); 
