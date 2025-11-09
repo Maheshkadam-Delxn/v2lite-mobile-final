@@ -1,10 +1,9 @@
 import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
 import React, { useState } from 'react';
 import { Feather } from '@expo/vector-icons';
-import BottomNavbar from '../../components/BottomNavbar';
-import Header from '../../components/Header';
+import CustomerBottomNavBar from 'components/CustomerBottomNavBar';
 
-const SubmitProposal = ({ navigation }) => {
+const SubmitProposalCustomer = ({ navigation }) => {
   const [clientName] = useState('Arun Mishra');
   const [clientEmail] = useState('arun.mishra@gmail.com');
   const [clientPhone] = useState('9326261416');
@@ -14,15 +13,45 @@ const SubmitProposal = ({ navigation }) => {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F5F5F5' }}>
       <View style={{ flex: 1 }}>
         {/* Header */}
-         <Header
-          title="Submit Proposal"
-          showBackButton={true}
-          // rightIcon="filter-outline"
-          // onRightIconPress={handleFilter}
-          backgroundColor="#0066FF"
-          titleColor="white"
-          iconColor="white"
-        />
+<View style={{
+  backgroundColor: '#0066FF',
+  paddingBottom: 20,
+  borderBottomLeftRadius: 20,
+  borderBottomRightRadius: 20
+}}>
+  <View style={{
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center', // Add this to center content
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 16,
+    position: 'relative' // Add this for absolute positioning
+  }}>
+    <TouchableOpacity
+      onPress={() => navigation?.goBack()}
+      style={{
+        width: 32,
+        height: 32,
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'absolute', // Position absolutely
+        left: 16 // Position from left
+      }}
+    >
+      <Feather name="arrow-left" size={24} color="white" />
+    </TouchableOpacity>
+
+    <Text style={{
+      fontFamily: 'Urbanist-Bold',
+      fontSize: 18,
+      color: 'white',
+      textAlign: 'center'
+    }}>
+      Submit Proposal
+    </Text>
+  </View>
+</View>
 
         {/* Content */}
         <ScrollView
@@ -338,7 +367,7 @@ const SubmitProposal = ({ navigation }) => {
 
             <TouchableOpacity
               onPress={() => {
-                // Handle submit action
+               navigation?.navigate('ViewCustomerProposal');
               }}
               style={{
                 flex: 1,
@@ -362,9 +391,9 @@ const SubmitProposal = ({ navigation }) => {
       </View>
 
       {/* Bottom Navigation */}
-      <BottomNavbar />
+      <CustomerBottomNavBar />
     </SafeAreaView>
   );
 };
 
-export default SubmitProposal;
+export default SubmitProposalCustomer;

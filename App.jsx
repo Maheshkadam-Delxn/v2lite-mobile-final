@@ -57,6 +57,11 @@ import QualityChecks from 'screens/HomeOwner/QualityChecks';
 import ChangeRequests from 'screens/HomeOwner/ChangeRequests';
 import MaterialStatus from 'screens/HomeOwner/MaterialStatus';
 import Overview from 'screens/HomeOwner/Overview';
+import MainAppScreen from 'screens/Dashboard/MainAppScreen';
+import ProfilePageScreen from 'screens/Profile/ProfilePageScreen';
+import CustomerChooseTemplate from 'screens/HomeOwner/CustomerChooseTemplate';
+import CustomerCreateProposal from 'screens/HomeOwner/CustomerCreateProposal';
+import SubmitProposalCustomer from 'screens/HomeOwner/SubmitProposalCustomer';
 
 const Stack = createNativeStackNavigator();
 const TOKEN_KEY = 'userToken';
@@ -85,8 +90,8 @@ export default function App() {
 
         // choose initial route (no navigation dispatch here)
         if (token) {
-          setInitialRoute('ProjectListScreen'); // or 'Dashboard' if you prefer
-          console.log('[App] initialRoute -> ProjectListScreen');
+          setInitialRoute('MainAppScreen'); // or 'Dashboard' if you prefer
+          console.log('[App] initialRoute -> MainAppScreen');
         } else {
           setInitialRoute('SignIn');
           console.log('[App] initialRoute -> SignIn');
@@ -125,9 +130,10 @@ export default function App() {
           <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
           <Stack.Screen name="OTPVerification" component={OTPVerificationScreen} />
           <Stack.Screen name="CreatePassword" component={CreatePasswordScreen} />
-
+<Stack.Screen name="ProfilePageScreen" component={ProfilePageScreen} />
           {/* Main App */}
-          <Stack.Screen name="ProjectListScreen" component={ProjectListScreen} />
+           <Stack.Screen name="ProjectListScreen" component={ProjectListScreen} />
+                    <Stack.Screen name="MainAppScreen" component={MainAppScreen} />
           <Stack.Screen name="ViewDetails" component={ViewDetailsScreen} />
           <Stack.Screen name="CreateProjectScreen" component={CreateProjectScreen} />
           <Stack.Screen name="FilterScreen" component={FilterScreen} />
@@ -139,19 +145,7 @@ export default function App() {
           <Stack.Screen name="TaskScreen" component={TaskScreen} />
           <Stack.Screen name="AddNewTask" component={AddNewTask} />
 
-          {/* Accounting & Payments
-          <Stack.Screen name="PaymentsTransaction" component={Payme} />
-          <Stack.Screen name="TransactionAdd" component={TransactionAdd} />
-          <Stack.Screen name="IncomingPayment" component={IncomingPayment} />
-          <Stack.Screen name="OutgoingPayment" component={OutgoingPayment} />
-          <Stack.Screen name="DebitNote" component={DebitNote} />
-          <Stack.Screen name="DebitNoteAddItem" component={DebitNoteAddItem} />
-          <Stack.Screen name="CreateInvoice" component={CreateInvoice} />
-          <Stack.Screen name="InvoiceAddBoqItem" component={InvoiceAddBoqItem} />
-          <Stack.Screen name="MaterialPurchase" component={MaterialPurchase} />
-          <Stack.Screen name="TransactionFilter" component={TransactionFilter} />
-          <Stack.Screen name="TransactionApproval" component={TransactionApproval} /> */}
- {/* Accounting and payement*/}
+       
             <Stack.Screen name="Transaction" component={Transaction} />
             <Stack.Screen name="TransactionAdd" component={TransactionAdd} />
             <Stack.Screen name="IncomingPayment" component={IncomingPayment} />
@@ -180,6 +174,10 @@ export default function App() {
             <Stack.Screen name="ChangeRequests" component={ChangeRequests} />
             <Stack.Screen name="MaterialStatus" component={MaterialStatus} />
             <Stack.Screen name="Overview" component={Overview} />
+            <Stack.Screen name="CustomerChooseTemplate" component={CustomerChooseTemplate} />
+            <Stack.Screen name="CustomerCreateProposal" component={CustomerCreateProposal} />
+            <Stack.Screen name="SubmitProposalCustomer" component={SubmitProposalCustomer} />
+            <Stack.Screen name="ViewCustomerProposal" component={ViewProposal} />
 
 
           {/* users */ }
