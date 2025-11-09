@@ -2,7 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity, Image, SafeAreaView } from 'r
 import React from 'react'
 import { Feather } from '@expo/vector-icons'
 import Header from '../../components/Header'
-import BottomNavbar from '../../components/BottomNavbar'
+import CustomerBottomNavbar from 'components/CustomerBottomNavBar'
 
 const ViewCustomerProposal = ({ navigation }) => {
   const attachmentDocuments = [
@@ -435,7 +435,7 @@ const ViewCustomerProposal = ({ navigation }) => {
       </View>
 
       {/* Bottom Navigation */}
-      <BottomNavbar />
+      <CustomerBottomNavbar />
     </SafeAreaView>
   )
 }

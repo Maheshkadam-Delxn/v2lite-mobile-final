@@ -60,6 +60,10 @@ import Overview from 'screens/HomeOwner/Overview';
 import EditProfileScreen from 'screens/Profile/EditProfileScreen';
 import MainAppScreen from 'screens/Dashboard/MainAppScreen';
 import ProfilePageScreen from 'screens/Profile/ProfilePageScreen';
+import PrivacyPolicyScreen from 'screens/Profile/PrivacyPolicyScreen';
+import CustomerChooseTemplate from 'screens/HomeOwner/CustomerChooseTemplate';
+import CustomerCreateProposal from 'screens/HomeOwner/CustomerCreateProposal';
+import SubmitProposalCustomer from 'screens/HomeOwner/SubmitProposalCustomer';
 
 const Stack = createNativeStackNavigator();
 const TOKEN_KEY = 'userToken';
