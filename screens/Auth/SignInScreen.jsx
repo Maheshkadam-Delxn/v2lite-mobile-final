@@ -385,7 +385,7 @@ import { MaterialIcons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { LinearGradient } from 'expo-linear-gradient'
 import Inputfield from '../../components/Inputfield'
-
+import Header from 'components/Header'
 const { width, height } = Dimensions.get('window')
 
 const API_URL = 'https://skystruct-lite-backend.vercel.app/api/auth/login'
@@ -446,7 +446,13 @@ const SignInScreen = () => {
         setModalVisible(true)
         setTimeout(() => {
           setModalVisible(false)
-          navigation.navigate('MainAppScreen')
+          if(data.data.user.role=="admin"){
+             navigation.navigate('MainAppScreen');
+            }
+            else{
+              navigation.navigate('CustomerChooseTemplate');
+            }
+         
         }, 2000)
       } else {
         const errorData = await response.json().catch(() => ({}))
@@ -483,8 +489,12 @@ const SignInScreen = () => {
   const handlereset = () => navigation.navigate('ResetPassword')
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <View className="flex-1 bg-white">
+      {/* StatusBar with dark content but white background */}
+      <StatusBar barStyle="light-content" backgroundColor="#ffffff" />
+      
+      {/* Header Component */}
+      <Header />
       
       <ScrollView 
         style={{ flex: 1 }}

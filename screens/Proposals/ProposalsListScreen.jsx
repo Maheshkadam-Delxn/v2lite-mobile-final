@@ -6,8 +6,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomNavbar from '../../components/BottomNavbar';
 import Header from '../../components/Header'; // Import the Header component
+import { useNavigation } from '@react-navigation/native';
 
-const ProposalsListScreen = ({ navigation }) => {
+const ProposalsListScreen = () => {
+  const navigation = useNavigation();
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showActionsModal, setShowActionsModal] = useState(false);

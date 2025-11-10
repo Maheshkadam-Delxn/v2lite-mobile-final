@@ -1,4 +1,3 @@
-
 import {
   View,
   Text,
@@ -436,8 +435,19 @@ const ProjectsListScreen = () => {
               />
             ))
           )}
-        </ScrollView>
 
+            {/* Go to Customer Dashboard Button */}
+          <TouchableOpacity
+            className="mx-4 mb-4 rounded-xl bg-blue-600 px-6 py-4 shadow-lg"
+            activeOpacity={0.8}
+            onPress={() => {
+              navigation.navigate('CustomerChooseTemplate');
+            }}>
+            <Text className="text-center text-base font-semibold text-white">
+              Go to Customer Dashboard
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
      
       </View>
     </GestureHandlerRootView>

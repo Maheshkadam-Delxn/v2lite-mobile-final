@@ -34,7 +34,7 @@ import { useNavigation } from "@react-navigation/native";
 // Screens
 import CustomerProjectsScreen from "../screens/customer/CustomerProjectsScreen";
 import CustomerPaymentsScreen from "../screens/customer/CustomerPaymentsScreen";
-import CustomerChooseTemplate from "../screens/customer/CustomerChooseTemplate";
+import CustomerChooseTemplate from "../screens/HomeOwner/CustomerChooseTemplate";
 
 import MyProjectsScreen from "../screens/ProjectListScreen/MyProjectsScreen";
 import ProfilePageScreen from "../screens/ProfileScreen/ProfilePageScreen";

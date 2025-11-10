@@ -1,12 +1,11 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   ScrollView,
-  StyleSheet,
   FlatList,
   Animated,
   Modal,
@@ -14,8 +13,9 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Header from '../../components/Header';
 import BottomNavBar from '../../components/BottomNavbar';
 
@@ -27,156 +27,216 @@ const RolesMembersScreen = () => {
   const [selectedRole, setSelectedRole] = useState(null);
   const [selectedMember, setSelectedMember] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  
-  // Sample data matching your API structure
-  const [roles, setRoles] = useState([
-    {
-      id: '1',
-      name: 'Administrator',
-      slug: 'administrator',
-      description: 'Full system access with all permissions',
-      memberCount: 3,
-      isSystem: true,
-      permissions: {
-        indent: { create: true, update: true, delete: true, view: true },
-        boq: { create: true, update: true, delete: true, view: true },
-        vendor: { create: true, update: true, delete: true, view: true },
-        user: { create: true, update: true, delete: true, view: true },
-        project: { create: true, update: true, delete: true, view: true },
-        payment: { create: true, update: true, delete: true, view: true }
-      }
-    },
-    {
-      id: '2',
-      name: 'Procurement Manager',
-      slug: 'procurement_manager',
-      description: 'Oversees vendor management, material procurement, and BOQ validation.',
-      memberCount: 5,
-      isSystem: false,
-      permissions: {
-        indent: { create: true, update: true, delete: false, view: true },
-        boq: { create: true, update: true, delete: false, view: true },
-        vendor: { create: true, update: true, delete: false, view: true },
-        user: { create: false, update: false, delete: false, view: true },
-        project: { create: false, update: false, delete: false, view: true },
-        payment: { create: false, update: false, delete: false, view: true }
-      }
-    },
-    {
-      id: '3',
-      name: 'Project Manager',
-      slug: 'project_manager',
-      description: 'Manages projects, tasks, and team assignments',
-      memberCount: 8,
-      isSystem: false,
-      permissions: {
-        indent: { create: true, update: true, delete: false, view: true },
-        boq: { create: true, update: true, delete: false, view: true },
-        vendor: { create: false, update: false, delete: false, view: true },
-        user: { create: false, update: false, delete: false, view: true },
-        project: { create: true, update: true, delete: false, view: true },
-        payment: { create: false, update: false, delete: false, view: true }
-      }
-    },
-    {
-      id: '4',
-      name: 'Viewer',
-      slug: 'viewer',
-      description: 'Read-only access to view projects and reports',
-      memberCount: 12,
-      isSystem: false,
-      permissions: {
-        indent: { create: false, update: false, delete: false, view: true },
-        boq: { create: false, update: false, delete: false, view: true },
-        vendor: { create: false, update: false, delete: false, view: true },
-        user: { create: false, update: false, delete: false, view: false },
-        project: { create: false, update: false, delete: false, view: true },
-        payment: { create: false, update: false, delete: false, view: true }
-      }
-    },
-  ]);
+  const [showRoleDropdown, setShowRoleDropdown] = useState(false);
 
-  const [members, setMembers] = useState([
-    {
-      id: '1',
-      name: 'John Doe',
-      email: 'john@company.com',
-      role: 'Administrator',
-      status: 'Active',
-      avatar: '👨‍💼'
+  // Updated role form state to match API structure
+  const [newRole, setNewRole] = useState({
+    name: '',
+    slug: '',
+    description: '',
+    permissions: {
+      indent: { create: false, update: false, delete: false },
+      boq: { create: false, update: false, delete: false },
+      vendor: { create: false, update: false, delete: false },
+      user: { create: false, update: false }
     },
-    {
-      id: '2',
-      name: 'Jane Smith',
-      email: 'jane@company.com',
-      role: 'Procurement Manager',
-      status: 'Active',
-      avatar: '👩‍💼'
-    },
-    {
-      id: '3',
-      name: 'Mike Johnson',
-      email: 'mike@company.com',
-      role: 'Project Manager',
-      status: 'Active',
-      avatar: '👨‍🔧'
-    },
-    {
-      id: '4',
-      name: 'Sarah Wilson',
-      email: 'sarah@company.com',
-      role: 'Viewer',
-      status: 'Inactive',
-      avatar: '👩‍💻'
-    },
-  ]);
+    isSystem: false
+  });
+
+  // New member form state
+  const [newMember, setNewMember] = useState({
+    name: '',
+    email: '',
+    password: '',
+    roleId: ''
+  });
+
+  // Initial empty states
+  const [roles, setRoles] = useState([]);
+  const [members, setMembers] = useState([]);
 
   const slideAnim = useRef(new Animated.Value(300)).current;
 
-  // Permission modules with labels
+  // Updated permission modules to match API structure
   const permissionModules = [
     {
       key: 'indent',
       label: 'Indent Management',
-      description: 'Manage material indents and requests'
+      description: 'Manage material indents and requests',
+      actions: ['create', 'update', 'delete']
     },
     {
       key: 'boq',
       label: 'BOQ Management',
-      description: 'Handle Bill of Quantities and estimates'
+      description: 'Handle Bill of Quantities and estimates',
+      actions: ['create', 'update', 'delete']
     },
     {
       key: 'vendor',
       label: 'Vendor Management',
-      description: 'Manage vendors and suppliers'
+      description: 'Manage vendors and suppliers',
+      actions: ['create', 'update', 'delete']
     },
     {
       key: 'user',
       label: 'User Management',
-      description: 'Manage users and team members'
-    },
-    {
-      key: 'project',
-      label: 'Project Management',
-      description: 'Manage projects and tasks'
-    },
-    {
-      key: 'payment',
-      label: 'Payment Management',
-      description: 'Handle payments and transactions'
+      description: 'Manage users and team members',
+      actions: ['create', 'update']
     }
   ];
 
   // Permission actions with labels
-  const permissionActions = [
-    { key: 'view', label: 'View' },
-    { key: 'create', label: 'Create' },
-    { key: 'update', label: 'Update' },
-    { key: 'delete', label: 'Delete' }
-  ];
+  const permissionActions = {
+    create: { key: 'create', label: 'Create' },
+    update: { key: 'update', label: 'Update' },
+    delete: { key: 'delete', label: 'Delete' }
+  };
+
+  // API base URL
+  const API_BASE = 'https://skystruct-lite-backend.vercel.app';
+
+  // Get auth token
+  const getAuthToken = async () => {
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      return token;
+    } catch (error) {
+      console.error('Error getting token:', error);
+      return null;
+    }
+  };
+
+  // Create headers with auth
+  const getHeaders = async (additionalHeaders = {}) => {
+    const token = await getAuthToken();
+    return {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      ...additionalHeaders,
+    };
+  };
+
+  // Fetch roles and members on mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setIsLoading(true);
+
+        // Fetch roles
+        console.log('Fetching roles from:', `${API_BASE}/api/admin/users/role`);
+        const rolesHeaders = await getHeaders();
+        const rolesResponse = await fetch(`${API_BASE}/api/admin/users/role`, {
+          headers: rolesHeaders
+        });
+        console.log('Roles response status:', rolesResponse.status, rolesResponse.statusText);
+        console.log('Roles response headers:', [...rolesResponse.headers.entries()]);
+        if (!rolesResponse.ok) {
+          console.error('Roles fetch failed:', rolesResponse.status, rolesResponse.statusText);
+          throw new Error(`Failed to fetch roles: ${rolesResponse.status} ${rolesResponse.statusText}`);
+        }
+        const rolesRes = await rolesResponse.json();
+        console.log('Roles data:', rolesRes);
+
+        // Map roles to include id
+        const mappedRoles = (rolesRes || []).map(role => ({
+          ...role,
+          id: role._id
+        }));
+        setRoles(mappedRoles);
+
+        // Fetch members
+        console.log('Fetching members from:', `${API_BASE}/api/admin/users`);
+        const membersHeaders = await getHeaders();
+        const membersResponse = await fetch(`${API_BASE}/api/admin/users`, {
+          headers: membersHeaders
+        });
+        console.log('Members response status:', membersResponse.status, membersResponse.statusText);
+        console.log('Members response headers:', [...membersResponse.headers.entries()]);
+        if (!membersResponse.ok) {
+          console.error('Members fetch failed:', membersResponse.status, membersResponse.statusText);
+          throw new Error(`Failed to fetch members: ${membersResponse.status} ${membersResponse.statusText}`);
+        }
+        const membersRes = await membersResponse.json();
+        console.log('Members data:', membersRes);
+
+        // Map members with role display logic
+        const mappedMembers = (membersRes.data || []).map(member => {
+          const memberWithId = {
+            ...member,
+            id: member._id || member.id
+          };
+
+          // Role display logic
+          let roleDisplay = 'Unknown Role';
+          if (member.roleId) {
+            const roleObj = mappedRoles.find(r => r.id === member.roleId);
+            if (roleObj) {
+              roleDisplay = roleObj.name;
+            }
+          }
+          if (member.roleName) {
+            try {
+              const parsedRoleName = typeof member.roleName === 'string' ? JSON.parse(member.roleName) : member.roleName;
+              if (parsedRoleName && parsedRoleName.name) {
+                roleDisplay = parsedRoleName.name;
+              } else if (typeof member.roleName === 'string') {
+                roleDisplay = member.roleName;
+              }
+            } catch (e) {
+              if (typeof member.roleName === 'string') {
+                roleDisplay = member.roleName;
+              }
+            }
+          }
+          if (member.role) {
+            try {
+              const parsedRole = typeof member.role === 'string' ? JSON.parse(member.role) : member.role;
+              if (parsedRole && parsedRole.name) {
+                roleDisplay = parsedRole.name;
+              }
+            } catch (e) {
+              // Ignore
+            }
+          }
+
+          return {
+            ...memberWithId,
+            role: roleDisplay,
+            avatar: member.avatar || '👤',
+            status: member.status === 'active' ? 'Active' : (member.status || 'Active')
+          };
+        });
+
+        setMembers(mappedMembers);
+      } catch (error) {
+        console.error('Error loading data:', error);
+        Alert.alert('Error', `Failed to load data: ${error.message}`);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
 
   const openRoleSheet = (role = null) => {
-    setSelectedRole(role);
+    if (role) {
+      setSelectedRole(role);
+    } else {
+      setSelectedRole(null);
+      setNewRole({
+        name: '',
+        slug: '',
+        description: '',
+        permissions: {
+          indent: { create: false, update: false, delete: false },
+          boq: { create: false, update: false, delete: false },
+          vendor: { create: false, update: false, delete: false },
+          user: { create: false, update: false }
+        },
+        isSystem: false
+      });
+    }
     setShowRoleSheet(true);
     Animated.timing(slideAnim, {
       toValue: 0,
@@ -193,11 +253,33 @@ const RolesMembersScreen = () => {
     }).start(() => {
       setShowRoleSheet(false);
       setSelectedRole(null);
+      setNewRole({
+        name: '',
+        slug: '',
+        description: '',
+        permissions: {
+          indent: { create: false, update: false, delete: false },
+          boq: { create: false, update: false, delete: false },
+          vendor: { create: false, update: false, delete: false },
+          user: { create: false, update: false }
+        },
+        isSystem: false
+      });
     });
   };
 
   const openMemberSheet = (member = null) => {
-    setSelectedMember(member);
+    if (member) {
+      setSelectedMember(member);
+    } else {
+      setSelectedMember(null);
+      setNewMember({
+        name: '',
+        email: '',
+        password: '',
+        roleId: ''
+      });
+    }
     setShowMemberSheet(true);
     Animated.timing(slideAnim, {
       toValue: 0,
@@ -214,29 +296,171 @@ const RolesMembersScreen = () => {
     }).start(() => {
       setShowMemberSheet(false);
       setSelectedMember(null);
+      setNewMember({
+        name: '',
+        email: '',
+        password: '',
+        roleId: ''
+      });
+      setShowRoleDropdown(false);
     });
   };
 
+  // Handle new member form changes
+  const handleNewMemberChange = (field, value) => {
+    setNewMember(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // Handle role selection
+  const handleRoleSelect = (roleId, roleName) => {
+    setNewMember(prev => ({
+      ...prev,
+      roleId: roleId
+    }));
+    setShowRoleDropdown(false);
+  };
+
+  // Handle create new member
+  const handleCreateMember = async () => {
+    if (!newMember.name.trim()) {
+      Alert.alert('Error', 'Please enter member name');
+      return;
+    }
+
+    if (!newMember.email.trim()) {
+      Alert.alert('Error', 'Please enter email address');
+      return;
+    }
+
+    if (!newMember.password.trim()) {
+      Alert.alert('Error', 'Please enter password');
+      return;
+    }
+
+    if (!newMember.roleId) {
+      Alert.alert('Error', 'Please select a role');
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newMember.email)) {
+      Alert.alert('Error', 'Please enter a valid email address');
+      return;
+    }
+
+    // Password strength validation
+    if (newMember.password.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters long');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const memberData = {
+        name: newMember.name.trim(),
+        email: newMember.email.trim().toLowerCase(),
+        password: newMember.password,
+        roleId: newMember.roleId
+      };
+
+      console.log('Creating new member with API body:', JSON.stringify(memberData, null, 2));
+
+      const headers = await getHeaders();
+      const response = await fetch(`${API_BASE}/api/admin/users`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(memberData)
+      });
+
+      console.log('Create member response status:', response.status, response.statusText);
+      console.log('Create member response headers:', [...response.headers.entries()]);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Create member failed:', response.status, response.statusText, errorText);
+        throw new Error(`Failed to create member: ${response.status} ${response.statusText}`);
+      }
+
+      const responseData = await response.json();
+      const createdMember = responseData.data || responseData; // Assuming similar structure
+      console.log('Created member data:', createdMember);
+      const roleName = roles.find(role => role.id === newMember.roleId)?.name || 'Unknown Role';
+
+      const newMemberWithDetails = {
+        ...createdMember,
+        id: createdMember._id || createdMember.id,
+        role: roleName,
+        avatar: '👤',
+        status: 'Active'
+      };
+
+      setMembers(prev => [newMemberWithDetails, ...prev]);
+
+      // Update role memberCount
+      const roleIndex = roles.findIndex(r => r.id === newMember.roleId);
+      if (roleIndex !== -1) {
+        setRoles(prevRoles => prevRoles.map((r, i) =>
+          i === roleIndex ? { ...r, memberCount: (r.memberCount || 0) + 1 } : r
+        ));
+      }
+
+      Alert.alert('Success', 'Member created successfully');
+      closeMemberSheet();
+    } catch (error) {
+      console.error('Error creating member:', error);
+      Alert.alert('Error', `Failed to create member: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle new role form changes
+  const handleNewRoleChange = (field, value) => {
+    setNewRole(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // Handle permission toggles for new role
+  const handleNewRolePermissionToggle = (module, action) => {
+    setNewRole(prev => ({
+      ...prev,
+      permissions: {
+        ...prev.permissions,
+        [module]: {
+          ...prev.permissions[module],
+          [action]: !prev.permissions[module][action]
+        }
+      }
+    }));
+  };
+
+  // Handle permission toggles for existing role
   const handlePermissionToggle = (module, action) => {
     if (!selectedRole || selectedRole.isSystem) return;
-    
-    setRoles(prevRoles => 
-      prevRoles.map(role => 
-        role.id === selectedRole.id 
+
+    setRoles(prevRoles =>
+      prevRoles.map(role =>
+        role.id === selectedRole.id
           ? {
-              ...role,
-              permissions: {
-                ...role.permissions,
-                [module]: {
-                  ...role.permissions[module],
-                  [action]: !role.permissions[module][action]
-                }
+            ...role,
+            permissions: {
+              ...role.permissions,
+              [module]: {
+                ...role.permissions[module],
+                [action]: !role.permissions[module][action]
               }
             }
+          }
           : role
       )
     );
-    
+
     setSelectedRole(prev => ({
       ...prev,
       permissions: {
@@ -249,12 +473,80 @@ const RolesMembersScreen = () => {
     }));
   };
 
-  const handleSaveRole = async () => {
-    if (!selectedRole) return;
-    
+  // Generate slug from name
+  const generateSlug = (name) => {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/(^_|_$)/g, '');
+  };
+
+  // Handle create new role
+  const handleCreateRole = async () => {
+    if (!newRole.name.trim()) {
+      Alert.alert('Error', 'Please enter a role name');
+      return;
+    }
+
+    if (!newRole.description.trim()) {
+      Alert.alert('Error', 'Please enter a role description');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // Here you would make your API call
+      const roleData = {
+        name: newRole.name.trim(),
+        slug: newRole.slug.trim() || generateSlug(newRole.name),
+        description: newRole.description.trim(),
+        permissions: newRole.permissions,
+        isSystem: false
+      };
+
+      console.log('Creating new role with API body:', JSON.stringify(roleData, null, 2));
+
+      const headers = await getHeaders();
+      const response = await fetch(`${API_BASE}/api/admin/users/role`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(roleData)
+      });
+
+      console.log('Create role response status:', response.status, response.statusText);
+      console.log('Create role response headers:', [...response.headers.entries()]);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Create role failed:', response.status, response.statusText, errorText);
+        throw new Error(`Failed to create role: ${response.status} ${response.statusText}`);
+      }
+
+      const createdRole = await response.json();
+      console.log('Created role data:', createdRole);
+      const newRoleWithDetails = {
+        ...createdRole,
+        id: createdRole._id,
+        memberCount: createdRole.memberCount || 0
+      };
+
+      setRoles(prev => [newRoleWithDetails, ...prev]);
+
+      Alert.alert('Success', 'Role created successfully');
+      closeRoleSheet();
+    } catch (error) {
+      console.error('Error creating role:', error);
+      Alert.alert('Error', `Failed to create role: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle update existing role
+  const handleSaveRole = async () => {
+    if (!selectedRole) return;
+
+    setIsLoading(true);
+    try {
       const roleData = {
         name: selectedRole.name,
         slug: selectedRole.slug,
@@ -263,16 +555,40 @@ const RolesMembersScreen = () => {
         isSystem: selectedRole.isSystem || false
       };
 
-      console.log('Saving role:', roleData);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      console.log('Updating role with API body:', JSON.stringify(roleData, null, 2));
+
+      const headers = await getHeaders();
+      const response = await fetch(`${API_BASE}/api/admin/users/role/${selectedRole.id}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(roleData)
+      });
+
+      console.log('Update role response status:', response.status, response.statusText);
+      console.log('Update role response headers:', [...response.headers.entries()]);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Update role failed:', response.status, response.statusText, errorText);
+        throw new Error(`Failed to update role permissions: ${response.status} ${response.statusText}`);
+      }
+
+      const updatedRole = await response.json();
+      console.log('Updated role data:', updatedRole);
+
+      // Update local state
+      setRoles(prevRoles =>
+        prevRoles.map(role =>
+          role.id === selectedRole.id ? { ...updatedRole, id: updatedRole._id, memberCount: role.memberCount } : role
+        )
+      );
+      setSelectedRole({ ...updatedRole, id: updatedRole._id, memberCount: selectedRole.memberCount });
+
       Alert.alert('Success', 'Role permissions updated successfully');
       closeRoleSheet();
     } catch (error) {
-      Alert.alert('Error', 'Failed to update role permissions');
       console.error('Error saving role:', error);
+      Alert.alert('Error', `Failed to update role permissions: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -288,6 +604,14 @@ const RolesMembersScreen = () => {
     return count;
   };
 
+  const getTotalPermissionsCount = () => {
+    let total = 0;
+    permissionModules.forEach(module => {
+      total += module.actions.length;
+    });
+    return total;
+  };
+
   const filteredRoles = roles.filter(role =>
     role.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     role.description.toLowerCase().includes(searchQuery.toLowerCase())
@@ -299,97 +623,116 @@ const RolesMembersScreen = () => {
     member.role.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const getSelectedRoleName = () => {
+    if (!newMember.roleId) return 'Select Role';
+    const selectedRoleObj = roles.find(role => role.id === newMember.roleId);
+    return selectedRoleObj?.name || 'Select Role';
+  };
+
   const renderRoleItem = ({ item }) => {
     const activePermissions = getActivePermissionsCount(item.permissions);
-    const totalPermissions = Object.keys(item.permissions).length * Object.keys(permissionActions).length;
-    
+    const totalPermissions = getTotalPermissionsCount();
+    const progressPercentage = (activePermissions / totalPermissions) * 100;
+
     return (
-      <TouchableOpacity 
-        style={styles.roleCard}
+      <TouchableOpacity
+        className="bg-white rounded-2xl p-4 mb-3 border border-gray-200"
         onPress={() => openRoleSheet(item)}
       >
-        <View style={styles.roleHeader}>
-          <View style={styles.roleInfo}>
-            <View style={styles.roleTitleContainer}>
-              <Text style={styles.roleName}>{item.name}</Text>
+        <View className="flex-row justify-between items-start mb-3">
+          <View className="flex-1">
+            <View className="flex-row items-center mb-1 flex-wrap">
+              <Text className="text-lg font-urbanistBold text-gray-900 mr-2">
+                {item.name}
+              </Text>
               {item.isSystem && (
-                <View style={styles.systemBadge}>
-                  <Text style={styles.systemBadgeText}>System</Text>
+                <View className="bg-red-100 px-2 py-1 rounded-lg">
+                  <Text className="text-xs font-urbanistMedium text-red-700">
+                    System
+                  </Text>
                 </View>
               )}
             </View>
-            <Text style={styles.memberCount}>{item.memberCount} members</Text>
-            <Text style={styles.roleDescription} numberOfLines={2}>
+            <Text className="text-sm font-urbanistRegular text-gray-600 mb-1">
+              {item.memberCount || 0} members
+            </Text>
+            <Text className="text-sm font-urbanistRegular text-gray-600 leading-5" numberOfLines={2}>
               {item.description}
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color="#666" />
         </View>
-        
-        <View style={styles.permissionProgress}>
-          <View style={styles.progressBar}>
-            <View 
-              style={[
-                styles.progressFill,
-                { width: `${(activePermissions / totalPermissions) * 100}%` }
-              ]} 
+
+        <View className="mb-3">
+          <View className="h-1.5 bg-gray-100 rounded-full mb-1.5 overflow-hidden">
+            <View
+              className="h-full bg-blue-600 rounded-full"
+              style={{ width: `${progressPercentage}%` }}
             />
           </View>
-          <Text style={styles.permissionCount}>
+          <Text className="text-xs font-urbanistRegular text-gray-600 text-center">
             {activePermissions}/{totalPermissions} permissions
           </Text>
         </View>
 
-        <View style={styles.permissionTags}>
+        <View className="flex-row flex-wrap items-center gap-2">
           {Object.entries(item.permissions)
-            .filter(([module, actions]) => 
+            .filter(([module, actions]) =>
               Object.values(actions).some(action => action)
             )
             .slice(0, 3)
             .map(([module]) => (
-              <View key={module} style={styles.permissionTag}>
-                <Text style={styles.permissionTagText}>
+              <View key={module} className="bg-gray-100 px-3 py-1.5 rounded-2xl">
+                <Text className="text-xs font-urbanistMedium text-gray-600">
                   {permissionModules.find(m => m.key === module)?.label || module}
                 </Text>
               </View>
             ))}
-          {Object.keys(item.permissions).filter(module => 
+          {Object.keys(item.permissions).filter(module =>
             Object.values(item.permissions[module]).some(action => action)
           ).length > 3 && (
-            <Text style={styles.morePermissions}>
-              +{Object.keys(item.permissions).filter(module => 
-                Object.values(item.permissions[module]).some(action => action)
-              ).length - 3} more
-            </Text>
-          )}
+              <Text className="text-xs font-urbanistRegular text-gray-500">
+                +{Object.keys(item.permissions).filter(module =>
+                  Object.values(item.permissions[module]).some(action => action)
+                ).length - 3} more
+              </Text>
+            )}
         </View>
       </TouchableOpacity>
     );
   };
 
   const renderMemberItem = ({ item }) => (
-    <TouchableOpacity 
-      style={styles.memberCard}
+    <TouchableOpacity
+      className="bg-white rounded-2xl p-4 mb-3 border border-gray-200"
       onPress={() => openMemberSheet(item)}
     >
-      <View style={styles.memberHeader}>
-        <View style={styles.memberAvatar}>
-          <Text style={styles.avatarText}>{item.avatar}</Text>
+      <View className="flex-row items-center">
+        <View className="w-12 h-12 rounded-full bg-gray-100 justify-center items-center mr-3">
+          <Text className="text-xl">{item.avatar}</Text>
         </View>
-        <View style={styles.memberInfo}>
-          <Text style={styles.memberName}>{item.name}</Text>
-          <Text style={styles.memberEmail}>{item.email}</Text>
-          <Text style={styles.memberRoleLabel}>{item.role}</Text>
+        <View className="flex-1">
+          <Text className="text-base font-urbanistBold text-gray-900 mb-0.5">
+            {item.name}
+          </Text>
+          <Text className="text-sm font-urbanistRegular text-gray-600 mb-0.5">
+            {item.email}
+          </Text>
+          <Text className="text-xs font-urbanistMedium text-blue-600">
+            {item.role}
+          </Text>
         </View>
-        <View style={styles.memberMeta}>
-          <View style={[
-            styles.statusBadge,
-            { backgroundColor: item.status === 'Active' ? '#E8F5E8' : '#FFE8E8' }
-          ]}>
-            <Text style={[
-              styles.statusText,
-              { color: item.status === 'Active' ? '#2E7D32' : '#D32F2F' }
-            ]}>
+        <View className="items-end">
+          <View className={
+            item.status === 'Active'
+              ? "bg-green-100 px-2 py-1 rounded-xl"
+              : "bg-red-100 px-2 py-1 rounded-xl"
+          }>
+            <Text className={
+              item.status === 'Active'
+                ? "text-xs font-urbanistMedium text-green-800"
+                : "text-xs font-urbanistMedium text-red-800"
+            }>
               {item.status}
             </Text>
           </View>
@@ -398,8 +741,336 @@ const RolesMembersScreen = () => {
     </TouchableOpacity>
   );
 
+  const renderRoleForm = () => (
+    <ScrollView className="px-5" showsVerticalScrollIndicator={false}>
+      <View className="mb-5">
+        <Text className="text-lg font-urbanistBold text-gray-900 mb-4">
+          Role Information
+        </Text>
+
+        <View className="mb-4">
+          <Text className="text-base font-urbanistSemiBold text-gray-900 mb-2">
+            Role Name *
+          </Text>
+          <TextInput
+            className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base font-urbanistRegular text-gray-900"
+            placeholder="e.g., Procurement Manager"
+            value={newRole.name}
+            onChangeText={(value) => handleNewRoleChange('name', value)}
+            placeholderTextColor="#999"
+          />
+        </View>
+
+        <View className="mb-4">
+          <Text className="text-base font-urbanistSemiBold text-gray-900 mb-2">
+            Slug
+          </Text>
+          <TextInput
+            className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base font-urbanistRegular text-gray-900"
+            placeholder="e.g., procurement_manager"
+            value={newRole.slug}
+            onChangeText={(value) => handleNewRoleChange('slug', value)}
+            placeholderTextColor="#999"
+          />
+          <Text className="text-xs font-urbanistRegular text-gray-600 mt-1 italic">
+            Auto-generated from name if left empty. Used for API references.
+          </Text>
+        </View>
+
+        <View className="mb-4">
+          <Text className="text-base font-urbanistSemiBold text-gray-900 mb-2">
+            Description *
+          </Text>
+          <TextInput
+            className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base font-urbanistRegular text-gray-900 min-h-[80px] text-align-top"
+            placeholder="Describe what this role can do..."
+            value={newRole.description}
+            onChangeText={(value) => handleNewRoleChange('description', value)}
+            placeholderTextColor="#999"
+            multiline
+            numberOfLines={3}
+            textAlignVertical="top"
+          />
+        </View>
+      </View>
+
+      <View className="mb-5">
+        <Text className="text-lg font-urbanistBold text-gray-900 mb-1">
+          Module Permissions
+        </Text>
+        <Text className="text-sm font-urbanistRegular text-gray-600 mb-5">
+          Configure what this role can access and modify
+        </Text>
+
+        {permissionModules.map(module => (
+          <View key={module.key} className="bg-gray-50 rounded-xl p-4 mb-3 border border-gray-200">
+            <View className="mb-3">
+              <View className="flex-1">
+                <Text className="text-base font-urbanistBold text-gray-900 mb-1">
+                  {module.label}
+                </Text>
+                <Text className="text-xs font-urbanistRegular text-gray-600">
+                  {module.description}
+                </Text>
+              </View>
+            </View>
+
+            <View className="gap-2">
+              {module.actions.map(actionKey => (
+                <View key={actionKey} className="flex-row items-center justify-between py-2">
+                  <Text className="text-sm font-urbanistMedium text-gray-900">
+                    {permissionActions[actionKey]?.label || actionKey}
+                  </Text>
+                  <Switch
+                    value={newRole.permissions[module.key]?.[actionKey] || false}
+                    onValueChange={() => handleNewRolePermissionToggle(module.key, actionKey)}
+                    trackColor={{ false: '#f0f0f0', true: '#0066FF' }}
+                    thumbColor="#fff"
+                  />
+                </View>
+              ))}
+            </View>
+          </View>
+        ))}
+      </View>
+
+      <TouchableOpacity
+        className={
+          `rounded-xl py-4 items-center mt-5 ${isLoading || !newRole.name.trim() || !newRole.description.trim()
+            ? 'bg-gray-400'
+            : 'bg-blue-600'
+          }`
+        }
+        onPress={handleCreateRole}
+        disabled={isLoading || !newRole.name.trim() || !newRole.description.trim()}
+      >
+        {isLoading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text className="text-base font-urbanistBold text-white">
+            Create Role
+          </Text>
+        )}
+      </TouchableOpacity>
+    </ScrollView>
+  );
+
+  const renderRolePermissions = () => (
+    <ScrollView className="px-5" showsVerticalScrollIndicator={false}>
+      {selectedRole.description && (
+        <View className="bg-gray-50 p-4 rounded-xl mb-5">
+          <Text className="text-sm font-urbanistRegular text-gray-600 leading-5 text-center">
+            {selectedRole.description}
+          </Text>
+        </View>
+      )}
+
+      <View className="mb-5">
+        <Text className="text-lg font-urbanistBold text-gray-900 mb-1">
+          Module Permissions
+        </Text>
+        <Text className="text-sm font-urbanistRegular text-gray-600 mb-5">
+          Configure what this role can access and modify
+        </Text>
+
+        {permissionModules.map(module => (
+          <View key={module.key} className="bg-gray-50 rounded-xl p-4 mb-3 border border-gray-200">
+            <View className="mb-3">
+              <View className="flex-1">
+                <Text className="text-base font-urbanistBold text-gray-900 mb-1">
+                  {module.label}
+                </Text>
+                <Text className="text-xs font-urbanistRegular text-gray-600">
+                  {module.description}
+                </Text>
+              </View>
+            </View>
+
+            <View className="gap-2">
+              {module.actions.map(actionKey => (
+                <View key={actionKey} className="flex-row items-center justify-between py-2">
+                  <Text className="text-sm font-urbanistMedium text-gray-900">
+                    {permissionActions[actionKey]?.label || actionKey}
+                  </Text>
+                  <Switch
+                    value={selectedRole.permissions[module.key]?.[actionKey] || false}
+                    onValueChange={() => handlePermissionToggle(module.key, actionKey)}
+                    trackColor={{ false: '#f0f0f0', true: '#0066FF' }}
+                    thumbColor="#fff"
+                    disabled={selectedRole.isSystem}
+                  />
+                </View>
+              ))}
+            </View>
+          </View>
+        ))}
+      </View>
+
+      {!selectedRole.isSystem && (
+        <TouchableOpacity
+          className="bg-blue-600 rounded-xl py-4 items-center mt-5"
+          onPress={handleSaveRole}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text className="text-base font-urbanistBold text-white">
+              Save Permissions
+            </Text>
+          )}
+        </TouchableOpacity>
+      )}
+
+      {selectedRole.isSystem && (
+        <View className="flex-row items-center justify-center bg-gray-50 p-4 rounded-xl mt-5 gap-2">
+          <Ionicons name="information-circle" size={20} color="#666" />
+          <Text className="text-sm font-urbanistMedium text-gray-600">
+            This is a system role and cannot be modified
+          </Text>
+        </View>
+      )}
+    </ScrollView>
+  );
+
+  const renderAddMemberForm = () => (
+    <ScrollView className="px-5" showsVerticalScrollIndicator={false}>
+      <View className="mb-5">
+        <Text className="text-lg font-urbanistBold text-gray-900 mb-4">
+          Add New Member
+        </Text>
+
+        <View className="mb-4">
+          <Text className="text-base font-urbanistSemiBold text-gray-900 mb-2">
+            Full Name *
+          </Text>
+          <TextInput
+            className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base font-urbanistRegular text-gray-900"
+            placeholder="e.g., Priya Deshmukh"
+            value={newMember.name}
+            onChangeText={(value) => handleNewMemberChange('name', value)}
+            placeholderTextColor="#999"
+          />
+        </View>
+
+        <View className="mb-4">
+          <Text className="text-base font-urbanistSemiBold text-gray-900 mb-2">
+            Email Address *
+          </Text>
+          <TextInput
+            className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base font-urbanistRegular text-gray-900"
+            placeholder="e.g., priya.deshmukh@example.com"
+            value={newMember.email}
+            onChangeText={(value) => handleNewMemberChange('email', value)}
+            placeholderTextColor="#999"
+            autoCapitalize="none"
+            keyboardType="email-address"
+          />
+        </View>
+
+        <View className="mb-4">
+          <Text className="text-base font-urbanistSemiBold text-gray-900 mb-2">
+            Password *
+          </Text>
+          <TextInput
+            className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base font-urbanistRegular text-gray-900"
+            placeholder="Enter password"
+            value={newMember.password}
+            onChangeText={(value) => handleNewMemberChange('password', value)}
+            placeholderTextColor="#999"
+            secureTextEntry
+          />
+          <Text className="text-xs font-urbanistRegular text-gray-600 mt-1">
+            Password must be at least 6 characters long
+          </Text>
+        </View>
+
+        <View className="mb-4">
+          <Text className="text-base font-urbanistSemiBold text-gray-900 mb-2">
+            Role *
+          </Text>
+          <TouchableOpacity
+            className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 flex-row justify-between items-center"
+            onPress={() => setShowRoleDropdown(!showRoleDropdown)}
+          >
+            <Text className={`text-base font-urbanistRegular ${newMember.roleId ? 'text-gray-900' : 'text-gray-500'
+              }`}>
+              {getSelectedRoleName()}
+            </Text>
+            <Ionicons
+              name={showRoleDropdown ? "chevron-up" : "chevron-down"}
+              size={20}
+              color="#666"
+            />
+          </TouchableOpacity>
+
+          {showRoleDropdown && (
+            <View className="bg-white border border-gray-200 rounded-xl mt-2 max-h-48">
+              <ScrollView nestedScrollEnabled={true}>
+                {roles.map(role => (
+                  <TouchableOpacity
+                    key={role.id}
+                    className="px-4 py-3 border-b border-gray-100"
+                    onPress={() => handleRoleSelect(role.id, role.name)}
+                  >
+                    <Text className="text-base font-urbanistMedium text-gray-900">
+                      {role.name}
+                    </Text>
+                    <Text className="text-sm font-urbanistRegular text-gray-600 mt-1">
+                      {role.description}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+        </View>
+      </View>
+
+      <TouchableOpacity
+        className={
+          `rounded-xl py-4 items-center mt-5 ${isLoading || !newMember.name.trim() || !newMember.email.trim() ||
+            !newMember.password.trim() || !newMember.roleId
+            ? 'bg-gray-400'
+            : 'bg-blue-600'
+          }`
+        }
+        onPress={handleCreateMember}
+        disabled={
+          isLoading || !newMember.name.trim() || !newMember.email.trim() ||
+          !newMember.password.trim() || !newMember.roleId
+        }
+      >
+        {isLoading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text className="text-base font-urbanistBold text-white">
+            Create Member
+          </Text>
+        )}
+      </TouchableOpacity>
+    </ScrollView>
+  );
+
+  const handleAddButtonPress = () => {
+    if (activeTab === 'roles') {
+      openRoleSheet(); // Open role creation modal
+    } else {
+      openMemberSheet(); // Open member creation modal
+    }
+  };
+
+  if (isLoading && roles.length === 0 && members.length === 0) {
+    return (
+      <View className="flex-1 bg-gray-50 justify-center items-center">
+        <ActivityIndicator size="large" color="#0066FF" />
+        <Text className="mt-2 text-gray-600">Loading...</Text>
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.container}>
+    <View className="flex-1 bg-gray-50">
       {/* Header */}
       <Header
         title="Team Management"
@@ -409,56 +1080,65 @@ const RolesMembersScreen = () => {
         iconColor="white"
       />
 
-      <View style={styles.contentWrapper}>
+      <View className="flex-1 pt-4">
         {/* Tabs */}
-        <View style={styles.tabContainer}>
+        <View className="flex-row mx-5 mb-4 bg-gray-100 rounded-xl p-1">
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'roles' && styles.activeTab]}
+            className={`flex-1 py-3 items-center rounded-lg ${activeTab === 'roles' ? 'bg-white' : ''
+              }`}
             onPress={() => setActiveTab('roles')}
           >
-            <Text style={[styles.tabText, activeTab === 'roles' && styles.activeTabText]}>
+            <Text className={`text-base font-urbanistSemiBold ${activeTab === 'roles' ? 'text-blue-600 font-urbanistBold' : 'text-gray-600'
+              }`}>
               Roles
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'members' && styles.activeTab]}
+            className={`flex-1 py-3 items-center rounded-lg ${activeTab === 'members' ? 'bg-white' : ''
+              }`}
             onPress={() => setActiveTab('members')}
           >
-            <Text style={[styles.tabText, activeTab === 'members' && styles.activeTabText]}>
+            <Text className={`text-base font-urbanistSemiBold ${activeTab === 'members' ? 'text-blue-600 font-urbanistBold' : 'text-gray-600'
+              }`}>
               Members
             </Text>
           </TouchableOpacity>
         </View>
 
         {/* Search and Add Button */}
-        <View style={styles.searchContainer}>
-          <View style={styles.searchBar}>
+        <View className="flex-row items-center px-5 mb-4 gap-3">
+          <View className="flex-1 flex-row items-center bg-white rounded-xl px-4 py-3 border border-gray-200">
             <Ionicons name="search" size={20} color="#666" />
             <TextInput
-              style={styles.searchInput}
+              className="flex-1 ml-2 text-base font-urbanistRegular text-gray-900"
               placeholder={`Search ${activeTab}...`}
               value={searchQuery}
               onChangeText={setSearchQuery}
               placeholderTextColor="#999"
             />
           </View>
-          <TouchableOpacity 
-            style={styles.addButton}
-            onPress={() => activeTab === 'roles' ? openRoleSheet() : openMemberSheet()}
+          <TouchableOpacity
+            className="w-12 h-12 bg-blue-600 rounded-xl justify-center items-center"
+            onPress={handleAddButtonPress}
           >
             <Ionicons name="add" size={24} color="#fff" />
           </TouchableOpacity>
         </View>
 
         {/* Content */}
-        <View style={styles.content}>
+        <View className="flex-1 px-5">
           {activeTab === 'roles' ? (
             <FlatList
               data={filteredRoles}
               renderItem={renderRoleItem}
               keyExtractor={item => item.id}
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.listContainer}
+              contentContainerStyle={{ paddingBottom: 20 }}
+              ListEmptyComponent={
+                <View className="flex-1 justify-center items-center py-10">
+                  <Text className="text-gray-500 text-center">No roles found</Text>
+                </View>
+              }
             />
           ) : (
             <FlatList
@@ -466,146 +1146,139 @@ const RolesMembersScreen = () => {
               renderItem={renderMemberItem}
               keyExtractor={item => item.id}
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.listContainer}
+              contentContainerStyle={{ paddingBottom: 20 }}
+              ListEmptyComponent={
+                <View className="flex-1 justify-center items-center py-10">
+                  <Text className="text-gray-500 text-center">No members found</Text>
+                </View>
+              }
             />
           )}
         </View>
       </View>
 
-   
+
 
       {/* Role Bottom Sheet */}
-      <Modal
+      {/* <Modal
         visible={showRoleSheet}
         transparent
         animationType="none"
         onRequestClose={closeRoleSheet}
       >
-        <TouchableOpacity 
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={closeRoleSheet}
-        >
-          <Animated.View 
-            style={[
-              styles.bottomSheet,
-              { transform: [{ translateY: slideAnim }] }
-            ]}
+        <View className="flex-1 bg-black/50 justify-end">
+          <Animated.View
+            className="bg-transparent rounded-t-3xl overflow-hidden max-h-[90%]"
+            style={{ transform: [{ translateY: slideAnim }] }}
           >
-            <View style={styles.sheetContentContainer}>
-              <View style={styles.sheetHeader}>
-                <View style={styles.sheetHandle} />
-                <Text style={styles.sheetTitle}>
-                  {selectedRole ? `${selectedRole.name} Permissions` : 'Add New Role'}
+            <View className="bg-white rounded-t-3xl overflow-hidden max-h-[90%]">
+              <View className="flex-row items-center justify-between px-5 py-4 border-b border-gray-100">
+                <View className="w-10 h-1 bg-gray-300 rounded-full absolute top-2 left-1/2 -ml-5" />
+                <Text className="text-lg font-urbanistBold text-gray-900 flex-1 text-center">
+                  {selectedRole ? `${selectedRole.name} Permissions` : 'Create New Role'}
                 </Text>
                 <TouchableOpacity onPress={closeRoleSheet}>
                   <Ionicons name="close" size={24} color="#666" />
                 </TouchableOpacity>
               </View>
 
-              <ScrollView style={styles.sheetContent} showsVerticalScrollIndicator={false}>
-                {selectedRole ? (
-                  <>
-                    {selectedRole.description && (
-                      <View style={styles.roleDescriptionSection}>
-                        <Text style={styles.roleDescriptionText}>
-                          {selectedRole.description}
-                        </Text>
-                      </View>
-                    )}
-                    
-                    <View style={styles.permissionSection}>
-                      <Text style={styles.sectionTitle}>Module Permissions</Text>
-                      <Text style={styles.sectionSubtitle}>
-                        Configure what this role can access and modify
-                      </Text>
-                      
-                      {permissionModules.map(module => (
-                        <View key={module.key} style={styles.permissionModule}>
-                          <View style={styles.moduleHeader}>
-                            <View style={styles.moduleInfo}>
-                              <Text style={styles.moduleName}>{module.label}</Text>
-                              <Text style={styles.moduleDescription}>
-                                {module.description}
-                              </Text>
-                            </View>
-                          </View>
-                          
-                          <View style={styles.permissionActions}>
-                            {permissionActions.map(action => (
-                              <View key={action.key} style={styles.permissionRow}>
-                                <Text style={styles.actionLabel}>{action.label}</Text>
-                                <Switch
-                                  value={selectedRole.permissions[module.key]?.[action.key] || false}
-                                  onValueChange={() => handlePermissionToggle(module.key, action.key)}
-                                  trackColor={{ false: '#f0f0f0', true: '#0066FF' }}
-                                  thumbColor="#fff"
-                                  disabled={selectedRole.isSystem}
-                                />
-                              </View>
-                            ))}
-                          </View>
-                        </View>
-                      ))}
-                    </View>
-
-                    {!selectedRole.isSystem && (
-                      <TouchableOpacity 
-                        style={styles.saveButton}
-                        onPress={handleSaveRole}
-                        disabled={isLoading}
-                      >
-                        {isLoading ? (
-                          <ActivityIndicator color="#fff" />
-                        ) : (
-                          <Text style={styles.saveButtonText}>Save Permissions</Text>
-                        )}
-                      </TouchableOpacity>
-                    )}
-                    
-                    {selectedRole.isSystem && (
-                      <View style={styles.systemRoleNote}>
-                        <Ionicons name="information-circle" size={20} color="#666" />
-                        <Text style={styles.systemRoleText}>
-                          This is a system role and cannot be modified
-                        </Text>
-                      </View>
-                    )}
-                  </>
-                ) : (
-                  <View style={styles.addRoleForm}>
-                    <Text style={styles.addFormTitle}>Create New Role</Text>
-                    {/* Add form fields for new role creation */}
-                  </View>
-                )}
-              </ScrollView>
+              {selectedRole ? renderRolePermissions() : renderRoleForm()}
             </View>
           </Animated.View>
-        </TouchableOpacity>
+        </View>
+      </Modal> */}
+      <Modal
+        visible={showRoleSheet}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={closeRoleSheet}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            justifyContent: 'flex-end',
+          }}
+        >
+          <Animated.View
+            style={{
+              backgroundColor: 'white',
+              borderTopLeftRadius: 24,
+              borderTopRightRadius: 24,
+              paddingTop: 20,
+              paddingBottom: 30,
+              paddingHorizontal: 20,
+              transform: [{ translateY: slideAnim }],
+              maxHeight: '90%',
+            }}
+          >
+            {/* Handle Bar */}
+            <View
+              style={{
+                width: 40,
+                height: 4,
+                backgroundColor: '#E0E0E0',
+                borderRadius: 2,
+                alignSelf: 'center',
+                marginBottom: 20,
+              }}
+            />
+
+            {/* Title */}
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 10,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: 'Urbanist-Bold',
+                  fontSize: 18,
+                  color: '#000',
+                  flex: 1,
+                  textAlign: 'center',
+                }}
+              >
+                {selectedRole
+                  ? `${selectedRole.name} Permissions`
+                  : 'Create New Role'}
+              </Text>
+
+              <TouchableOpacity onPress={closeRoleSheet}>
+                <Ionicons name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Dynamic Content */}
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {selectedRole ? renderRolePermissions() : renderRoleForm()}
+
+              {/* Optional Actions (if needed for your new modal) */}
+
+            </ScrollView>
+          </Animated.View>
+        </View>
       </Modal>
 
       {/* Member Bottom Sheet */}
-      <Modal
+      {/* <Modal
         visible={showMemberSheet}
         transparent
         animationType="none"
         onRequestClose={closeMemberSheet}
       >
-        <TouchableOpacity 
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={closeMemberSheet}
-        >
-          <Animated.View 
-            style={[
-              styles.bottomSheet,
-              { transform: [{ translateY: slideAnim }] }
-            ]}
+        <View className="flex-1 bg-black/50 justify-end">
+          <Animated.View
+            className="bg-transparent rounded-t-3xl overflow-hidden max-h-[90%]"
+            style={{ transform: [{ translateY: slideAnim }] }}
           >
-            <View style={styles.sheetContentContainer}>
-              <View style={styles.sheetHeader}>
-                <View style={styles.sheetHandle} />
-                <Text style={styles.sheetTitle}>
+            <View className="bg-white rounded-t-3xl overflow-hidden max-h-[90%]">
+              <View className="flex-row items-center justify-between px-5 py-4 border-b border-gray-100">
+                <View className="w-10 h-1 bg-gray-300 rounded-full absolute top-2 left-1/2 -ml-5" />
+                <Text className="text-lg font-urbanistBold text-gray-900 flex-1 text-center">
                   {selectedMember ? selectedMember.name : 'Add New Member'}
                 </Text>
                 <TouchableOpacity onPress={closeMemberSheet}>
@@ -613,476 +1286,110 @@ const RolesMembersScreen = () => {
                 </TouchableOpacity>
               </View>
 
-              <ScrollView style={styles.sheetContent}>
-                {selectedMember ? (
-                  <View style={styles.memberDetails}>
-                    <View style={styles.memberAvatarLarge}>
-                      <Text style={styles.avatarTextLarge}>{selectedMember.avatar}</Text>
+              {selectedMember ? (
+                <ScrollView className="px-5">
+                  <View className="items-center py-5">
+                    <View className="w-20 h-20 rounded-full bg-gray-100 justify-center items-center mb-4">
+                      <Text className="text-3xl">{selectedMember.avatar}</Text>
                     </View>
-                    <Text style={styles.memberNameLarge}>{selectedMember.name}</Text>
-                    <Text style={styles.memberEmailLarge}>{selectedMember.email}</Text>
-                    
-                    <View style={styles.detailRow}>
-                      <Text style={styles.detailLabel}>Role:</Text>
-                      <Text style={styles.detailValue}>{selectedMember.role}</Text>
+                    <Text className="text-xl font-urbanistBold text-gray-900 mb-1">
+                      {selectedMember.name}
+                    </Text>
+                    <Text className="text-base font-urbanistRegular text-gray-600 mb-5">
+                      {selectedMember.email}
+                    </Text>
+
+                    <View className="flex-row justify-between items-center w-full py-3 border-b border-gray-100">
+                      <Text className="text-base font-urbanistSemiBold text-gray-900">
+                        Role:
+                      </Text>
+                      <Text className="text-base font-urbanistRegular text-gray-600">
+                        {selectedMember.role}
+                      </Text>
                     </View>
-                    <View style={styles.detailRow}>
-                      <Text style={styles.detailLabel}>Status:</Text>
-                      <Text style={[
-                        styles.detailValue,
-                        { color: selectedMember.status === 'Active' ? '#2E7D32' : '#D32F2F' }
-                      ]}>
+                    <View className="flex-row justify-between items-center w-full py-3 border-b border-gray-100">
+                      <Text className="text-base font-urbanistSemiBold text-gray-900">
+                        Status:
+                      </Text>
+                      <Text className={
+                        selectedMember.status === 'Active'
+                          ? "text-base font-urbanistRegular text-green-700"
+                          : "text-base font-urbanistRegular text-red-700"
+                      }>
                         {selectedMember.status}
                       </Text>
                     </View>
                   </View>
-                ) : (
-                  <View style={styles.addMemberForm}>
-                    <Text style={styles.addFormTitle}>Add Team Member</Text>
-                    {/* Add form fields for new member creation */}
-                  </View>
-                )}
-              </ScrollView>
+                </ScrollView>
+              ) : (
+                renderAddMemberForm()
+              )}
             </View>
           </Animated.View>
+        </View>
+      </Modal> */}
+      <Modal
+  visible={showMemberSheet}
+  transparent
+  animationType="slide"
+  onRequestClose={closeMemberSheet}
+>
+  <View className="flex-1 bg-black/50 justify-end">
+    <View className="bg-white rounded-t-3xl overflow-hidden max-h-[90%]">
+      <View className="flex-row items-center justify-between px-5 py-4 border-b border-gray-100">
+        <View className="w-10 h-1 bg-gray-300 rounded-full absolute top-2 left-1/2 -ml-5" />
+        <Text className="text-lg font-urbanistBold text-gray-900 flex-1 text-center">
+          {selectedMember ? selectedMember.name : 'Add New Member'}
+        </Text>
+        <TouchableOpacity onPress={closeMemberSheet}>
+          <Ionicons name="close" size={24} color="#666" />
         </TouchableOpacity>
-      </Modal>
+      </View>
+
+      {selectedMember ? (
+        <ScrollView className="px-5">
+          <View className="items-center py-5">
+            <View className="w-20 h-20 rounded-full bg-gray-100 justify-center items-center mb-4">
+              <Text className="text-3xl">{selectedMember.avatar}</Text>
+            </View>
+            <Text className="text-xl font-urbanistBold text-gray-900 mb-1">
+              {selectedMember.name}
+            </Text>
+            <Text className="text-base font-urbanistRegular text-gray-600 mb-5">
+              {selectedMember.email}
+            </Text>
+            <View className="flex-row justify-between items-center w-full py-3 border-b border-gray-100">
+              <Text className="text-base font-urbanistSemiBold text-gray-900">
+                Role:
+              </Text>
+              <Text className="text-base font-urbanistRegular text-gray-600">
+                {selectedMember.role}
+              </Text>
+            </View>
+            <View className="flex-row justify-between items-center w-full py-3 border-b border-gray-100">
+              <Text className="text-base font-urbanistSemiBold text-gray-900">
+                Status:
+              </Text>
+              <Text
+                className={
+                  selectedMember.status === 'Active'
+                    ? 'text-base font-urbanistRegular text-green-700'
+                    : 'text-base font-urbanistRegular text-red-700'
+                }
+              >
+                {selectedMember.status}
+              </Text>
+            </View>
+          </View>
+        </ScrollView>
+      ) : (
+        renderAddMemberForm()
+      )}
+    </View>
+  </View>
+</Modal>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  contentWrapper: {
-    flex: 1,
-    paddingTop: 16,
-  },
-  tabContainer: {
-    flexDirection: 'row',
-    marginHorizontal: 20,
-    marginBottom: 16,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 12,
-    padding: 4,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderRadius: 8,
-  },
-  activeTab: {
-    backgroundColor: '#fff',
-  },
-  tabText: {
-    fontSize: 16,
-    fontFamily: 'Urbanist-SemiBold',
-    color: '#666',
-  },
-  activeTabText: {
-    color: '#0066FF',
-    fontFamily: 'Urbanist-Bold',
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 16,
-    gap: 12,
-  },
-  searchBar: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: 8,
-    fontSize: 16,
-    fontFamily: 'Urbanist-Regular',
-    color: '#1a1a1a',
-  },
-  addButton: {
-    width: 50,
-    height: 50,
-    backgroundColor: '#0066FF',
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  listContainer: {
-    paddingBottom: 20,
-  },
-  roleCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  roleHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  roleInfo: {
-    flex: 1,
-  },
-  roleTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-    flexWrap: 'wrap',
-  },
-  roleName: {
-    fontSize: 18,
-    fontFamily: 'Urbanist-Bold',
-    color: '#1a1a1a',
-    marginRight: 8,
-  },
-  systemBadge: {
-    backgroundColor: '#FFE8E8',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  systemBadgeText: {
-    fontSize: 10,
-    fontFamily: 'Urbanist-Medium',
-    color: '#D32F2F',
-  },
-  memberCount: {
-    fontSize: 14,
-    fontFamily: 'Urbanist-Regular',
-    color: '#666',
-    marginBottom: 4,
-  },
-  roleDescription: {
-    fontSize: 14,
-    fontFamily: 'Urbanist-Regular',
-    color: '#666',
-    lineHeight: 18,
-  },
-  permissionProgress: {
-    marginBottom: 12,
-  },
-  progressBar: {
-    height: 6,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 3,
-    marginBottom: 6,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#0066FF',
-    borderRadius: 3,
-  },
-  permissionCount: {
-    fontSize: 12,
-    fontFamily: 'Urbanist-Regular',
-    color: '#666',
-    textAlign: 'center',
-  },
-  permissionTags: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: 8,
-  },
-  permissionTag: {
-    backgroundColor: '#f0f0f0',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  permissionTagText: {
-    fontSize: 12,
-    fontFamily: 'Urbanist-Medium',
-    color: '#666',
-  },
-  morePermissions: {
-    fontSize: 12,
-    fontFamily: 'Urbanist-Regular',
-    color: '#999',
-  },
-  memberCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  memberHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  memberAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  avatarText: {
-    fontSize: 20,
-  },
-  memberInfo: {
-    flex: 1,
-  },
-  memberName: {
-    fontSize: 16,
-    fontFamily: 'Urbanist-Bold',
-    color: '#1a1a1a',
-    marginBottom: 2,
-  },
-  memberEmail: {
-    fontSize: 14,
-    fontFamily: 'Urbanist-Regular',
-    color: '#666',
-    marginBottom: 2,
-  },
-  memberRoleLabel: {
-    fontSize: 12,
-    fontFamily: 'Urbanist-Medium',
-    color: '#0066FF',
-  },
-  memberMeta: {
-    alignItems: 'flex-end',
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusText: {
-    fontSize: 12,
-    fontFamily: 'Urbanist-Medium',
-  },
-  bottomNavContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  bottomSheet: {
-    backgroundColor: 'transparent',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    overflow: 'hidden',
-    maxHeight: '80%',
-  },
-  sheetContentContainer: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    overflow: 'hidden',
-  },
-  sheetHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  sheetHandle: {
-    width: 40,
-    height: 4,
-    backgroundColor: '#ddd',
-    borderRadius: 2,
-    position: 'absolute',
-    top: 8,
-    left: '50%',
-    marginLeft: -20,
-  },
-  sheetTitle: {
-    fontSize: 20,
-    fontFamily: 'Urbanist-Bold',
-    color: '#1a1a1a',
-    flex: 1,
-    textAlign: 'center',
-  },
-  sheetContent: {
-    padding: 20,
-  },
-  roleDescriptionSection: {
-    backgroundColor: '#f8f9fa',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 20,
-  },
-  roleDescriptionText: {
-    fontSize: 14,
-    fontFamily: 'Urbanist-Regular',
-    color: '#666',
-    lineHeight: 20,
-    textAlign: 'center',
-  },
-  permissionSection: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontFamily: 'Urbanist-Bold',
-    color: '#1a1a1a',
-    marginBottom: 4,
-  },
-  sectionSubtitle: {
-    fontSize: 14,
-    fontFamily: 'Urbanist-Regular',
-    color: '#666',
-    marginBottom: 20,
-  },
-  permissionModule: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  moduleHeader: {
-    marginBottom: 12,
-  },
-  moduleInfo: {
-    flex: 1,
-  },
-  moduleName: {
-    fontSize: 16,
-    fontFamily: 'Urbanist-Bold',
-    color: '#1a1a1a',
-    marginBottom: 4,
-  },
-  moduleDescription: {
-    fontSize: 12,
-    fontFamily: 'Urbanist-Regular',
-    color: '#666',
-  },
-  permissionActions: {
-    gap: 8,
-  },
-  permissionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-  },
-  actionLabel: {
-    fontSize: 14,
-    fontFamily: 'Urbanist-Medium',
-    color: '#1a1a1a',
-  },
-  saveButton: {
-    backgroundColor: '#0066FF',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  saveButtonText: {
-    fontSize: 16,
-    fontFamily: 'Urbanist-Bold',
-    color: '#fff',
-  },
-  systemRoleNote: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#f8f9fa',
-    padding: 16,
-    borderRadius: 12,
-    marginTop: 20,
-    gap: 8,
-  },
-  systemRoleText: {
-    fontSize: 14,
-    fontFamily: 'Urbanist-Medium',
-    color: '#666',
-  },
-  addRoleForm: {
-    paddingVertical: 20,
-  },
-  addFormTitle: {
-    fontSize: 18,
-    fontFamily: 'Urbanist-Bold',
-    color: '#1a1a1a',
-    marginBottom: 20,
-  },
-  memberDetails: {
-    alignItems: 'center',
-    paddingVertical: 20,
-  },
-  memberAvatarLarge: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  avatarTextLarge: {
-    fontSize: 32,
-  },
-  memberNameLarge: {
-    fontSize: 24,
-    fontFamily: 'Urbanist-Bold',
-    color: '#1a1a1a',
-    marginBottom: 4,
-  },
-  memberEmailLarge: {
-    fontSize: 16,
-    fontFamily: 'Urbanist-Regular',
-    color: '#666',
-    marginBottom: 20,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  detailLabel: {
-    fontSize: 16,
-    fontFamily: 'Urbanist-SemiBold',
-    color: '#1a1a1a',
-  },
-  detailValue: {
-    fontSize: 16,
-    fontFamily: 'Urbanist-Regular',
-    color: '#666',
-  },
-  addMemberForm: {
-    paddingVertical: 20,
-  },
-});
 
 export default RolesMembersScreen;

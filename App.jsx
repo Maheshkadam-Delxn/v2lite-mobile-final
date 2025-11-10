@@ -56,8 +56,14 @@ import DesignApprovals from 'screens/HomeOwner/DesignApprovals';
 import QualityChecks from 'screens/HomeOwner/QualityChecks';
 import ChangeRequests from 'screens/HomeOwner/ChangeRequests';
 import MaterialStatus from 'screens/HomeOwner/MaterialStatus';
+import Overview from 'screens/HomeOwner/Overview';
+import EditProfileScreen from 'screens/Profile/EditProfileScreen';
 import MainAppScreen from 'screens/Dashboard/MainAppScreen';
 import ProfilePageScreen from 'screens/Profile/ProfilePageScreen';
+import PrivacyPolicyScreen from 'screens/Profile/PrivacyPolicyScreen';
+import CustomerChooseTemplate from 'screens/HomeOwner/CustomerChooseTemplate';
+import CustomerCreateProposal from 'screens/HomeOwner/CustomerCreateProposal';
+import SubmitProposalCustomer from 'screens/HomeOwner/SubmitProposalCustomer';
 
 const Stack = createNativeStackNavigator();
 const TOKEN_KEY = 'userToken';
@@ -126,10 +132,13 @@ export default function App() {
           <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
           <Stack.Screen name="OTPVerification" component={OTPVerificationScreen} />
           <Stack.Screen name="CreatePassword" component={CreatePasswordScreen} />
-<Stack.Screen name="ProfilePageScreen" component={ProfilePageScreen} />
+          <Stack.Screen name="ProfilePageScreen" component={ProfilePageScreen} />
+          <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
+          <Stack.Screen name="PrivacyPolicyScreen" component={PrivacyPolicyScreen} />
+
           {/* Main App */}
            <Stack.Screen name="ProjectListScreen" component={ProjectListScreen} />
-                    <Stack.Screen name="MainAppScreen" component={MainAppScreen} />
+          <Stack.Screen name="MainAppScreen" component={MainAppScreen} />
           <Stack.Screen name="ViewDetails" component={ViewDetailsScreen} />
           <Stack.Screen name="CreateProjectScreen" component={CreateProjectScreen} />
           <Stack.Screen name="FilterScreen" component={FilterScreen} />
@@ -163,13 +172,17 @@ export default function App() {
             <Stack.Screen name="SurveyDetailScreen" component={SurveyDetailScreen} />
 
             {/* Home Owner */}
-            <Stack.Screen name='CustomerChooseTemplate' component={ChooseTemplate} />
             <Stack.Screen name="ProjectTimeline" component={ProjectTimeline} />
             <Stack.Screen name="BudgetTracker" component={BudgetTracker} />
             <Stack.Screen name="DesignApprovals" component={DesignApprovals} />
             <Stack.Screen name="QualityChecks" component={QualityChecks} />
             <Stack.Screen name="ChangeRequests" component={ChangeRequests} />
             <Stack.Screen name="MaterialStatus" component={MaterialStatus} />
+            <Stack.Screen name="Overview" component={Overview} />
+            <Stack.Screen name="CustomerChooseTemplate" component={CustomerChooseTemplate} />
+            <Stack.Screen name="CustomerCreateProposal" component={CustomerCreateProposal} />
+            <Stack.Screen name="SubmitProposalCustomer" component={SubmitProposalCustomer} />
+            <Stack.Screen name="ViewCustomerProposal" component={ViewProposal} />
 
 
           {/* users */ }

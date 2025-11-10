@@ -95,7 +95,7 @@ export default function SignUpScreen() {
   return (
     <View className="flex-1 bg-white">
       {/* StatusBar with dark content but white background */}
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      <StatusBar barStyle="light-content" backgroundColor="#ffffff" />
       
       {/* Header Component */}
       <Header />

@@ -1,10 +1,9 @@
 import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
 import React, { useState } from 'react';
 import { Feather } from '@expo/vector-icons';
-import BottomNavbar from '../../components/BottomNavbar';
-import Header from '../../components/Header';
+import CustomerBottomNavBar from 'components/CustomerBottomNavBar';
 
-const CreateProposalScreen = ({ navigation }) => {
+const CustomerCreateProposal = ({ navigation }) => {
   const [title, setTitle] = useState('Project Name 1');
   const [clientName, setClientName] = useState('Arun Mishra');
   const [address, setAddress] = useState(
@@ -48,15 +47,51 @@ const CreateProposalScreen = ({ navigation }) => {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F5F5F5' }}>
       <View style={{ flex: 1 }}>
         {/* Header */}
-         <Header
-          title="Create Proposal"
-          showBackButton={true}
-          // rightIcon="filter-outline"
-          // onRightIconPress={handleFilter}
-          backgroundColor="#0066FF"
-          titleColor="white"
-          iconColor="white"
-        />
+        <View
+          style={{
+            backgroundColor: '#0066FF',
+            paddingBottom: 20,
+            borderBottomLeftRadius: 20,
+            borderBottomRightRadius: 20,
+          }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              paddingHorizontal: 16,
+              paddingTop: 16,
+              paddingBottom: 16,
+            }}>
+            <TouchableOpacity
+              onPress={() => navigation?.goBack()}
+              style={{
+                width: 32,
+                height: 32,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+              <Feather name="arrow-left" size={24} color="white" />
+            </TouchableOpacity>
+
+            {/* Centered Title */}
+            <View
+              style={{
+                flex: 1,
+                alignItems: 'center',
+                marginLeft: -32, // This compensates for the back button width
+              }}>
+              <Text
+                style={{
+                  fontFamily: 'Urbanist-Bold',
+                  fontSize: 18,
+                  color: 'white',
+                  textAlign: 'center',
+                }}>
+                Create Proposal
+              </Text>
+            </View>
+          </View>
+        </View>
 
         {/* Content */}
         <ScrollView
@@ -521,7 +556,7 @@ const CreateProposalScreen = ({ navigation }) => {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => navigation?.navigate('SubmitProposal')}
+              onPress={() => navigation?.navigate('SubmitProposalCustomer')}
               style={{
                 flex: 1,
                 backgroundColor: '#0066FF',
@@ -541,12 +576,10 @@ const CreateProposalScreen = ({ navigation }) => {
             </TouchableOpacity>
           </View>
         </ScrollView>
+        <CustomerBottomNavBar/>
       </View>
-
-      {/* Bottom Navigation */}
-      <BottomNavbar />
     </SafeAreaView>
   );
 };
 
-export default CreateProposalScreen;
+export default CustomerCreateProposal;
