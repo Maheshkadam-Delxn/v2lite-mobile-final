@@ -392,7 +392,7 @@ const ProposalsListScreen = () => {
         {/* Use the Header component */}
         <Header
           title="Proposals Templates"
-          showBackButton={true}
+          // showBackButton={true}
           rightIcon="filter-outline"
           onRightIconPress={handleFilter}
           backgroundColor="#0066FF"

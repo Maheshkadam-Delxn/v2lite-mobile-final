@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native'; 
+import BottomNavBar from 'components/BottomNavbar';
+import { useFonts, Urbanist_400Regular, Urbanist_500Medium, Urbanist_600SemiBold, Urbanist_700Bold } from '@expo-google-fonts/urbanist';
 
 
 const ApproveSurveyScreen = () => {
@@ -140,41 +142,7 @@ const ApproveSurveyScreen = () => {
         </ScrollView>
       </View>
 
-      {/* ==================== BOTTOM NAVIGATION ==================== */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity 
-          style={styles.navItem}
-          onPress={() => navigation.navigate('Home')}
-        >
-          <Feather name="home" size={24} color="#9CA3AF" />
-          <Text style={styles.navLabel}>Home</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.navItem}
-          onPress={() => navigation.navigate('Projects')}
-        >
-          <Feather name="briefcase" size={24} color="#9CA3AF" />
-          <Text style={styles.navLabel}>Projects</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Feather name="credit-card" size={24} color="#0066FF" />
-          <Text style={[styles.navLabel, { color: '#0066FF' }]}>Payments</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.navItem}
-          onPress={() => navigation.navigate('Tasks')}
-        >
-          <Feather name="file-text" size={24} color="#9CA3AF" />
-          <Text style={styles.navLabel}>Tasks</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.navItem}
-          onPress={() => navigation.navigate('Account')}
-        >
-          <Feather name="user" size={24} color="#9CA3AF" />
-          <Text style={styles.navLabel}>Account</Text>
-        </TouchableOpacity>
-      </View>
+  <BottomNavBar/>
     </SafeAreaView>
   );
 };

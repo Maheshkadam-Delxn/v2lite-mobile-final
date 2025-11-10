@@ -375,7 +375,7 @@ const ProjectsListScreen = () => {
         {/* Header */}
         <Header
           title="My Projects"
-          showBackButton={true}
+          // showBackButton={true}
           rightIcon="filter-outline"
           onRightIconPress={handleFilter}
           backgroundColor="#0066FF"
