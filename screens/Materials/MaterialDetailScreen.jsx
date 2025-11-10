@@ -35,7 +35,9 @@ const MaterialDetailsScreen = ({ route, navigation }) => {
 
   const filteredEntries = activeTab === 'All Entries'
     ? entries
-    : entries.filter(e => e.type === activeTab.toLowerCase());
+    : activeTab === 'Received Entries'
+    ? entries.filter(e => e.type === 'received')
+    : entries.filter(e => e.type === 'used');
 
   const renderEntry = ({ item }) => (
     <View className="mb-4">
@@ -91,35 +93,15 @@ const MaterialDetailsScreen = ({ route, navigation }) => {
           </View>
         </View>
 
-        {/* Entry Tabs */}
-        <View className="mx-4 mt-4 flex-row rounded-lg bg-gray-100 p-1">
-          {['All Entries', 'Received Entries', 'Uned'].map((tab) => (
-            <TouchableOpacity
-              key={tab}
-              className={`flex-1 py-2 rounded-md ${
-                activeTab === tab ? 'bg-white shadow-sm' : ''
-              }`}
-              onPress={() => setActiveTab(tab)}
-            >
-              <Text
-                className={`text-center text-sm font-medium ${
-                  activeTab === tab ? 'text-blue-600' : 'text-gray-600'
-                }`}
-              >
-                {tab}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        {/* Entries Container */}
+        <View className="mx-4 mt-4 rounded-xl bg-white p-4">
+          {/* Entries List Header */}
+          <View className="flex-row justify-between items-center mb-4">
+            <Text className="text-sm font-medium text-gray-700">Amount</Text>
+            <Text className="text-sm font-medium text-gray-700">No Stock</Text>
+          </View>
 
-        {/* Entries List Header */}
-        <View className="mx-4 mt-4 flex-row justify-between items-center">
-          <Text className="text-sm font-medium text-gray-700">Amount</Text>
-          <Text className="text-sm font-medium text-gray-700">No Stock</Text>
-        </View>
-
-        {/* Entries List */}
-        <View className="mx-4 mt-2 rounded-xl bg-white p-4">
+          {/* Entries List */}
           <FlatList
             data={filteredEntries}
             renderItem={renderEntry}
@@ -127,6 +109,36 @@ const MaterialDetailsScreen = ({ route, navigation }) => {
             showsVerticalScrollIndicator={false}
             scrollEnabled={false}
           />
+
+          {/* Empty State for Other Tabs */}
+          {filteredEntries.length === 0 && (
+            <View className="py-8 items-center">
+              <Text className="text-gray-500 text-sm">No {activeTab.toLowerCase()} found</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Additional Containers Section */}
+        <View className="mx-4 mt-4 rounded-xl bg-white p-4">
+          <Text className="text-sm font-medium text-gray-700 mb-3">Other Information</Text>
+          <View className="space-y-3">
+            <View className="flex-row justify-between items-center">
+              <Text className="text-sm text-gray-600">Total Transactions</Text>
+              <Text className="text-sm font-medium text-gray-900">2</Text>
+            </View>
+            <View className="h-px bg-gray-200" />
+            <View className="flex-row justify-between items-center">
+              <Text className="text-sm text-gray-600">Last Updated</Text>
+              <Text className="text-sm font-medium text-gray-900">30 Apr 2025</Text>
+            </View>
+            <View className="h-px bg-gray-200" />
+            <View className="flex-row justify-between items-center">
+              <Text className="text-sm text-gray-600">Status</Text>
+              <View className="bg-green-100 px-2 py-1 rounded-full">
+                <Text className="text-xs font-medium text-green-800">Active</Text>
+              </View>
+            </View>
+          </View>
         </View>
       </ScrollView>
 
@@ -137,26 +149,6 @@ const MaterialDetailsScreen = ({ route, navigation }) => {
         </TouchableOpacity>
         <TouchableOpacity className="ml-2 flex-1 flex-row items-center justify-center rounded-xl bg-green-50 py-3">
           <Text className="text-sm font-semibold text-green-600">Received</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Bottom Navigation */}
-      <View className="absolute bottom-0 left-0 right-0 h-16 flex-row items-center justify-around border-t border-gray-200 bg-white">
-        <TouchableOpacity className="items-center">
-          <Ionicons name="home-outline" size={24} color="#9CA3AF" />
-          <Text className="mt-1 text-xs text-gray-500">Home</Text>
-        </TouchableOpacity>
-        <TouchableOpacity className="items-center">
-          <Ionicons name="folder-outline" size={24} color="#9CA3AF" />
-          <Text className="mt-1 text-xs text-gray-500">Projects</Text>
-        </TouchableOpacity>
-        <TouchableOpacity className="items-center">
-          <Ionicons name="card-outline" size={24} color="#3B82F6" />
-          <Text className="mt-1 text-xs text-blue-600">Payments</Text>
-        </TouchableOpacity>
-        <TouchableOpacity className="items-center">
-          <Ionicons name="document-text-outline" size={24} color="#9CA3AF" />
-          <Text className="mt-1 text-xs text-gray-500">Tasks</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

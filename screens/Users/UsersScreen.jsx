@@ -2511,117 +2511,296 @@ const RolesMembersScreen = () => {
       </View>
 
       {/* Role Bottom Sheet */}
-      <Modal
-        visible={showRoleSheet}
-        transparent
-        animationType="none"
-        onRequestClose={closeRoleSheet}
-      >
-        <TouchableOpacity
-          className="flex-1 bg-black/50 justify-end"
-          activeOpacity={1}
-          onPress={closeRoleSheet}
-        >
-          <Animated.View
-            className="bg-transparent rounded-t-3xl overflow-hidden max-h-[90%]"
-            style={{ transform: [{ translateY: slideAnim }] }}
-          >
-            <View className="bg-white rounded-t-3xl overflow-hidden max-h-[90%]">
-              <View className="flex-row items-center justify-between px-5 py-4 border-b border-gray-100">
-                <View className="w-10 h-1 bg-gray-300 rounded-full absolute top-2 left-1/2 -ml-5" />
-                <Text className="text-lg font-urbanistBold text-gray-900 flex-1 text-center">
-                  {selectedRole ? `${selectedRole.name} Permissions` : 'Create New Role'}
-                </Text>
-                <TouchableOpacity onPress={closeRoleSheet}>
-                  <Ionicons name="close" size={24} color="#666" />
-                </TouchableOpacity>
-              </View>
+     <Modal
+  visible={showRoleSheet}
+  transparent={true}
+  animationType="slide"
+  onRequestClose={closeRoleSheet}
+>
+  <View
+    style={{
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'flex-end',
+    }}
+  >
+    <Animated.View
+      style={{
+        backgroundColor: 'white',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        paddingTop: 20,
+        paddingBottom: 30,
+        paddingHorizontal: 20,
+        transform: [{ translateY: slideAnim }],
+        maxHeight: '90%',
+      }}
+    >
+      {/* Handle Bar */}
+      <View
+        style={{
+          width: 50,
+          height: 5,
+          backgroundColor: '#E5E5E5',
+          borderRadius: 10,
+          alignSelf: 'center',
+          marginBottom: 15,
+        }}
+      />
 
-              {selectedRole ? renderRolePermissions() : renderRoleForm()}
-            </View>
-          </Animated.View>
+      {/* Header */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 10,
+        }}
+      >
+        <Text
+          style={{
+            fontFamily: 'Urbanist-Bold',
+            fontSize: 18,
+            color: '#000',
+            flex: 1,
+            textAlign: 'center',
+          }}
+        >
+          {selectedRole
+            ? `${selectedRole.name} Permissions`
+            : 'Create New Role'}
+        </Text>
+
+        <TouchableOpacity onPress={closeRoleSheet}>
+          <Ionicons name="close" size={24} color="#666" />
         </TouchableOpacity>
-      </Modal>
+      </View>
+
+      {/* Scrollable Content */}
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {selectedRole ? renderRolePermissions() : renderRoleForm()}
+      </ScrollView>
+    </Animated.View>
+  </View>
+</Modal>
+
 
       {/* Member Bottom Sheet */}
-      <Modal
-        visible={showMemberSheet}
-        transparent
-        animationType="none"
-        onRequestClose={closeMemberSheet}
+     <Modal
+  visible={showMemberSheet}
+  transparent={true}
+  animationType="slide"
+  onRequestClose={closeMemberSheet}
+>
+  <View
+    style={{
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'flex-end',
+    }}
+  >
+    <Animated.View
+      style={{
+        backgroundColor: 'white',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        paddingTop: 20,
+        paddingBottom: 30,
+        paddingHorizontal: 20,
+        transform: [{ translateY: slideAnim }],
+        maxHeight: '90%',
+      }}
+    >
+      {/* Handle Bar */}
+      <View
+        style={{
+          width: 50,
+          height: 5,
+          backgroundColor: '#E5E5E5',
+          borderRadius: 10,
+          alignSelf: 'center',
+          marginBottom: 15,
+        }}
+      />
+
+      {/* Header */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 10,
+        }}
       >
-        <TouchableOpacity
-          className="flex-1 bg-black/50 justify-end"
-          activeOpacity={1}
-          onPress={closeMemberSheet}
+        <Text
+          style={{
+            fontFamily: 'Urbanist-Bold',
+            fontSize: 18,
+            color: '#000',
+            flex: 1,
+            textAlign: 'center',
+          }}
         >
-          <Animated.View
-            className="bg-transparent rounded-t-3xl overflow-hidden max-h-[90%]"
-            style={{ transform: [{ translateY: slideAnim }] }}
-          >
-            <View className="bg-white rounded-t-3xl overflow-hidden max-h-[90%]">
-              <View className="flex-row items-center justify-between px-5 py-4 border-b border-gray-100">
-                <View className="w-10 h-1 bg-gray-300 rounded-full absolute top-2 left-1/2 -ml-5" />
-                <Text className="text-lg font-urbanistBold text-gray-900 flex-1 text-center">
-                  {selectedMember ? selectedMember.name : 'Add New Member'}
-                </Text>
-                <TouchableOpacity onPress={closeMemberSheet}>
-                  <Ionicons name="close" size={24} color="#666" />
-                </TouchableOpacity>
-              </View>
-
-              {selectedMember ? (
-                <ScrollView className="px-5">
-                  <View className="items-center py-5">
-                    <View className="w-20 h-20 rounded-full bg-gray-100 justify-center items-center mb-4">
-                      <Text className="text-3xl">{selectedMember.avatar}</Text>
-                    </View>
-                    <Text className="text-xl font-urbanistBold text-gray-900 mb-1">
-                      {selectedMember.name}
-                    </Text>
-                    <Text className="text-base font-urbanistRegular text-gray-600 mb-5">
-                      {selectedMember.email}
-                    </Text>
-
-                    <View className="flex-row justify-between items-center w-full py-3 border-b border-gray-100">
-                      <Text className="text-base font-urbanistSemiBold text-gray-900">
-                        Role:
-                      </Text>
-                      <Text className="text-base font-urbanistRegular text-gray-600">
-                        {selectedMember.role}
-                      </Text>
-                    </View>
-                    <View className="flex-row justify-between items-center w-full py-3 border-b border-gray-100">
-                      <Text className="text-base font-urbanistSemiBold text-gray-900">
-                        Status:
-                      </Text>
-                      <Text className={
-                        selectedMember.status === 'Active'
-                          ? "text-base font-urbanistRegular text-green-700"
-                          : "text-base font-urbanistRegular text-red-700"
-                      }>
-                        {selectedMember.status}
-                      </Text>
-                    </View>
-                    {selectedMember.assignedProjects && selectedMember.assignedProjects.length > 0 && (
-                      <View className="w-full mt-3">
-                        <Text className="text-sm font-urbanistMedium text-gray-900 mb-2">Assigned Projects</Text>
-                        {selectedMember.assignedProjects.map(pid => (
-                          <View key={pid} className="py-2 border-b border-gray-100">
-                            <Text className="text-sm font-urbanistRegular text-gray-700">{projects.find(p => p.id === pid)?.name || pid}</Text>
-                          </View>
-                        ))}
-                      </View>
-                    )}
-                  </View>
-                </ScrollView>
-              ) : (
-                renderAddMemberForm()
-              )}
-            </View>
-          </Animated.View>
+          {selectedMember ? selectedMember.name : 'Add New Member'}
+        </Text>
+        <TouchableOpacity onPress={closeMemberSheet}>
+          <Ionicons name="close" size={24} color="#666" />
         </TouchableOpacity>
-      </Modal>
+      </View>
+
+      {/* Scrollable Content */}
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {selectedMember ? (
+          <View style={{ alignItems: 'center', paddingVertical: 20 }}>
+            {/* Avatar */}
+            <View
+              style={{
+                width: 80,
+                height: 80,
+                borderRadius: 40,
+                backgroundColor: '#F3F4F6',
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginBottom: 15,
+              }}
+            >
+              <Text style={{ fontSize: 32 }}>{selectedMember.avatar}</Text>
+            </View>
+
+            {/* Member Info */}
+            <Text
+              style={{
+                fontFamily: 'Urbanist-Bold',
+                fontSize: 20,
+                color: '#111827',
+                marginBottom: 4,
+              }}
+            >
+              {selectedMember.name}
+            </Text>
+            <Text
+              style={{
+                fontFamily: 'Urbanist-Regular',
+                fontSize: 16,
+                color: '#6B7280',
+                marginBottom: 20,
+              }}
+            >
+              {selectedMember.email}
+            </Text>
+
+            {/* Role */}
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                width: '100%',
+                paddingVertical: 12,
+                borderBottomWidth: 1,
+                borderBottomColor: '#E5E7EB',
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: 'Urbanist-SemiBold',
+                  fontSize: 16,
+                  color: '#111827',
+                }}
+              >
+                Role:
+              </Text>
+              <Text
+                style={{
+                  fontFamily: 'Urbanist-Regular',
+                  fontSize: 16,
+                  color: '#6B7280',
+                }}
+              >
+                {selectedMember.role}
+              </Text>
+            </View>
+
+            {/* Status */}
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                width: '100%',
+                paddingVertical: 12,
+                borderBottomWidth: 1,
+                borderBottomColor: '#E5E7EB',
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: 'Urbanist-SemiBold',
+                  fontSize: 16,
+                  color: '#111827',
+                }}
+              >
+                Status:
+              </Text>
+              <Text
+                style={{
+                  fontFamily: 'Urbanist-Regular',
+                  fontSize: 16,
+                  color:
+                    selectedMember.status === 'Active'
+                      ? '#15803D'
+                      : '#B91C1C',
+                }}
+              >
+                {selectedMember.status}
+              </Text>
+            </View>
+
+            {/* Assigned Projects */}
+            {selectedMember.assignedProjects &&
+              selectedMember.assignedProjects.length > 0 && (
+                <View style={{ width: '100%', marginTop: 10 }}>
+                  <Text
+                    style={{
+                      fontFamily: 'Urbanist-Medium',
+                      fontSize: 14,
+                      color: '#111827',
+                      marginBottom: 6,
+                    }}
+                  >
+                    Assigned Projects
+                  </Text>
+                  {selectedMember.assignedProjects.map((pid) => (
+                    <View
+                      key={pid}
+                      style={{
+                        paddingVertical: 8,
+                        borderBottomWidth: 1,
+                        borderBottomColor: '#F3F4F6',
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontFamily: 'Urbanist-Regular',
+                          fontSize: 14,
+                          color: '#374151',
+                        }}
+                      >
+                        {projects.find((p) => p.id === pid)?.name || pid}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+          </View>
+        ) : (
+          renderAddMemberForm()
+        )}
+      </ScrollView>
+    </Animated.View>
+  </View>
+</Modal>
+
 
 
     </View>
