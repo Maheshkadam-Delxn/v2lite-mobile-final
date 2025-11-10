@@ -14,6 +14,7 @@ import BottomNavBar from 'components/BottomNavbar';
 import TaskScreen from './TaskScreen';
 import PaymentsTransaction from 'screens/AccountingPayement/Transaction';
 import ApproveSurveyScreen from 'screens/Surveys/ApproveSurveyScreen';
+import MaterialsListScreen from 'screens/Materials/MaterialsListScreen';
 
 const ViewDetailsScreen = () => {
   const route = useRoute();
@@ -46,6 +47,7 @@ console.log("asdfasdfasdf",project);
     { id: 'Task', label: 'Task' },
     { id: 'Transaction', label: 'Transaction' },
     { id: 'Sites', label: 'Sites' },
+    { id: 'Material', label: 'Material' },
     { id: 'Attendance', label: 'Attendance' },
   ];
 
@@ -110,6 +112,10 @@ console.log("asdfasdfasdf",project);
           case 'Sites':
         // Render the PaymentsTransaction component inline
         return <ApproveSurveyScreen project={project} />;
+
+          case 'Material':
+        // Render the PaymentsTransaction component inline
+        return <MaterialsListScreen project={project} />;
       
       default:
         return null;
