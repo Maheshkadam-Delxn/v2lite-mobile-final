@@ -1,5 +1,4 @@
 
-// export default SignInScreen
 import { View, Text, TouchableOpacity, StatusBar, Dimensions, Modal, Animated, ScrollView, Image, Alert } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import { useNavigation } from '@react-navigation/native'
@@ -7,7 +6,6 @@ import { MaterialIcons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import Header from '../../components/Header'
 import Inputfield from '../../components/Inputfield'
-
 const { width, height } = Dimensions.get('window')
 
 const API_URL = 'https://skystruct-lite-backend.vercel.app/api/auth/login'
@@ -152,10 +150,10 @@ const SignInScreen = () => {
       >
         {/* Header Section - Directly on white background */}
         <View className="px-6 pt-6">
-          <Text className="text-gray-900 text-2xl font-bold mb-2">
+          <Text style={{ fontSize: 28, fontWeight: '600', color: '#000000', marginBottom: 12 }}>
             Welcome back 👋
           </Text>
-          <Text className="text-gray-600 text-base leading-6 pt-6">
+          <Text style={{ fontSize: 15, fontWeight: '400', color: '#6B7280', lineHeight: 22 }}>
             Please enter your email & password to sign in.
           </Text>
         </View>
@@ -212,11 +210,15 @@ const SignInScreen = () => {
                   )}
                 </View>
               </TouchableOpacity>
-              <Text className="text-gray-700 text-sm">Remember me</Text>
+              <Text style={{ fontSize: 14, fontWeight: '400', color: '#374151' }}>
+                Remember me
+              </Text>
             </View>
             
             <TouchableOpacity onPress={handlereset}>
-              <Text className="text-blue-600 text-sm font-medium">Forgot password?</Text>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: '#2563EB' }}>
+                Forgot password?
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -230,33 +232,32 @@ const SignInScreen = () => {
             disabled={isLoading}
           >
             <View className="flex-1 items-center justify-center">
-              <Text className="text-white text-base font-semibold">
+              <Text style={{ fontSize: 16, fontWeight: '600', color: '#FFFFFF' }}>
                 {isLoading ? 'Signing in...' : 'Sign in'}
               </Text>
             </View>
           </TouchableOpacity>
         </View>
 
-        {/* Divider - Directly on white background */}
-        <View className="px-6 mt-6">
-          <View className="w-full h-px bg-gray-200" />
-        </View>
-
         {/* Sign Up Link - Directly on white background */}
         <View className="px-6 mt-6">
           <View className="flex-row justify-center">
-            <Text className="text-gray-500 text-sm">Don't have an account? </Text>
+            <Text style={{ fontSize: 14, fontWeight: '400', color: '#6B7280' }}>
+              Don't have an account?{' '}
+            </Text>
             <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-              <Text className="text-blue-600 text-sm font-medium">Sign up</Text>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: '#2563EB' }}>
+                Sign up
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Social Login Divider - Directly on white background */}
-        <View className="px-6 mt-6">
+        <View className="px-6 mt-12">
           <View className="flex-row items-center w-full">
             <View className="flex-1 h-px bg-gray-300" />
-            <Text className="text-sm font-medium text-gray-600 mx-4">
+            <Text style={{ fontSize: 14, fontWeight: '400', color: '#6B7280', marginHorizontal: 16 }}>
               or continue with
             </Text>
             <View className="flex-1 h-px bg-gray-300" />
@@ -264,34 +265,20 @@ const SignInScreen = () => {
         </View>
 
         {/* Social Login Buttons - Directly on white background */}
-        <View className="px-6 mt-6">
-          <View className="flex-row justify-between w-full px-4">
-            <TouchableOpacity
-              className="w-16 h-16 rounded-full items-center justify-center border border-gray-300 bg-white shadow-sm"
-              onPress={() => handleSocialLogin('Google')}
-            >
-              <MaterialIcons name="mail" size={24} color="#DB4437" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              className="w-16 h-16 rounded-full items-center justify-center border border-gray-300 bg-white shadow-sm"
-              onPress={() => handleSocialLogin('Apple')}
-            >
-              <MaterialIcons name="phone-iphone" size={24} color="#000000" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              className="w-16 h-16 rounded-full items-center justify-center border border-gray-300 bg-white shadow-sm"
-              onPress={() => handleSocialLogin('Facebook')}
-            >
-              <MaterialIcons name="facebook" size={24} color="#1877F2" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              className="w-16 h-16 rounded-full items-center justify-center border border-gray-300 bg-white shadow-sm"
-              onPress={() => handleSocialLogin('Twitter')}
-            >
-              <MaterialIcons name="chat" size={24} color="#1DA1F2" />
-            </TouchableOpacity>
-          </View>
-        </View>
+      <View className="px-6 mt-6">
+  <View className="flex-row justify-center w-full px-4">
+    <TouchableOpacity
+      className="w-16 h-16 rounded-full items-center justify-center border border-gray-300 bg-white shadow-sm"
+      onPress={() => handleSocialLogin('Google')}
+    >
+      <Image 
+        source={require('../../assets/google.png')} 
+        style={{ width: 24, height: 24 }} 
+        resizeMode="contain"
+      />
+    </TouchableOpacity>
+  </View>
+</View>
       </ScrollView>
 
       {/* Success Modal - Updated to match CreatePasswordScreen style */}
