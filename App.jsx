@@ -64,6 +64,8 @@ import PrivacyPolicyScreen from 'screens/Profile/PrivacyPolicyScreen';
 import CustomerChooseTemplate from 'screens/HomeOwner/CustomerChooseTemplate';
 import CustomerCreateProposal from 'screens/HomeOwner/CustomerCreateProposal';
 import SubmitProposalCustomer from 'screens/HomeOwner/SubmitProposalCustomer';
+import MaterialDetailScreen from 'screens/Materials/MaterialDetailScreen';
+import MaterialsListScreen from 'screens/Materials/MaterialsListScreen';
 
 const Stack = createNativeStackNavigator();
 const TOKEN_KEY = 'userToken';
@@ -187,6 +189,11 @@ export default function App() {
 
           {/* users */ }
           <Stack.Screen name="Users" component={UsersScreen} />
+
+
+          {/* Materials */}
+          <Stack.Screen name="MaterialListScreen" component={MaterialsListScreen} />
+          <Stack.Screen name="MaterialDetailScreen" component={MaterialDetailScreen} />
 
 
         </Stack.Navigator>
