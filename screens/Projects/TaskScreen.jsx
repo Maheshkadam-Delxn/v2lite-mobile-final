@@ -1,13 +1,41 @@
-import React, { useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+// TaskScreen.js
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  ActivityIndicator,
+} from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons, Feather } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const TaskScreen = () => {
+const BASE_URL = 'https://skystruct-lite-backend.vercel.app/api';
+const TASKS_BY_PROJECT = (projectId) => `${BASE_URL}/tasks/by-project?projectId=${projectId}`;
+const TOKEN_KEY = 'userToken';
+
+const TaskScreen = ({ project: projectProp }) => {
   const navigation = useNavigation();
+  const route = useRoute();
+
+  // projectId: prefer prop.project._id / prop.project.id, else route.params.projectId
+  const derivedProjectId =
+    (projectProp && (projectProp._id || projectProp.id)) ||
+    route?.params?.projectId ||
+    null;
+
+  const [projectId, setProjectId] = useState(derivedProjectId);
+
   const [activeView, setActiveView] = useState('Calendar');
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
+
+  const [tasks, setTasks] = useState([]);
+  const [loadingTasks, setLoadingTasks] = useState(false);
+  const [tasksError, setTasksError] = useState(null);
 
   const projectStatus = [
     { label: 'Completed (110)', color: '#1DD1A1', icon: 'checkmark-circle' },
@@ -16,106 +44,18 @@ const TaskScreen = () => {
     { label: 'Cancelled (10)', color: '#FF3B30', icon: 'close-circle' },
   ];
 
-  const scheduleActivities = [
-    {
-      id: 1,
-      title: 'Daily Design Request Report',
-      startTime: '12:00 PM',
-      endTime: '02:00 PM',
-      color: '#FF6B6B',
-    },
-    {
-      id: 2,
-      title: 'Daily Design Request Report',
-      startTime: '12:00 PM',
-      endTime: '02:00 PM',
-      color: '#4ECDC4',
-    },
-    {
-      id: 3,
-      title: 'Daily Design Request Report',
-      startTime: '12:00 PM',
-      endTime: '02:00 PM',
-      color: '#95E1D3',
-    },
-    {
-      id: 4,
-      title: 'Daily Design Request Report',
-      startTime: '12:00 PM',
-      endTime: '02:00 PM',
-      color: '#F3A683',
-    },
-    {
-      id: 5,
-      title: 'Daily Design Request Report',
-      startTime: '12:00 PM',
-      endTime: '02:00 PM',
-      color: '#786FA6',
-    },
-    {
-      id: 6,
-      title: 'Daily Design Request Report',
-      startTime: '12:00 PM',
-      endTime: '02:00 PM',
-      color: '#F8B500',
-    },
-    {
-      id: 7,
-      title: 'Daily Design Request Report',
-      startTime: '12:00 PM',
-      endTime: '02:00 PM',
-      color: '#FF6B9D',
-    },
-    {
-      id: 8,
-      title: 'Daily Design Request Report',
-      startTime: '12:00 PM',
-      endTime: '02:00 PM',
-      color: '#C44569',
-    },
-    {
-      id: 9,
-      title: 'Daily Design Request Report',
-      startTime: '12:00 PM',
-      endTime: '02:00 PM',
-      color: '#1B9CFC',
-    },
-  ];
+  // keep projectId updated if prop or route changes
+  useEffect(() => {
+    const id =
+      (projectProp && (projectProp._id || projectProp.id)) ||
+      route?.params?.projectId ||
+      null;
+    setProjectId(id);
+  }, [projectProp, route?.params?.projectId]);
 
-  const calendarActivities = [
-    {
-      id: 1,
-      title: 'Onboarding',
-      description: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
-      priority: 'High',
-      assignees: 3,
-    },
-    {
-      id: 2,
-      title: 'Onboarding',
-      description: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
-      priority: 'High',
-      assignees: 3,
-    },
-    {
-      id: 3,
-      title: 'Onboarding',
-      description: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
-      priority: 'High',
-      assignees: 3,
-    },
-    {
-      id: 4,
-      title: 'Onboarding',
-      description: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
-      priority: 'High',
-      assignees: 3,
-    },
-  ];
-
-  // ------------------------------------------------------------------
-  // Calendar helpers
-  // ------------------------------------------------------------------
+  // -----------------------------
+  // Calendar helpers (unchanged)
+  // -----------------------------
   const generateWeekDates = (startDate) => {
     const dates = [];
     const current = new Date(startDate);
@@ -158,18 +98,7 @@ const TaskScreen = () => {
 
   const formatMonthYear = (date) => {
     const months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
+      'January','February','March','April','May','June','July','August','September','October','November','December',
     ];
     return `${months[date.getMonth()]} ${date.getDate()}`;
   };
@@ -192,9 +121,9 @@ const TaskScreen = () => {
 
   const weekDates = generateWeekDates(currentMonth);
 
-  // ------------------------------------------------------------------
-  // Render helpers
-  // ------------------------------------------------------------------
+  // -----------------------------
+  // UI cards
+  // -----------------------------
   const StatusItem = ({ status }) => (
     <View style={styles.statusItem}>
       <View style={[styles.statusIcon, { backgroundColor: status.color }]}>
@@ -225,27 +154,108 @@ const TaskScreen = () => {
       <Text style={styles.activityDesc}>{item.description}</Text>
       <View style={styles.assigneeRow}>
         <View style={styles.assigneeAvatars}>
-          {[...Array(item.assignees)].map((_, i) => (
+          {[...Array(Math.max(0, item.assignees || 0))].map((_, i) => (
             <View key={i} style={[styles.avatar, i > 0 && { marginLeft: -8 }]} />
           ))}
         </View>
-        <Text style={styles.assigneeCount}>{item.assignees} people</Text>
+        <Text style={styles.assigneeCount}>{item.assignees || 0} people</Text>
       </View>
     </View>
   );
 
   const ScheduleCard = ({ item }) => (
     <View style={styles.scheduleCard}>
-      <View style={[styles.scheduleColorBar, { backgroundColor: item.color }]} />
+      <View style={[styles.scheduleColorBar, { backgroundColor: item.color || '#1B9CFC' }]} />
       <View style={styles.scheduleContent}>
         <Text style={styles.scheduleTitle}>{item.title}</Text>
         <Text style={styles.scheduleTime}>
-          {item.startTime} - {item.endTime}
+          {item.startTime || '09:00 AM'} - {item.endTime || '10:00 AM'}
         </Text>
       </View>
     </View>
   );
 
+  // -----------------------------
+  // map API tasks -> UI shapes
+  // -----------------------------
+  const scheduleActivities = tasks.map((t, idx) => ({
+    id: t._id || t.id || idx,
+    title: t.title || t.name || t.taskName || 'Untitled Task',
+    startTime: t.startTime || t.from || t.start || '09:00 AM',
+    endTime: t.endTime || t.to || t.end || '10:00 AM',
+    color: t.color || t.colorCode || '#1B9CFC',
+  }));
+
+  const calendarActivities = tasks.map((t, idx) => ({
+    id: t._id || t.id || idx,
+    title: t.title || t.name || t.taskName || 'Untitled Task',
+    description: t.description || t.details || 'No description provided.',
+    priority: t.priority || t.priorityLevel || 'Low',
+    assignees:
+      typeof t.assignees === 'number'
+        ? t.assignees
+        : Array.isArray(t.assignees)
+        ? t.assignees.length
+        : 1,
+  }));
+
+  // -----------------------------
+  // fetch tasks by project
+  // -----------------------------
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!projectId) {
+      setTasks([]);
+      setTasksError('Missing projectId. Open this screen from a project (pass project or projectId).');
+      setLoadingTasks(false);
+      return;
+    }
+
+    const fetchTasks = async () => {
+      setLoadingTasks(true);
+      setTasksError(null);
+      try {
+        const token = await AsyncStorage.getItem(TOKEN_KEY);
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const res = await fetch(TASKS_BY_PROJECT(projectId), {
+          method: 'GET',
+          headers,
+        });
+
+        if (!res.ok) {
+          if (res.status === 401) {
+            const txt = await res.text().catch(() => '');
+            throw new Error(`Unauthorized (401). ${txt}`);
+          }
+          const txt = await res.text().catch(() => '');
+          throw new Error(`HTTP ${res.status} ${txt}`);
+        }
+
+        const json = await res.json().catch(() => []);
+        const items = Array.isArray(json) ? json : Array.isArray(json.data) ? json.data : [];
+
+        if (!cancelled) setTasks(items);
+      } catch (err) {
+        console.error('Failed to fetch tasks for project:', projectId, err);
+        if (!cancelled) setTasksError(err.message || 'Failed to fetch tasks');
+      } finally {
+        if (!cancelled) setLoadingTasks(false);
+      }
+    };
+
+    fetchTasks();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId]);
+
+  // -----------------------------
+  // Render
+  // -----------------------------
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -321,7 +331,7 @@ const TaskScreen = () => {
                 <View style={styles.tasksHeader}>
                   <TouchableOpacity
                     style={styles.addNewButton}
-                    onPress={() => navigation.navigate('AddNewTask')}>
+                    onPress={() => navigation.navigate('AddNewTask', { projectId })}>
                     <Ionicons name="add-circle-outline" size={18} color="#0066FF" />
                     <Text style={styles.addNewText}>Add New</Text>
                   </TouchableOpacity>
@@ -331,14 +341,22 @@ const TaskScreen = () => {
                   </TouchableOpacity>
                 </View>
 
-                {/* Activity List */}
-                <FlatList
-                  data={calendarActivities}
-                  renderItem={({ item }) => <ActivityCard item={item} />}
-                  keyExtractor={(item) => item.id.toString()}
-                  scrollEnabled={false}
-                  showsVerticalScrollIndicator={false}
-                />
+                {/* Activity List (Calendar view uses calendarActivities) */}
+                {loadingTasks ? (
+                  <ActivityIndicator size="small" color="#0066FF" style={{ marginTop: 8 }} />
+                ) : tasksError ? (
+                  <Text style={{ textAlign: 'center', color: '#ef4444', marginTop: 8 }}>{tasksError}</Text>
+                ) : tasks.length === 0 ? (
+                  <Text style={{ textAlign: 'center', color: '#6B7280', marginTop: 8 }}>No tasks found.</Text>
+                ) : (
+                  <FlatList
+                    data={calendarActivities}
+                    renderItem={({ item }) => <ActivityCard item={item} />}
+                    keyExtractor={(item) => item.id.toString()}
+                    scrollEnabled={false}
+                    showsVerticalScrollIndicator={false}
+                  />
+                )}
               </View>
             </>
           )}
@@ -399,13 +417,21 @@ const TaskScreen = () => {
                   </TouchableOpacity>
                 </View>
 
-                <FlatList
-                  data={scheduleActivities}
-                  renderItem={({ item }) => <ScheduleCard item={item} />}
-                  keyExtractor={(item) => item.id.toString()}
-                  scrollEnabled={false}
-                  showsVerticalScrollIndicator={false}
-                />
+                {loadingTasks ? (
+                  <ActivityIndicator size="small" color="#0066FF" style={{ marginTop: 8 }} />
+                ) : tasksError ? (
+                  <Text style={{ textAlign: 'center', color: '#ef4444', marginTop: 8 }}>{tasksError}</Text>
+                ) : tasks.length === 0 ? (
+                  <Text style={{ textAlign: 'center', color: '#6B7280', marginTop: 8 }}>No tasks found.</Text>
+                ) : (
+                  <FlatList
+                    data={scheduleActivities}
+                    renderItem={({ item }) => <ScheduleCard item={item} />}
+                    keyExtractor={(item) => item.id.toString()}
+                    scrollEnabled={false}
+                    showsVerticalScrollIndicator={false}
+                  />
+                )}
               </View>
             </View>
           )}
@@ -418,7 +444,7 @@ const TaskScreen = () => {
 };
 
 /* --------------------------------------------------------------
-   Styles
+   Styles (unchanged)
    -------------------------------------------------------------- */
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f9fafb' },
