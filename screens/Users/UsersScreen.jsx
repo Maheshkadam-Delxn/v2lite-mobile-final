@@ -1,4 +1,4 @@
-// // screens/Users/RolesMembersScreen.jsx
+
 // import React, { useState, useRef, useEffect } from 'react';
 // import {
 //   View,
@@ -137,6 +137,13 @@
 //         const rolesRes = await rolesResponse.json();
 //         console.log('Roles data:', rolesRes);
 
+//         // Map roles to include id
+//         const mappedRoles = (rolesRes || []).map(role => ({
+//           ...role,
+//           id: role._id
+//         }));
+//         setRoles(mappedRoles);
+
 //         // Fetch members
 //         console.log('Fetching members from:', `${API_BASE}/api/admin/users`);
 //         const membersHeaders = await getHeaders();
@@ -152,22 +159,58 @@
 //         const membersRes = await membersResponse.json();
 //         console.log('Members data:', membersRes);
 
-//         setRoles(rolesRes || []);
-//         setMembers((membersRes || []).map(member => ({
-//           ...member,
-//           role: rolesRes.find(r => r.id === member.roleId)?.name || 'Unknown Role',
-//           avatar: member.avatar || '👤',
-//           status: member.status || 'Active'
-//         })));
+//         // Map members with role display logic
+//         const mappedMembers = (membersRes.data || []).map(member => {
+//           const memberWithId = {
+//             ...member,
+//             id: member._id || member.id
+//           };
+
+//           // Role display logic
+//           let roleDisplay = 'Unknown Role';
+//           if (member.roleId) {
+//             const roleObj = mappedRoles.find(r => r.id === member.roleId);
+//             if (roleObj) {
+//               roleDisplay = roleObj.name;
+//             }
+//           }
+//           if (member.roleName) {
+//             try {
+//               const parsedRoleName = typeof member.roleName === 'string' ? JSON.parse(member.roleName) : member.roleName;
+//               if (parsedRoleName && parsedRoleName.name) {
+//                 roleDisplay = parsedRoleName.name;
+//               } else if (typeof member.roleName === 'string') {
+//                 roleDisplay = member.roleName;
+//               }
+//             } catch (e) {
+//               if (typeof member.roleName === 'string') {
+//                 roleDisplay = member.roleName;
+//               }
+//             }
+//           }
+//           if (member.role) {
+//             try {
+//               const parsedRole = typeof member.role === 'string' ? JSON.parse(member.role) : member.role;
+//               if (parsedRole && parsedRole.name) {
+//                 roleDisplay = parsedRole.name;
+//               }
+//             } catch (e) {
+//               // Ignore
+//             }
+//           }
+
+//           return {
+//             ...memberWithId,
+//             role: roleDisplay,
+//             avatar: member.avatar || '👤',
+//             status: member.status === 'active' ? 'Active' : (member.status || 'Active')
+//           };
+//         });
+
+//         setMembers(mappedMembers);
 //       } catch (error) {
 //         console.error('Error loading data:', error);
-//         if (error.message.includes('401') || error.message.includes('auth')) {
-//           Alert.alert('Authentication Error', 'Please log in again.', [
-//             { text: 'OK', onPress: () => navigation.navigate('SignIn') }
-//           ]);
-//         } else {
-//           Alert.alert('Error', `Failed to load data: ${error.message}`);
-//         }
+//         Alert.alert('Error', `Failed to load data: ${error.message}`);
 //       } finally {
 //         setIsLoading(false);
 //       }
@@ -342,18 +385,28 @@
 //         throw new Error(`Failed to create member: ${response.status} ${response.statusText}`);
 //       }
 
-//       const createdMember = await response.json();
+//       const responseData = await response.json();
+//       const createdMember = responseData.data || responseData; // Assuming similar structure
 //       console.log('Created member data:', createdMember);
 //       const roleName = roles.find(role => role.id === newMember.roleId)?.name || 'Unknown Role';
 
 //       const newMemberWithDetails = {
 //         ...createdMember,
+//         id: createdMember._id || createdMember.id,
 //         role: roleName,
 //         avatar: '👤',
 //         status: 'Active'
 //       };
 
 //       setMembers(prev => [newMemberWithDetails, ...prev]);
+
+//       // Update role memberCount
+//       const roleIndex = roles.findIndex(r => r.id === newMember.roleId);
+//       if (roleIndex !== -1) {
+//         setRoles(prevRoles => prevRoles.map((r, i) => 
+//           i === roleIndex ? { ...r, memberCount: (r.memberCount || 0) + 1 } : r
+//         ));
+//       }
       
 //       Alert.alert('Success', 'Member created successfully');
 //       closeMemberSheet();
@@ -472,6 +525,7 @@
 //       console.log('Created role data:', createdRole);
 //       const newRoleWithDetails = {
 //         ...createdRole,
+//         id: createdRole._id,
 //         memberCount: createdRole.memberCount || 0
 //       };
 
@@ -525,10 +579,10 @@
 //       // Update local state
 //       setRoles(prevRoles => 
 //         prevRoles.map(role => 
-//           role.id === selectedRole.id ? { ...updatedRole, memberCount: role.memberCount } : role
+//           role.id === selectedRole.id ? { ...updatedRole, id: updatedRole._id, memberCount: role.memberCount } : role
 //         )
 //       );
-//       setSelectedRole({ ...updatedRole, memberCount: selectedRole.memberCount });
+//       setSelectedRole({ ...updatedRole, id: updatedRole._id, memberCount: selectedRole.memberCount });
       
 //       Alert.alert('Success', 'Role permissions updated successfully');
 //       closeRoleSheet();
@@ -1219,7 +1273,7 @@
 // };
 
 // export default RolesMembersScreen;
-// screens/Users/RolesMembersScreen.jsx
+// RolesMembersScreen.js
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
@@ -1249,7 +1303,8 @@ const RolesMembersScreen = () => {
   const [selectedMember, setSelectedMember] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
-  
+  const [showProjectDropdown, setShowProjectDropdown] = useState(false);
+
   // Updated role form state to match API structure
   const [newRole, setNewRole] = useState({
     name: '',
@@ -1264,17 +1319,19 @@ const RolesMembersScreen = () => {
     isSystem: false
   });
 
-  // New member form state
+  // New member form state (added assignedProjects)
   const [newMember, setNewMember] = useState({
     name: '',
     email: '',
     password: '',
-    roleId: ''
+    roleId: '',
+    assignedProjects: [], // <-- new field (array of project ids)
   });
 
   // Initial empty states
   const [roles, setRoles] = useState([]);
   const [members, setMembers] = useState([]);
+  const [projects, setProjects] = useState([]); // fetched projects
 
   const slideAnim = useRef(new Animated.Value(300)).current;
 
@@ -1337,12 +1394,12 @@ const RolesMembersScreen = () => {
     };
   };
 
-  // Fetch roles and members on mount
+  // Fetch roles, members and projects on mount
   useEffect(() => {
     const loadData = async () => {
       try {
         setIsLoading(true);
-        
+
         // Fetch roles
         console.log('Fetching roles from:', `${API_BASE}/api/admin/users/role`);
         const rolesHeaders = await getHeaders();
@@ -1350,19 +1407,14 @@ const RolesMembersScreen = () => {
           headers: rolesHeaders
         });
         console.log('Roles response status:', rolesResponse.status, rolesResponse.statusText);
-        console.log('Roles response headers:', [...rolesResponse.headers.entries()]);
         if (!rolesResponse.ok) {
-          console.error('Roles fetch failed:', rolesResponse.status, rolesResponse.statusText);
-          throw new Error(`Failed to fetch roles: ${rolesResponse.status} ${rolesResponse.statusText}`);
+          const txt = await rolesResponse.text().catch(() => '');
+          console.error('Roles fetch failed:', rolesResponse.status, rolesResponse.statusText, txt);
+          throw new Error(`Failed to fetch roles: ${rolesResponse.status}`);
         }
         const rolesRes = await rolesResponse.json();
         console.log('Roles data:', rolesRes);
-
-        // Map roles to include id
-        const mappedRoles = (rolesRes || []).map(role => ({
-          ...role,
-          id: role._id
-        }));
+        const mappedRoles = (rolesRes || []).map(role => ({ ...role, id: role._id }));
         setRoles(mappedRoles);
 
         // Fetch members
@@ -1372,28 +1424,23 @@ const RolesMembersScreen = () => {
           headers: membersHeaders
         });
         console.log('Members response status:', membersResponse.status, membersResponse.statusText);
-        console.log('Members response headers:', [...membersResponse.headers.entries()]);
         if (!membersResponse.ok) {
-          console.error('Members fetch failed:', membersResponse.status, membersResponse.statusText);
-          throw new Error(`Failed to fetch members: ${membersResponse.status} ${membersResponse.statusText}`);
+          const txt = await membersResponse.text().catch(() => '');
+          console.error('Members fetch failed:', membersResponse.status, membersResponse.statusText, txt);
+          throw new Error(`Failed to fetch members: ${membersResponse.status}`);
         }
         const membersRes = await membersResponse.json();
         console.log('Members data:', membersRes);
 
-        // Map members with role display logic
+        // Map members with role display logic (preserve your logic)
         const mappedMembers = (membersRes.data || []).map(member => {
-          const memberWithId = {
-            ...member,
-            id: member._id || member.id
-          };
+          const memberWithId = { ...member, id: member._id || member.id };
 
           // Role display logic
           let roleDisplay = 'Unknown Role';
           if (member.roleId) {
             const roleObj = mappedRoles.find(r => r.id === member.roleId);
-            if (roleObj) {
-              roleDisplay = roleObj.name;
-            }
+            if (roleObj) roleDisplay = roleObj.name;
           }
           if (member.roleName) {
             try {
@@ -1404,17 +1451,13 @@ const RolesMembersScreen = () => {
                 roleDisplay = member.roleName;
               }
             } catch (e) {
-              if (typeof member.roleName === 'string') {
-                roleDisplay = member.roleName;
-              }
+              if (typeof member.roleName === 'string') roleDisplay = member.roleName;
             }
           }
           if (member.role) {
             try {
               const parsedRole = typeof member.role === 'string' ? JSON.parse(member.role) : member.role;
-              if (parsedRole && parsedRole.name) {
-                roleDisplay = parsedRole.name;
-              }
+              if (parsedRole && parsedRole.name) roleDisplay = parsedRole.name;
             } catch (e) {
               // Ignore
             }
@@ -1424,11 +1467,34 @@ const RolesMembersScreen = () => {
             ...memberWithId,
             role: roleDisplay,
             avatar: member.avatar || '👤',
-            status: member.status === 'active' ? 'Active' : (member.status || 'Active')
+            status: member.status === 'active' ? 'Active' : (member.status || 'Active'),
+            assignedProjects: member.assignedProjects || []
           };
         });
 
         setMembers(mappedMembers);
+
+        // Fetch projects for assignment
+        console.log('Fetching projects from:', `${API_BASE}/api/projects`);
+        const projectsHeaders = await getHeaders();
+        const projectsResponse = await fetch(`${API_BASE}/api/projects`, {
+          headers: projectsHeaders
+        });
+        console.log('Projects response status:', projectsResponse.status, projectsResponse.statusText);
+        if (!projectsResponse.ok) {
+          const txt = await projectsResponse.text().catch(() => '');
+          console.error('Projects fetch failed:', projectsResponse.status, projectsResponse.statusText, txt);
+          // don't throw here — projects are optional for member creation
+        } else {
+          const projectsRes = await projectsResponse.json();
+          // projects API might return array or { data: [...] }
+          const list = Array.isArray(projectsRes) ? projectsRes : (projectsRes.data || projectsRes.projects || []);
+          const mappedProjects = (list || []).map(p => ({
+            id: p._id || p.id,
+            name: p.name || p.projectName || p.projectCode || `Project ${p._id}`
+          }));
+          setProjects(mappedProjects);
+        }
       } catch (error) {
         console.error('Error loading data:', error);
         Alert.alert('Error', `Failed to load data: ${error.message}`);
@@ -1498,7 +1564,8 @@ const RolesMembersScreen = () => {
         name: '',
         email: '',
         password: '',
-        roleId: ''
+        roleId: '',
+        assignedProjects: []
       });
     }
     setShowMemberSheet(true);
@@ -1521,27 +1588,47 @@ const RolesMembersScreen = () => {
         name: '',
         email: '',
         password: '',
-        roleId: ''
+        roleId: '',
+        assignedProjects: []
       });
       setShowRoleDropdown(false);
+      setShowProjectDropdown(false);
     });
   };
 
   // Handle new member form changes
   const handleNewMemberChange = (field, value) => {
-    setNewMember(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setNewMember(prev => ({ ...prev, [field]: value }));
   };
 
   // Handle role selection
-  const handleRoleSelect = (roleId, roleName) => {
-    setNewMember(prev => ({
-      ...prev,
-      roleId: roleId
-    }));
+  const handleRoleSelect = (roleId) => {
+    setNewMember(prev => ({ ...prev, roleId }));
     setShowRoleDropdown(false);
+  };
+
+  // Handle project toggle for assignedProjects (multi-select)
+  const toggleProjectSelection = (projectId) => {
+    setNewMember(prev => {
+      const assigned = prev.assignedProjects || [];
+      if (assigned.includes(projectId)) {
+        return { ...prev, assignedProjects: assigned.filter(id => id !== projectId) };
+      } else {
+        return { ...prev, assignedProjects: [...assigned, projectId] };
+      }
+    });
+  };
+
+  const getSelectedRoleName = () => {
+    if (!newMember.roleId) return 'Select Role';
+    const selectedRoleObj = roles.find(role => role.id === newMember.roleId);
+    return selectedRoleObj?.name || 'Select Role';
+  };
+
+  const getSelectedProjectsNames = () => {
+    if (!newMember.assignedProjects || newMember.assignedProjects.length === 0) return 'Assign Projects (optional)';
+    const names = newMember.assignedProjects.map(pid => projects.find(p => p.id === pid)?.name || pid);
+    return names.join(', ');
   };
 
   // Handle create new member
@@ -1581,11 +1668,13 @@ const RolesMembersScreen = () => {
 
     setIsLoading(true);
     try {
+      // Build request body — include assignedProjects (array of project ids)
       const memberData = {
         name: newMember.name.trim(),
         email: newMember.email.trim().toLowerCase(),
         password: newMember.password,
-        roleId: newMember.roleId
+        roleId: newMember.roleId,
+        assignedProjects: newMember.assignedProjects || []
       };
 
       console.log('Creating new member with API body:', JSON.stringify(memberData, null, 2));
@@ -1598,16 +1687,20 @@ const RolesMembersScreen = () => {
       });
 
       console.log('Create member response status:', response.status, response.statusText);
-      console.log('Create member response headers:', [...response.headers.entries()]);
 
       if (!response.ok) {
-        const errorText = await response.text();
+        const errorText = await response.text().catch(() => '');
         console.error('Create member failed:', response.status, response.statusText, errorText);
-        throw new Error(`Failed to create member: ${response.status} ${response.statusText}`);
+        let msg = `Failed to create member: ${response.status}`;
+        try {
+          const j = errorText ? JSON.parse(errorText) : null;
+          if (j?.message) msg = j.message;
+        } catch (e) {}
+        throw new Error(msg);
       }
 
       const responseData = await response.json();
-      const createdMember = responseData.data || responseData; // Assuming similar structure
+      const createdMember = responseData.data || responseData; // adapt to API shape
       console.log('Created member data:', createdMember);
       const roleName = roles.find(role => role.id === newMember.roleId)?.name || 'Unknown Role';
 
@@ -1616,7 +1709,8 @@ const RolesMembersScreen = () => {
         id: createdMember._id || createdMember.id,
         role: roleName,
         avatar: '👤',
-        status: 'Active'
+        status: 'Active',
+        assignedProjects: createdMember.assignedProjects || newMember.assignedProjects || []
       };
 
       setMembers(prev => [newMemberWithDetails, ...prev]);
@@ -1624,11 +1718,9 @@ const RolesMembersScreen = () => {
       // Update role memberCount
       const roleIndex = roles.findIndex(r => r.id === newMember.roleId);
       if (roleIndex !== -1) {
-        setRoles(prevRoles => prevRoles.map((r, i) => 
-          i === roleIndex ? { ...r, memberCount: (r.memberCount || 0) + 1 } : r
-        ));
+        setRoles(prevRoles => prevRoles.map((r, i) => i === roleIndex ? { ...r, memberCount: (r.memberCount || 0) + 1 } : r));
       }
-      
+
       Alert.alert('Success', 'Member created successfully');
       closeMemberSheet();
     } catch (error) {
@@ -1641,10 +1733,7 @@ const RolesMembersScreen = () => {
 
   // Handle new role form changes
   const handleNewRoleChange = (field, value) => {
-    setNewRole(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setNewRole(prev => ({ ...prev, [field]: value }));
   };
 
   // Handle permission toggles for new role
@@ -1664,10 +1753,10 @@ const RolesMembersScreen = () => {
   // Handle permission toggles for existing role
   const handlePermissionToggle = (module, action) => {
     if (!selectedRole || selectedRole.isSystem) return;
-    
-    setRoles(prevRoles => 
-      prevRoles.map(role => 
-        role.id === selectedRole.id 
+
+    setRoles(prevRoles =>
+      prevRoles.map(role =>
+        role.id === selectedRole.id
           ? {
               ...role,
               permissions: {
@@ -1681,7 +1770,7 @@ const RolesMembersScreen = () => {
           : role
       )
     );
-    
+
     setSelectedRole(prev => ({
       ...prev,
       permissions: {
@@ -1695,12 +1784,8 @@ const RolesMembersScreen = () => {
   };
 
   // Generate slug from name
-  const generateSlug = (name) => {
-    return name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '_')
-      .replace(/(^_|_$)/g, '');
-  };
+  const generateSlug = (name) =>
+    name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/(^_|_$)/g, '');
 
   // Handle create new role
   const handleCreateRole = async () => {
@@ -1708,7 +1793,6 @@ const RolesMembersScreen = () => {
       Alert.alert('Error', 'Please enter a role name');
       return;
     }
-
     if (!newRole.description.trim()) {
       Alert.alert('Error', 'Please enter a role description');
       return;
@@ -1725,7 +1809,6 @@ const RolesMembersScreen = () => {
       };
 
       console.log('Creating new role with API body:', JSON.stringify(roleData, null, 2));
-
       const headers = await getHeaders();
       const response = await fetch(`${API_BASE}/api/admin/users/role`, {
         method: 'POST',
@@ -1734,12 +1817,10 @@ const RolesMembersScreen = () => {
       });
 
       console.log('Create role response status:', response.status, response.statusText);
-      console.log('Create role response headers:', [...response.headers.entries()]);
-
       if (!response.ok) {
-        const errorText = await response.text();
+        const errorText = await response.text().catch(() => '');
         console.error('Create role failed:', response.status, response.statusText, errorText);
-        throw new Error(`Failed to create role: ${response.status} ${response.statusText}`);
+        throw new Error(`Failed to create role: ${response.status}`);
       }
 
       const createdRole = await response.json();
@@ -1751,7 +1832,6 @@ const RolesMembersScreen = () => {
       };
 
       setRoles(prev => [newRoleWithDetails, ...prev]);
-      
       Alert.alert('Success', 'Role created successfully');
       closeRoleSheet();
     } catch (error) {
@@ -1765,7 +1845,7 @@ const RolesMembersScreen = () => {
   // Handle update existing role
   const handleSaveRole = async () => {
     if (!selectedRole) return;
-    
+
     setIsLoading(true);
     try {
       const roleData = {
@@ -1777,7 +1857,6 @@ const RolesMembersScreen = () => {
       };
 
       console.log('Updating role with API body:', JSON.stringify(roleData, null, 2));
-
       const headers = await getHeaders();
       const response = await fetch(`${API_BASE}/api/admin/users/role/${selectedRole.id}`, {
         method: 'PUT',
@@ -1786,25 +1865,22 @@ const RolesMembersScreen = () => {
       });
 
       console.log('Update role response status:', response.status, response.statusText);
-      console.log('Update role response headers:', [...response.headers.entries()]);
-
       if (!response.ok) {
-        const errorText = await response.text();
+        const errorText = await response.text().catch(() => '');
         console.error('Update role failed:', response.status, response.statusText, errorText);
-        throw new Error(`Failed to update role permissions: ${response.status} ${response.statusText}`);
+        throw new Error(`Failed to update role permissions: ${response.status}`);
       }
 
       const updatedRole = await response.json();
       console.log('Updated role data:', updatedRole);
 
       // Update local state
-      setRoles(prevRoles => 
-        prevRoles.map(role => 
+      setRoles(prevRoles =>
+        prevRoles.map(role =>
           role.id === selectedRole.id ? { ...updatedRole, id: updatedRole._id, memberCount: role.memberCount } : role
         )
       );
       setSelectedRole({ ...updatedRole, id: updatedRole._id, memberCount: selectedRole.memberCount });
-      
       Alert.alert('Success', 'Role permissions updated successfully');
       closeRoleSheet();
     } catch (error) {
@@ -1841,22 +1917,16 @@ const RolesMembersScreen = () => {
   const filteredMembers = members.filter(member =>
     member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     member.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    member.role.toLowerCase().includes(searchQuery.toLowerCase())
+    (member.role || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  const getSelectedRoleName = () => {
-    if (!newMember.roleId) return 'Select Role';
-    const selectedRoleObj = roles.find(role => role.id === newMember.roleId);
-    return selectedRoleObj?.name || 'Select Role';
-  };
 
   const renderRoleItem = ({ item }) => {
     const activePermissions = getActivePermissionsCount(item.permissions);
     const totalPermissions = getTotalPermissionsCount();
     const progressPercentage = (activePermissions / totalPermissions) * 100;
-    
+
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         className="bg-white rounded-2xl p-4 mb-3 border border-gray-200"
         onPress={() => openRoleSheet(item)}
       >
@@ -1883,10 +1953,10 @@ const RolesMembersScreen = () => {
           </View>
           <Ionicons name="chevron-forward" size={20} color="#666" />
         </View>
-        
+
         <View className="mb-3">
           <View className="h-1.5 bg-gray-100 rounded-full mb-1.5 overflow-hidden">
-            <View 
+            <View
               className="h-full bg-blue-600 rounded-full"
               style={{ width: `${progressPercentage}%` }}
             />
@@ -1898,7 +1968,7 @@ const RolesMembersScreen = () => {
 
         <View className="flex-row flex-wrap items-center gap-2">
           {Object.entries(item.permissions)
-            .filter(([module, actions]) => 
+            .filter(([module, actions]) =>
               Object.values(actions).some(action => action)
             )
             .slice(0, 3)
@@ -1909,11 +1979,11 @@ const RolesMembersScreen = () => {
                 </Text>
               </View>
             ))}
-          {Object.keys(item.permissions).filter(module => 
+          {Object.keys(item.permissions).filter(module =>
             Object.values(item.permissions[module]).some(action => action)
           ).length > 3 && (
             <Text className="text-xs font-urbanistRegular text-gray-500">
-              +{Object.keys(item.permissions).filter(module => 
+              +{Object.keys(item.permissions).filter(module =>
                 Object.values(item.permissions[module]).some(action => action)
               ).length - 3} more
             </Text>
@@ -1924,7 +1994,7 @@ const RolesMembersScreen = () => {
   };
 
   const renderMemberItem = ({ item }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       className="bg-white rounded-2xl p-4 mb-3 border border-gray-200"
       onPress={() => openMemberSheet(item)}
     >
@@ -1942,11 +2012,16 @@ const RolesMembersScreen = () => {
           <Text className="text-xs font-urbanistMedium text-blue-600">
             {item.role}
           </Text>
+          {item.assignedProjects && item.assignedProjects.length > 0 && (
+            <Text className="text-xs font-urbanistRegular text-gray-500 mt-1">
+              Projects: {item.assignedProjects.map(pid => projects.find(p => p.id === pid)?.name || pid).slice(0,3).join(', ')}{item.assignedProjects.length > 3 ? ` +${item.assignedProjects.length - 3}` : ''}
+            </Text>
+          )}
         </View>
         <View className="items-end">
           <View className={
-            item.status === 'Active' 
-              ? "bg-green-100 px-2 py-1 rounded-xl" 
+            item.status === 'Active'
+              ? "bg-green-100 px-2 py-1 rounded-xl"
               : "bg-red-100 px-2 py-1 rounded-xl"
           }>
             <Text className={
@@ -1968,7 +2043,7 @@ const RolesMembersScreen = () => {
         <Text className="text-lg font-urbanistBold text-gray-900 mb-4">
           Role Information
         </Text>
-        
+
         <View className="mb-4">
           <Text className="text-base font-urbanistSemiBold text-gray-900 mb-2">
             Role Name *
@@ -2022,7 +2097,7 @@ const RolesMembersScreen = () => {
         <Text className="text-sm font-urbanistRegular text-gray-600 mb-5">
           Configure what this role can access and modify
         </Text>
-        
+
         {permissionModules.map(module => (
           <View key={module.key} className="bg-gray-50 rounded-xl p-4 mb-3 border border-gray-200">
             <View className="mb-3">
@@ -2035,7 +2110,7 @@ const RolesMembersScreen = () => {
                 </Text>
               </View>
             </View>
-            
+
             <View className="gap-2">
               {module.actions.map(actionKey => (
                 <View key={actionKey} className="flex-row items-center justify-between py-2">
@@ -2055,7 +2130,7 @@ const RolesMembersScreen = () => {
         ))}
       </View>
 
-      <TouchableOpacity 
+      <TouchableOpacity
         className={
           `rounded-xl py-4 items-center mt-5 ${
             isLoading || !newRole.name.trim() || !newRole.description.trim()
@@ -2086,7 +2161,7 @@ const RolesMembersScreen = () => {
           </Text>
         </View>
       )}
-      
+
       <View className="mb-5">
         <Text className="text-lg font-urbanistBold text-gray-900 mb-1">
           Module Permissions
@@ -2094,7 +2169,7 @@ const RolesMembersScreen = () => {
         <Text className="text-sm font-urbanistRegular text-gray-600 mb-5">
           Configure what this role can access and modify
         </Text>
-        
+
         {permissionModules.map(module => (
           <View key={module.key} className="bg-gray-50 rounded-xl p-4 mb-3 border border-gray-200">
             <View className="mb-3">
@@ -2107,7 +2182,7 @@ const RolesMembersScreen = () => {
                 </Text>
               </View>
             </View>
-            
+
             <View className="gap-2">
               {module.actions.map(actionKey => (
                 <View key={actionKey} className="flex-row items-center justify-between py-2">
@@ -2129,7 +2204,7 @@ const RolesMembersScreen = () => {
       </View>
 
       {!selectedRole.isSystem && (
-        <TouchableOpacity 
+        <TouchableOpacity
           className="bg-blue-600 rounded-xl py-4 items-center mt-5"
           onPress={handleSaveRole}
           disabled={isLoading}
@@ -2143,7 +2218,7 @@ const RolesMembersScreen = () => {
           )}
         </TouchableOpacity>
       )}
-      
+
       {selectedRole.isSystem && (
         <View className="flex-row items-center justify-center bg-gray-50 p-4 rounded-xl mt-5 gap-2">
           <Ionicons name="information-circle" size={20} color="#666" />
@@ -2161,7 +2236,7 @@ const RolesMembersScreen = () => {
         <Text className="text-lg font-urbanistBold text-gray-900 mb-4">
           Add New Member
         </Text>
-        
+
         <View className="mb-4">
           <Text className="text-base font-urbanistSemiBold text-gray-900 mb-2">
             Full Name *
@@ -2220,10 +2295,10 @@ const RolesMembersScreen = () => {
             }`}>
               {getSelectedRoleName()}
             </Text>
-            <Ionicons 
-              name={showRoleDropdown ? "chevron-up" : "chevron-down"} 
-              size={20} 
-              color="#666" 
+            <Ionicons
+              name={showRoleDropdown ? "chevron-up" : "chevron-down"}
+              size={20}
+              color="#666"
             />
           </TouchableOpacity>
 
@@ -2234,7 +2309,7 @@ const RolesMembersScreen = () => {
                   <TouchableOpacity
                     key={role.id}
                     className="px-4 py-3 border-b border-gray-100"
-                    onPress={() => handleRoleSelect(role.id, role.name)}
+                    onPress={() => handleRoleSelect(role.id)}
                   >
                     <Text className="text-base font-urbanistMedium text-gray-900">
                       {role.name}
@@ -2248,12 +2323,62 @@ const RolesMembersScreen = () => {
             </View>
           )}
         </View>
+
+        {/* Projects multi-select */}
+        <View className="mb-4">
+          <Text className="text-base font-urbanistSemiBold text-gray-900 mb-2">
+            Assign Projects (optional)
+          </Text>
+          <TouchableOpacity
+            className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 flex-row justify-between items-center"
+            onPress={() => setShowProjectDropdown(!showProjectDropdown)}
+          >
+            <Text className={`text-base font-urbanistRegular ${
+              newMember.assignedProjects && newMember.assignedProjects.length ? 'text-gray-900' : 'text-gray-500'
+            }`}>
+              {getSelectedProjectsNames()}
+            </Text>
+            <Ionicons
+              name={showProjectDropdown ? "chevron-up" : "chevron-down"}
+              size={20}
+              color="#666"
+            />
+          </TouchableOpacity>
+
+          {showProjectDropdown && (
+            <View className="bg-white border border-gray-200 rounded-xl mt-2 max-h-48">
+              <ScrollView nestedScrollEnabled={true}>
+                {projects.length === 0 ? (
+                  <View className="px-4 py-3">
+                    <Text className="text-sm font-urbanistRegular text-gray-600">No projects available</Text>
+                  </View>
+                ) : projects.map(project => {
+                  const checked = newMember.assignedProjects.includes(project.id);
+                  return (
+                    <TouchableOpacity
+                      key={project.id}
+                      className="px-4 py-3 border-b border-gray-100 flex-row justify-between items-center"
+                      onPress={() => toggleProjectSelection(project.id)}
+                    >
+                      <View>
+                        <Text className="text-base font-urbanistMedium text-gray-900">{project.name}</Text>
+                      </View>
+                      <View style={{ width: 24, height: 24, borderRadius: 6, backgroundColor: checked ? '#0066FF' : '#fff', borderWidth: 1, borderColor: '#e5e7eb', alignItems: 'center', justifyContent: 'center' }}>
+                        {checked && <Ionicons name="checkmark" size={14} color="#fff" />}
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )}
+        </View>
       </View>
 
-      <TouchableOpacity 
+      <TouchableOpacity
         className={
           `rounded-xl py-4 items-center mt-5 ${
-            isLoading || !newMember.name.trim() || !newMember.email.trim() || 
+            isLoading || !newMember.name.trim() || !newMember.email.trim() ||
             !newMember.password.trim() || !newMember.roleId
               ? 'bg-gray-400'
               : 'bg-blue-600'
@@ -2261,7 +2386,7 @@ const RolesMembersScreen = () => {
         }
         onPress={handleCreateMember}
         disabled={
-          isLoading || !newMember.name.trim() || !newMember.email.trim() || 
+          isLoading || !newMember.name.trim() || !newMember.email.trim() ||
           !newMember.password.trim() || !newMember.roleId
         }
       >
@@ -2345,7 +2470,7 @@ const RolesMembersScreen = () => {
               placeholderTextColor="#999"
             />
           </View>
-          <TouchableOpacity 
+          <TouchableOpacity
             className="w-12 h-12 bg-blue-600 rounded-xl justify-center items-center"
             onPress={handleAddButtonPress}
           >
@@ -2385,8 +2510,6 @@ const RolesMembersScreen = () => {
         </View>
       </View>
 
-   
-
       {/* Role Bottom Sheet */}
       <Modal
         visible={showRoleSheet}
@@ -2394,12 +2517,12 @@ const RolesMembersScreen = () => {
         animationType="none"
         onRequestClose={closeRoleSheet}
       >
-        <TouchableOpacity 
+        <TouchableOpacity
           className="flex-1 bg-black/50 justify-end"
           activeOpacity={1}
           onPress={closeRoleSheet}
         >
-          <Animated.View 
+          <Animated.View
             className="bg-transparent rounded-t-3xl overflow-hidden max-h-[90%]"
             style={{ transform: [{ translateY: slideAnim }] }}
           >
@@ -2427,12 +2550,12 @@ const RolesMembersScreen = () => {
         animationType="none"
         onRequestClose={closeMemberSheet}
       >
-        <TouchableOpacity 
+        <TouchableOpacity
           className="flex-1 bg-black/50 justify-end"
           activeOpacity={1}
           onPress={closeMemberSheet}
         >
-          <Animated.View 
+          <Animated.View
             className="bg-transparent rounded-t-3xl overflow-hidden max-h-[90%]"
             style={{ transform: [{ translateY: slideAnim }] }}
           >
@@ -2459,7 +2582,7 @@ const RolesMembersScreen = () => {
                     <Text className="text-base font-urbanistRegular text-gray-600 mb-5">
                       {selectedMember.email}
                     </Text>
-                    
+
                     <View className="flex-row justify-between items-center w-full py-3 border-b border-gray-100">
                       <Text className="text-base font-urbanistSemiBold text-gray-900">
                         Role:
@@ -2480,6 +2603,16 @@ const RolesMembersScreen = () => {
                         {selectedMember.status}
                       </Text>
                     </View>
+                    {selectedMember.assignedProjects && selectedMember.assignedProjects.length > 0 && (
+                      <View className="w-full mt-3">
+                        <Text className="text-sm font-urbanistMedium text-gray-900 mb-2">Assigned Projects</Text>
+                        {selectedMember.assignedProjects.map(pid => (
+                          <View key={pid} className="py-2 border-b border-gray-100">
+                            <Text className="text-sm font-urbanistRegular text-gray-700">{projects.find(p => p.id === pid)?.name || pid}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    )}
                   </View>
                 </ScrollView>
               ) : (
@@ -2489,6 +2622,8 @@ const RolesMembersScreen = () => {
           </Animated.View>
         </TouchableOpacity>
       </Modal>
+
+
     </View>
   );
 };
