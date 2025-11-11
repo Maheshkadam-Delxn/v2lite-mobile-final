@@ -435,7 +435,7 @@ const ViewProposal = ({ navigation }) => {
       </View>
 
       {/* Bottom Navigation */}
-      <BottomNavbar />
+     
     </SafeAreaView>
   )
 }

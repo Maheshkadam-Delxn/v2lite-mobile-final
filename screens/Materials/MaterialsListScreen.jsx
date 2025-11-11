@@ -1001,6 +1001,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Header from 'components/Header';
 
 const BASE_URL = 'https://skystruct-lite-backend.vercel.app';
 const MATERIALS_API = `${BASE_URL}/api/materials`;
@@ -1376,6 +1377,15 @@ const MaterialsListScreen = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
+<Header
+          title="Material Management"
+          // showBackButton={true}
+          rightIcon="filter-outline"
+          
+          backgroundColor="#0066FF"
+          titleColor="white"
+          iconColor="white"
+        />
       {/* === Sub Tabs (UNCHANGED) === */}
       <View className="mb-1 mt-3 flex-row px-4">
         <FlatList
