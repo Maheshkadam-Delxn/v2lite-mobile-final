@@ -1,23 +1,24 @@
-import { View, Text, TouchableOpacity, StatusBar, Dimensions, Modal, Animated, ScrollView, Image, Alert } from 'react-native'
-import React, { useState, useEffect } from 'react'
+import { View, Text, TouchableOpacity, StatusBar, TextInput, Modal, Animated, ScrollView, Image, Alert } from 'react-native'
+import React, { useState, useEffect, useRef } from 'react'
 import { useNavigation } from '@react-navigation/native'
 import { MaterialIcons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import Header from '../../components/Header'
-import Inputfield from '../../components/Inputfield'
-const { width, height } = Dimensions.get('window')
 
 const API_URL = 'https://skystruct-lite-backend.vercel.app/api/auth/login'
 
-const SignInScreen = () => {
+const ModernSignInScreen = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
   const [modalVisible, setModalVisible] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [fadeAnim] = useState(new Animated.Value(0))
-  const [scaleAnim] = useState(new Animated.Value(0.8))
+  const [emailFocused, setEmailFocused] = useState(false)
+  const [passwordFocused, setPasswordFocused] = useState(false)
+
+  const fadeAnim = useRef(new Animated.Value(0)).current
+  const scaleAnim = useRef(new Animated.Value(0.9)).current
 
   const navigation = useNavigation()
 
@@ -45,28 +46,16 @@ const SignInScreen = () => {
         const data = await response.json()
         console.log('Login successful:', data)
 
-        // Log token if present (nested under data.data)
         if (data.data?.token) {
-          console.log('Received token from API:', data.data.token)
           await AsyncStorage.setItem('userToken', data.data.token)
-
-          // Verify token was saved correctly
-          const savedToken = await AsyncStorage.getItem('userToken')
-          console.log('Token saved in AsyncStorage:', savedToken)
-        } else {
-          console.log('No token field in response data.')
         }
 
-        // Optionally store user data if returned
         if (data.data?.user) {
           await AsyncStorage.setItem('userData', JSON.stringify(data.data.user))
-          console.log('User data saved:', data.data.user)
         }
 
-        // Store remembered email if checked
         if (rememberMe) {
           await AsyncStorage.setItem('rememberedEmail', email)
-          console.log('Email remembered:', email)
         }
 
         setModalVisible(true)
@@ -77,12 +66,10 @@ const SignInScreen = () => {
           } else {
             navigation.navigate('HomeOwner');
           }
- 
         }, 2000)
       } else {
         const errorData = await response.json().catch(() => ({}))
         Alert.alert('Login Failed', errorData.message || 'Invalid email or password.')
-        console.log('Login failed, response status:', response.status, errorData)
       }
     } catch (error) {
       console.error('Network error during login:', error)
@@ -92,7 +79,6 @@ const SignInScreen = () => {
     }
   }
 
-  // Load remembered email on mount
   useEffect(() => {
     const loadRememberedEmail = async () => {
       try {
@@ -123,245 +109,330 @@ const SignInScreen = () => {
           useNativeDriver: true,
         }),
       ]).start()
-
-      const timer = setTimeout(() => {
-        setModalVisible(false)
-         navigation.navigate('MainApp');
-      }, 2000)
-
-      return () => clearTimeout(timer)
     } else {
       fadeAnim.setValue(0)
-      scaleAnim.setValue(0.8)
+      scaleAnim.setValue(0.9)
     }
   }, [modalVisible])
 
-  const handleSocialLogin = (provider) => {
-    console.log(`${provider} login attempted`)
-    // TODO: Implement social auth
-  }
-
-  const handlereset = () => navigation.navigate('ResetPassword')
-
   return (
-    <View className="flex-1 bg-white">
-      {/* StatusBar with dark content but white background */}
+    <View style={{ flex: 1, backgroundColor: '#ffffff' }}>
+      <Header/>
       <StatusBar barStyle="light-content" backgroundColor="#ffffff" />
-      
-      {/* Header Component */}
-      <Header />
-      
-      <ScrollView 
-        className="flex-1" 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 20 }}
-      >
-        {/* Header Section - Directly on white background */}
-        <View className="px-6 pt-6">
-          <Text style={{ fontSize: 28, fontWeight: '600', color: '#000000', marginBottom: 12 }}>
-            Welcome back 👋
-          </Text>
-          <Text style={{ fontSize: 15, fontWeight: '400', color: '#6B7280', lineHeight: 22 }}>
-            Please enter your email & password to sign in.
-          </Text>
-        </View>
 
-        {/* Email Input - Directly on white background */}
-        <View className="px-6 mt-8 pt-6">
-          <Inputfield
-            label="Email"
-            placeholder="Email"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            icon={<MaterialIcons name="email" size={24} color="#9CA3AF" />}
+     
+<ScrollView 
+  showsVerticalScrollIndicator={false}
+  contentContainerStyle={{ 
+    flexGrow: 1, 
+    justifyContent: 'center', 
+    paddingHorizontal: 24, 
+    paddingVertical: 20 
+  }}
+>
+        {/* Logo */}
+        <View style={{ alignItems: 'center', marginBottom: 32 }}>
+          <Image 
+            source={require('../../assets/logo.png')} 
+            style={{ width: 120, height: 120 }} 
+            resizeMode="contain"
           />
         </View>
 
-        {/* Password Input - Directly on white background */}
-        <View className="px-6 pt-6">
-          <Inputfield
-            label="Password"
-            placeholder="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!showPassword}
-            icon={
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                <MaterialIcons 
-                  name={showPassword ? "visibility" : "visibility-off"} 
-                  size={24} 
-                  color="#2563EB" 
-                />
-              </TouchableOpacity>
-            }
-            onIconPress={() => setShowPassword(!showPassword)}
-          />
+        {/* Header */}
+        <View style={{ marginBottom: 40 }}>
+          <Text style={{ 
+            fontSize: 32, 
+            fontWeight: '700', 
+            color: '#000000', 
+            marginBottom: 8,
+            fontFamily: 'Inter', // Add your font family if needed
+          }}>
+            Welcome back
+          </Text>
+          <Text style={{ 
+            fontSize: 16, 
+            color: '#6B7280', 
+            lineHeight: 24,
+            fontFamily: 'Inter', // Add your font family if needed
+          }}>
+            Sign in to your account
+          </Text>
         </View>
 
-        {/* Remember Me & Forgot Password - Directly on white background */}
-        <View className="px-6 mt-6">
-          <View className="flex-row items-center justify-between">
-            <View className="flex-row items-center">
-              <TouchableOpacity
-                className="mr-3"
-                onPress={() => setRememberMe(!rememberMe)}
-              >
-                <View
-                  className={`w-5 h-5 rounded border-2 items-center justify-center ${
-                    rememberMe ? 'bg-blue-600 border-blue-600' : 'border-gray-300'
-                  }`}
-                >
-                  {rememberMe && (
-                    <MaterialIcons name="check" size={12} color="#FFFFFF" />
-                  )}
-                </View>
-              </TouchableOpacity>
-              <Text style={{ fontSize: 14, fontWeight: '400', color: '#374151' }}>
-                Remember me
-              </Text>
-            </View>
-            
-            <TouchableOpacity onPress={handlereset}>
-              <Text style={{ fontSize: 14, fontWeight: '600', color: '#2563EB' }}>
-                Forgot password?
-              </Text>
+        {/* Email Input */}
+        <View style={{ marginBottom: 20 }}>
+          <Text style={{ 
+            fontSize: 14, 
+            fontWeight: '600', 
+            color: '#111827', 
+            marginBottom: 8,
+            fontFamily: 'Inter', // Add your font family if needed
+          }}>
+            Email
+          </Text>
+          <View style={{ 
+            flexDirection: 'row', 
+            alignItems: 'center', 
+            backgroundColor: '#F9FAFB', 
+            borderRadius: 12, 
+            borderWidth: 1.5, 
+            borderColor: emailFocused ? '#2563EB' : '#E5E7EB', 
+            paddingHorizontal: 16, 
+            height: 52 
+          }}>
+            <MaterialIcons name="email" size={20} color={emailFocused ? '#2563EB' : '#9CA3AF'} />
+            <TextInput
+              value={email}
+              onChangeText={setEmail}
+              onFocus={() => setEmailFocused(true)}
+              onBlur={() => setEmailFocused(false)}
+              placeholder="Enter your email"
+              placeholderTextColor="#9CA3AF"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              style={{ 
+                flex: 1, 
+                marginLeft: 12, 
+                fontSize: 15, 
+                color: '#111827',
+                fontFamily: 'Inter', // Add your font family if needed
+              }}
+            />
+          </View>
+        </View>
+
+        {/* Password Input */}
+        <View style={{ marginBottom: 20 }}>
+          <Text style={{ 
+            fontSize: 14, 
+            fontWeight: '600', 
+            color: '#111827', 
+            marginBottom: 8,
+            fontFamily: 'Inter', // Add your font family if needed
+          }}>
+            Password
+          </Text>
+          <View style={{ 
+            flexDirection: 'row', 
+            alignItems: 'center', 
+            backgroundColor: '#F9FAFB', 
+            borderRadius: 12, 
+            borderWidth: 1.5, 
+            borderColor: passwordFocused ? '#2563EB' : '#E5E7EB', 
+            paddingHorizontal: 16, 
+            height: 52 
+          }}>
+            <MaterialIcons name="lock" size={20} color={passwordFocused ? '#2563EB' : '#9CA3AF'} />
+            <TextInput
+              value={password}
+              onChangeText={setPassword}
+              onFocus={() => setPasswordFocused(true)}
+              onBlur={() => setPasswordFocused(false)}
+              placeholder="Enter your password"
+              placeholderTextColor="#9CA3AF"
+              secureTextEntry={!showPassword}
+              style={{ 
+                flex: 1, 
+                marginLeft: 12, 
+                fontSize: 15, 
+                color: '#111827',
+                fontFamily: 'Inter', // Add your font family if needed
+              }}
+            />
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+              <MaterialIcons 
+                name={showPassword ? "visibility" : "visibility-off"} 
+                size={20} 
+                color="#2563EB" 
+              />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Sign In Button - Directly on white background */}
-        <View className="px-6 mt-6">
-          <TouchableOpacity
-            className="bg-blue-600 rounded-2xl items-center shadow-lg"
-            style={{ height: 56 }}
-            onPress={handleLogin}
-            disabled={isLoading}
+        {/* Remember Me & Forgot Password */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 }}>
+          <TouchableOpacity 
+            onPress={() => setRememberMe(!rememberMe)}
+            style={{ flexDirection: 'row', alignItems: 'center' }}
           >
-            <View className="flex-1 items-center justify-center">
-              <Text style={{ fontSize: 16, fontWeight: '600', color: '#FFFFFF' }}>
-                {isLoading ? 'Signing in...' : 'Sign in'}
-              </Text>
+            <View style={{ 
+              width: 20, 
+              height: 20, 
+              borderRadius: 6, 
+              borderWidth: 2, 
+              borderColor: rememberMe ? '#2563EB' : '#D1D5DB',
+              backgroundColor: rememberMe ? '#2563EB' : '#ffffff',
+              justifyContent: 'center', 
+              alignItems: 'center' 
+            }}>
+              {rememberMe && (
+                <MaterialIcons name="check" size={14} color="#ffffff" />
+              )}
             </View>
+            <Text style={{ 
+              marginLeft: 8, 
+              fontSize: 14, 
+              color: '#374151',
+              fontFamily: 'Inter', // Add your font family if needed
+            }}>
+              Remember me
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity onPress={() => navigation.navigate('ResetPassword')}>
+            <Text style={{ 
+              fontSize: 14, 
+              fontWeight: '600', 
+              color: '#2563EB',
+              fontFamily: 'Inter', // Add your font family if needed
+            }}>
+              Forgot password?
+            </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Sign Up Link - Directly on white background */}
-        <View className="px-6 mt-6">
-          <View className="flex-row justify-center">
-            <Text style={{ fontSize: 14, fontWeight: '400', color: '#6B7280' }}>
-              Don't have an account?{' '}
+        {/* Sign In Button */}
+        <TouchableOpacity
+          onPress={handleLogin}
+          disabled={isLoading}
+          activeOpacity={0.9}
+          style={{ 
+            backgroundColor: '#2563EB', 
+            height: 52, 
+            borderRadius: 12, 
+            justifyContent: 'center', 
+            alignItems: 'center',
+            marginBottom: 24,
+            opacity: isLoading ? 0.7 : 1
+          }}
+        >
+          <Text style={{ 
+            fontSize: 16, 
+            fontWeight: '600', 
+            color: '#ffffff',
+            fontFamily: 'Inter', // Add your font family if needed
+          }}>
+            {isLoading ? 'Signing in...' : 'Sign in'}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Sign Up Link */}
+        <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 32 }}>
+          <Text style={{ 
+            fontSize: 14, 
+            color: '#6B7280',
+            fontFamily: 'Inter', // Add your font family if needed
+          }}>
+            Don't have an account?{' '}
+          </Text>
+          <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
+            <Text style={{ 
+              fontSize: 14, 
+              fontWeight: '600', 
+              color: '#2563EB',
+              fontFamily: 'Inter', // Add your font family if needed
+            }}>
+              Sign up
             </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-              <Text style={{ fontSize: 14, fontWeight: '600', color: '#2563EB' }}>
-                Sign up
-              </Text>
-            </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
         </View>
 
-        {/* Social Login Divider - Directly on white background */}
-        <View className="px-6 mt-12">
-          <View className="flex-row items-center w-full">
-            <View className="flex-1 h-px bg-gray-300" />
-            <Text style={{ fontSize: 14, fontWeight: '400', color: '#6B7280', marginHorizontal: 16 }}>
-              or continue with
-            </Text>
-            <View className="flex-1 h-px bg-gray-300" />
-          </View>
+        {/* Divider */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}>
+          <View style={{ flex: 1, height: 1, backgroundColor: '#E5E7EB' }} />
+          <Text style={{ 
+            marginHorizontal: 16, 
+            fontSize: 13, 
+            color: '#9CA3AF',
+            fontFamily: 'Inter', // Add your font family if needed
+          }}>
+            or
+          </Text>
+          <View style={{ flex: 1, height: 1, backgroundColor: '#E5E7EB' }} />
         </View>
 
-        {/* Social Login Buttons - Directly on white background */}
-      <View className="px-6 mt-6">
-  <View className="flex-row justify-center w-full px-4">
-    <TouchableOpacity
-      className="w-16 h-16 rounded-full items-center justify-center border border-gray-300 bg-white shadow-sm"
-      onPress={() => handleSocialLogin('Google')}
-    >
-      <Image 
-        source={require('../../assets/google.png')} 
-        style={{ width: 24, height: 24 }} 
-        resizeMode="contain"
-      />
-    </TouchableOpacity>
-  </View>
-</View>
+        {/* Social Login */}
+        <TouchableOpacity
+          style={{ 
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: 52, 
+            borderRadius: 12, 
+            backgroundColor: '#ffffff', 
+            borderWidth: 1.5, 
+            borderColor: '#E5E7EB'
+          }}
+          activeOpacity={0.7}
+        >
+          <Image 
+            source={require('../../assets/google.png')} 
+            style={{ width: 20, height: 20, marginRight: 12 }} 
+            resizeMode="contain"
+          />
+          <Text style={{ 
+            fontSize: 15, 
+            fontWeight: '600', 
+            color: '#374151',
+            fontFamily: 'Inter', // Add your font family if needed
+          }}>
+            Continue with Google
+          </Text>
+        </TouchableOpacity>
       </ScrollView>
 
-      {/* Success Modal - Updated to match CreatePasswordScreen style */}
+      {/* Success Modal */}
       <Modal
         visible={modalVisible}
         transparent={true}
         animationType="none"
         onRequestClose={() => setModalVisible(false)}
       >
-        <View className="flex-1 justify-center items-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <Animated.View
             style={{
               opacity: fadeAnim,
               transform: [{ scale: scaleAnim }],
             }}
           >
-            <View
-              style={{
-                width: 340,
-                height: 500,
-                backgroundColor: '#fff',
-                borderRadius: 30,
-                alignItems: 'center',
-                justifyContent: 'flex-start',
-                elevation: 15,
-                zIndex: 999,
-                overflow: 'hidden',
-                paddingHorizontal: 24,
-                paddingTop: 50,
-              }}
-            >
-              {/* Success Image - Using signsuccess.png */}
-              <Image
-                source={require('../../assets/signsuccess.png')}
-                style={{
-                  width: 160,
-                  height: 160,
-                  resizeMode: 'contain',
-                  marginBottom: 30,
-                }}
-              />
+            <View style={{ 
+              width: 300, 
+              backgroundColor: '#ffffff', 
+              borderRadius: 24, 
+              alignItems: 'center', 
+              padding: 40
+            }}>
+              <View style={{ 
+                width: 80, 
+                height: 80, 
+                borderRadius: 40, 
+                backgroundColor: '#10B981', 
+                justifyContent: 'center', 
+                alignItems: 'center', 
+                marginBottom: 24 
+              }}>
+                <MaterialIcons name="check" size={48} color="#ffffff" />
+              </View>
 
-              {/* Text Content */}
-              <Text
-                style={{
-                  fontSize: 24,
-                  fontWeight: '700',
-                  color: '#235DFF',
-                  textAlign: 'center',
-                  marginBottom: 8,
-                }}
-              >
-                Sign In{'\n'}Successful!
+              <Text style={{ 
+                fontSize: 24, 
+                fontWeight: '700', 
+                color: '#111827', 
+                textAlign: 'center', 
+                marginBottom: 8,
+                fontFamily: 'Inter', // Add your font family if needed
+              }}>
+                Success!
               </Text>
 
-              <Text
-                style={{
-                  fontSize: 16,
-                  color: '#6B7280',
-                  textAlign: 'center',
-                  marginBottom: 4,
-                }}
-              >
-                Please wait...
-              </Text>
-
-              <Text
-                style={{
-                  fontSize: 14,
-                  color: '#9CA3AF',
-                  textAlign: 'center',
-                  marginTop: 20,
-                }}
-              >
-                You will be redirected to the homepage
+              <Text style={{ 
+                fontSize: 15, 
+                color: '#6B7280', 
+                textAlign: 'center',
+                fontFamily: 'Inter', // Add your font family if needed
+              }}>
+                Redirecting to home...
               </Text>
             </View>
           </Animated.View>
@@ -371,4 +442,4 @@ const SignInScreen = () => {
   )
 }
 
-export default SignInScreen
+export default ModernSignInScreen
