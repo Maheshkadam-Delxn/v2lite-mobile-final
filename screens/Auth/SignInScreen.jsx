@@ -70,6 +70,15 @@ const SignInScreen = () => {
         }
 
         setModalVisible(true)
+        setTimeout(() => {
+          setModalVisible(false)
+          if (data.data.user.role === "admin") {
+            navigation.navigate('MainApp');
+          } else {
+            navigation.navigate('HomeOwner');
+          }
+ 
+        }, 2000)
       } else {
         const errorData = await response.json().catch(() => ({}))
         Alert.alert('Login Failed', errorData.message || 'Invalid email or password.')
@@ -117,7 +126,7 @@ const SignInScreen = () => {
 
       const timer = setTimeout(() => {
         setModalVisible(false)
-        navigation.navigate('MainAppScreen')
+         navigation.navigate('MainApp');
       }, 2000)
 
       return () => clearTimeout(timer)
