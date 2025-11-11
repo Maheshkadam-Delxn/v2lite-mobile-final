@@ -15,7 +15,7 @@ const CreateProposalScreen = ({ navigation }) => {
   const [startDate, setStartDate] = useState('2025-03-28');
   const [endDate, setEndDate] = useState('2026-03-22');
   const [notes, setNotes] = useState(
-    'The budget includes material costs, labor, and subcontractor fees.Client approvals are required at key project milestones.Additional customization may impact the final budget.'
+    'The budget includes material costsasdfasdfadsf, labor, and subcontractor fees.Client approvals are required at key project milestones.Additional customization may impact the final budget.'
   );
 
   const [proposalItems, setProposalItems] = useState([

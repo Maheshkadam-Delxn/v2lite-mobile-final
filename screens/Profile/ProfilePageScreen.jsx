@@ -261,10 +261,11 @@ const ProfilePageScreen = () => {
               console.log('✅ User logged out successfully.')
 
               // Navigate to SignIn screen
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'SignIn' }],
-              })
+              navigation.navigate('Auth')
+            //   navigation.reset({
+            //     index: 0,
+            //     routes: [{ name: 'SignIn' }],
+            //   })
             } catch (error) {
               console.error('Error during logout:', error)
               Alert.alert('Error', 'Something went wrong while logging out.')

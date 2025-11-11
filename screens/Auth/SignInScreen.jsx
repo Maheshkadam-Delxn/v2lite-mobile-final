@@ -141,10 +141,10 @@
 //     <View className="flex-1 bg-white">
 //       {/* StatusBar with dark content but white background */}
 //       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-      
+
 //       {/* Header Component */}
 //       <Header />
-      
+
 //       <ScrollView 
 //         className="flex-1" 
 //         showsVerticalScrollIndicator={false}
@@ -214,7 +214,7 @@
 //               </TouchableOpacity>
 //               <Text className="text-gray-700 text-sm">Remember me</Text>
 //             </View>
-            
+
 //             <TouchableOpacity onPress={handlereset}>
 //               <Text className="text-blue-600 text-sm font-medium">Forgot password?</Text>
 //             </TouchableOpacity>
@@ -446,13 +446,12 @@ const SignInScreen = () => {
         setModalVisible(true)
         setTimeout(() => {
           setModalVisible(false)
-          if(data.data.user.role=="admin"){
-             navigation.navigate('MainAppScreen');
-            }
-            else{
-              navigation.navigate('CustomerChooseTemplate');
-            }
-         
+          if (data.data.user.role === "admin") {
+            navigation.navigate('MainApp');
+          } else {
+            navigation.navigate('HomeOwner');
+          }
+
         }, 2000)
       } else {
         const errorData = await response.json().catch(() => ({}))
@@ -492,18 +491,18 @@ const SignInScreen = () => {
     <View className="flex-1 bg-white">
       {/* StatusBar with dark content but white background */}
       <StatusBar barStyle="light-content" backgroundColor="#ffffff" />
-      
+
       {/* Header Component */}
       <Header />
-      
-      <ScrollView 
+
+      <ScrollView
         style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 40 }}
       >
         {/* Logo Section */}
-        <View style={{ 
-          alignItems: 'center', 
+        <View style={{
+          alignItems: 'center',
           paddingTop: 60,
           paddingBottom: 20
         }}>
@@ -518,16 +517,16 @@ const SignInScreen = () => {
           }}>
             <MaterialIcons name="lock" size={40} color="#FFFFFF" />
           </View>
-          <Text style={{ 
-            fontSize: 32, 
-            fontWeight: '800', 
+          <Text style={{
+            fontSize: 32,
+            fontWeight: '800',
             color: '#1A202C',
-            marginBottom: 8 
+            marginBottom: 8
           }}>
             Welcome Back
           </Text>
-          <Text style={{ 
-            fontSize: 16, 
+          <Text style={{
+            fontSize: 16,
             color: '#718096',
             textAlign: 'center',
             paddingHorizontal: 40,
@@ -538,16 +537,16 @@ const SignInScreen = () => {
         </View>
 
         {/* Main Form Container */}
-        <View style={{ 
-          marginHorizontal: 24, 
-          marginTop: 40 
+        <View style={{
+          marginHorizontal: 24,
+          marginTop: 40
         }}>
           {/* Email Input */}
           <View style={{ marginBottom: 20 }}>
-            <Text style={{ 
-              fontSize: 14, 
-              fontWeight: '600', 
-              color: '#2D3748', 
+            <Text style={{
+              fontSize: 14,
+              fontWeight: '600',
+              color: '#2D3748',
               marginBottom: 8,
               marginLeft: 4
             }}>
@@ -579,10 +578,10 @@ const SignInScreen = () => {
 
           {/* Password Input */}
           <View style={{ marginBottom: 16 }}>
-            <Text style={{ 
-              fontSize: 14, 
-              fontWeight: '600', 
-              color: '#2D3748', 
+            <Text style={{
+              fontSize: 14,
+              fontWeight: '600',
+              color: '#2D3748',
               marginBottom: 8,
               marginLeft: 4
             }}>
@@ -608,23 +607,23 @@ const SignInScreen = () => {
                   style={{ fontSize: 15, color: '#2D3748' }}
                 />
               </View>
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => setShowPassword(!showPassword)}
                 style={{ padding: 4 }}
               >
-                <MaterialIcons 
-                  name={showPassword ? "visibility" : "visibility-off"} 
-                  size={22} 
-                  color="#667EEA" 
+                <MaterialIcons
+                  name={showPassword ? "visibility" : "visibility-off"}
+                  size={22}
+                  color="#667EEA"
                 />
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Remember Me & Forgot Password */}
-          <View style={{ 
-            flexDirection: 'row', 
-            alignItems: 'center', 
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
             justifyContent: 'space-between',
             marginBottom: 28,
             paddingHorizontal: 4
@@ -655,7 +654,7 @@ const SignInScreen = () => {
                 Remember me
               </Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity onPress={handlereset} activeOpacity={0.7}>
               <Text style={{ fontSize: 14, color: '#667EEA', fontWeight: '600' }}>
                 Forgot Password?
@@ -682,9 +681,9 @@ const SignInScreen = () => {
               marginBottom: 24,
             }}
           >
-            <Text style={{ 
-              color: '#FFFFFF', 
-              fontSize: 16, 
+            <Text style={{
+              color: '#FFFFFF',
+              fontSize: 16,
               fontWeight: '700',
               letterSpacing: 0.5
             }}>
@@ -696,17 +695,17 @@ const SignInScreen = () => {
           <View style={{ alignItems: 'center', marginBottom: 32 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Text style={{ color: '#718096', fontSize: 15 }}>
-                Don't have an account? 
+                Don't have an account?
               </Text>
-              <TouchableOpacity 
-                onPress={() => navigation.navigate('SignUp')} 
+              <TouchableOpacity
+                onPress={() => navigation.navigate('SignUp')}
                 activeOpacity={0.7}
               >
-                <Text style={{ 
-                  color: '#667EEA', 
-                  fontSize: 15, 
-                  fontWeight: '700', 
-                  marginLeft: 4 
+                <Text style={{
+                  color: '#667EEA',
+                  fontSize: 15,
+                  fontWeight: '700',
+                  marginLeft: 4
                 }}>
                   Sign Up
                 </Text>
@@ -715,16 +714,16 @@ const SignInScreen = () => {
           </View>
 
           {/* Divider */}
-          <View style={{ 
-            flexDirection: 'row', 
+          <View style={{
+            flexDirection: 'row',
             alignItems: 'center',
             marginBottom: 28
           }}>
             <View style={{ flex: 1, height: 1, backgroundColor: '#E2E8F0' }} />
-            <Text style={{ 
-              fontSize: 13, 
-              fontWeight: '600', 
-              color: '#A0AEC0', 
+            <Text style={{
+              fontSize: 13,
+              fontWeight: '600',
+              color: '#A0AEC0',
               marginHorizontal: 16,
               letterSpacing: 0.5
             }}>
@@ -734,8 +733,8 @@ const SignInScreen = () => {
           </View>
 
           {/* Social Login Buttons */}
-          <View style={{ 
-            flexDirection: 'row', 
+          <View style={{
+            flexDirection: 'row',
             justifyContent: 'center',
             gap: 16,
             marginBottom: 40
@@ -761,7 +760,7 @@ const SignInScreen = () => {
             >
               <MaterialIcons name="mail" size={28} color="#DB4437" />
             </TouchableOpacity>
-            
+
             <TouchableOpacity
               onPress={() => handleSocialLogin('Apple')}
               activeOpacity={0.7}
@@ -783,7 +782,7 @@ const SignInScreen = () => {
             >
               <MaterialIcons name="phone-iphone" size={28} color="#000000" />
             </TouchableOpacity>
-            
+
             <TouchableOpacity
               onPress={() => handleSocialLogin('Facebook')}
               activeOpacity={0.7}
@@ -805,7 +804,7 @@ const SignInScreen = () => {
             >
               <MaterialIcons name="facebook" size={28} color="#1877F2" />
             </TouchableOpacity>
-            
+
             <TouchableOpacity
               onPress={() => handleSocialLogin('Twitter')}
               activeOpacity={0.7}
@@ -838,11 +837,11 @@ const SignInScreen = () => {
         animationType="fade"
         onRequestClose={() => setModalVisible(false)}
       >
-        <View style={{ 
-          flex: 1, 
-          justifyContent: 'center', 
+        <View style={{
+          flex: 1,
+          justifyContent: 'center',
           alignItems: 'center',
-          backgroundColor: 'rgba(0, 0, 0, 0.65)' 
+          backgroundColor: 'rgba(0, 0, 0, 0.65)'
         }}>
           <View
             style={{
@@ -909,30 +908,30 @@ const SignInScreen = () => {
             </Text>
 
             {/* Loading Indicator */}
-            <View style={{ 
-              flexDirection: 'row', 
+            <View style={{
+              flexDirection: 'row',
               marginTop: 24,
               gap: 8
             }}>
-              <View style={{ 
-                width: 8, 
-                height: 8, 
-                borderRadius: 4, 
-                backgroundColor: '#667EEA' 
+              <View style={{
+                width: 8,
+                height: 8,
+                borderRadius: 4,
+                backgroundColor: '#667EEA'
               }} />
-              <View style={{ 
-                width: 8, 
-                height: 8, 
-                borderRadius: 4, 
+              <View style={{
+                width: 8,
+                height: 8,
+                borderRadius: 4,
                 backgroundColor: '#667EEA',
-                opacity: 0.6 
+                opacity: 0.6
               }} />
-              <View style={{ 
-                width: 8, 
-                height: 8, 
-                borderRadius: 4, 
+              <View style={{
+                width: 8,
+                height: 8,
+                borderRadius: 4,
                 backgroundColor: '#667EEA',
-                opacity: 0.3 
+                opacity: 0.3
               }} />
             </View>
           </View>

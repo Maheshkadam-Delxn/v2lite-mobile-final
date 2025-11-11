@@ -401,7 +401,7 @@ const ProposalsListScreen = () => {
         />
 
         {/* Search and Add Button - No top padding for flush UI */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 12, backgroundColor: '#F5F5F5' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 12, backgroundColor: '#F5F5F5' }} className='mt-4'>
           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: 'white', borderRadius: 12, paddingHorizontal: 12, height: 48, marginRight: 12 }}>
             <Feather name="search" size={20} color="#999999" />
             <TextInput
