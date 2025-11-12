@@ -1,460 +1,3 @@
-// import {
-//   View,
-//   Text,
-//   TextInput,
-//   ScrollView,
-//   TouchableOpacity,
-//   Image,
-//   ActivityIndicator,
-//   RefreshControl,
-//   Alert,
-// } from 'react-native';
-// import React, { useState, useCallback, useMemo, useRef } from 'react';
-// import { useNavigation, useFocusEffect } from '@react-navigation/native';
-// import Header from 'components/Header';
-// import { Ionicons } from '@expo/vector-icons';
-// import BottomNavBar from 'components/BottomNavbar';
-// import AsyncStorage from '@react-native-async-storage/async-storage';
-// import { GestureHandlerRootView } from 'react-native-gesture-handler';
-// import Swipeable from 'react-native-gesture-handler/Swipeable';
-// import { RectButton } from 'react-native-gesture-handler';
-
-// const API_URL = 'https://skystruct-lite-backend.vercel.app/api/projects';
-// const TOKEN_KEY = 'userToken';
-
-// const ProjectsListScreen = () => {
-//   const navigation = useNavigation();
-
-//   // state
-//   const [projects, setProjects] = useState([]); // from API
-//   const [isLoading, setIsLoading] = useState(true);
-//   const [refreshing, setRefreshing] = useState(false);
-//   const [searchQuery, setSearchQuery] = useState('');
-//   const [error, setError] = useState(null);
-  
-//   // Use ref instead of state for swipeable row to prevent re-renders
-//   const swipeableRowRef = useRef(null);
-
-//   // map API item -> UI project shape
-//   const mapItemToProject = (item) => {
-//     const name = item.name || item.title || 'Untitled Project';
-//     const location = item.location || item.address || (item.site && item.site.address) || 'Address not provided';
-//     const dueDateRaw = item.dueDate || item.deadline || item.endDate || item.due || item.createdAt;
-//     const dueDate = dueDateRaw ? new Date(dueDateRaw).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
-//     const status = item.status || (item.isActive ? 'In Progress' : 'Completed') || 'Unknown';
-//     const progress = typeof item.progress === 'number' ? item.progress : item.percentage || 0;
-//     const imageUrl = item.image || item.imageUrl || item.coverImage || item.thumbnail || null;
-//     return {
-//       id: item._id || item.id || Math.random().toString(36).slice(2),
-//       name,
-//       location,
-//       dueDate,
-//       status,
-//       statusColor: item.statusColor || (status === 'Completed' ? 'bg-emerald-500' : 'bg-blue-600'),
-//       progress: Math.min(Math.max(parseInt(progress || 0, 10), 0), 100),
-//       imageUrl,
-//       raw: item,
-//     };
-//   };
-
-//   // fetch projects with verbose logging
-//   const fetchProjects = useCallback(async () => {
-//     setError(null);
-//     try {
-//       if (!refreshing) setIsLoading(true);
-
-//       console.log('[Projects] fetchProjects -> start');
-//       const token = await AsyncStorage.getItem(TOKEN_KEY);
-//       console.log('[Projects] token present:', !!token, ' (key used:', TOKEN_KEY, ')');
-
-//       const startedAt = Date.now();
-//       const response = await fetch(API_URL, {
-//         method: 'GET',
-//         headers: {
-//           'Content-Type': 'application/json',
-//           ...(token && { Authorization: `Bearer ${token}` }),
-//         },
-//       });
-//       const tookMs = Date.now() - startedAt;
-
-//       // response summary
-//       const headersArr = Array.from(response.headers.entries ? response.headers.entries() : []);
-//       console.log('[Projects] response summary:', {
-//         status: response.status,
-//         ok: response.ok,
-//         url: response.url,
-//         tookMs,
-//         headersPreview: headersArr.slice(0, 20),
-//       });
-
-//       // parse body
-//       const json = await response.json().catch((e) => {
-//         console.warn('[Projects] failed to parse JSON body', e);
-//         return {};
-//       });
-//       console.log('[Projects] parsed JSON body:', json);
-
-//       // accept [] OR { data: [...] }
-//       const items = Array.isArray(json) ? json : Array.isArray(json.data) ? json.data : [];
-
-//       console.log('[Projects] detected items length:', items.length);
-
-//       if (!Array.isArray(items) || items.length === 0) {
-//         console.log('[Projects] No projects found, setting empty array');
-//         setProjects([]);
-//       } else {
-//         const mapped = items.map(mapItemToProject);
-//         console.log('[Projects] mapped projects (first):', mapped[0]);
-//         setProjects(mapped);
-//       }
-//     } catch (err) {
-//       console.error('[Projects] fetch error:', err);
-//       setError('Failed to fetch projects. See console for details.');
-//       setProjects([]);
-//     } finally {
-//       setIsLoading(false);
-//       setRefreshing(false);
-//     }
-//   }, [refreshing]);
-
-//   // run once on mount and again whenever screen focuses (handles navigate after login)
-//   useFocusEffect(
-//     useCallback(() => {
-//       console.log('[Projects] screen focused — fetching projects');
-//       fetchProjects();
-//       return () => {
-//         // cleanup when unfocused - close any open swipeable
-//         if (swipeableRowRef.current) {
-//           swipeableRowRef.current.close();
-//           swipeableRowRef.current = null;
-//         }
-//         console.log('[Projects] screen unfocused');
-//       };
-//     }, [fetchProjects])
-//   );
-
-//   // pull-to-refresh handler
-//   const onRefresh = () => {
-//     setRefreshing(true);
-//     fetchProjects();
-//   };
-
-//   // delete project function
-//   const deleteProject = async (projectId) => {
-//     try {
-//       const token = await AsyncStorage.getItem(TOKEN_KEY);
-      
-//       // Close the swipeable row
-//       if (swipeableRowRef.current) {
-//         swipeableRowRef.current.close();
-//         swipeableRowRef.current = null;
-//       }
-
-//       // Optimistically remove from UI
-//       setProjects(prev => prev.filter(project => project.id !== projectId));
-
-//       // API call to delete from backend
-//       const response = await fetch(`${API_URL}/${projectId}`, {
-//         method: 'DELETE',
-//         headers: {
-//           'Content-Type': 'application/json',
-//           ...(token && { Authorization: `Bearer ${token}` }),
-//         },
-//       });
-
-//       if (!response.ok) {
-//         throw new Error('Failed to delete project from server');
-//       }
-
-//       console.log('[Projects] Project deleted successfully:', projectId);
-      
-//     } catch (error) {
-//       console.error('[Projects] Delete error:', error);
-      
-//       // Re-fetch projects to restore the deleted item if API call failed
-//       fetchProjects();
-      
-//       Alert.alert(
-//         'Delete Failed',
-//         'Failed to delete project. Please try again.',
-//         [{ text: 'OK' }]
-//       );
-//     }
-//   };
-
-//   // confirm delete dialog
-//   const confirmDelete = (project) => {
-//     Alert.alert(
-//       'Delete Project',
-//       `Are you sure you want to delete "${project.name}"?`,
-//       [
-//         {
-//           text: 'Cancel',
-//           style: 'cancel',
-//           onPress: () => {
-//             if (swipeableRowRef.current) {
-//               swipeableRowRef.current.close();
-//               swipeableRowRef.current = null;
-//             }
-//           },
-//         },
-//         {
-//           text: 'Delete',
-//           style: 'destructive',
-//           onPress: () => deleteProject(project.id),
-//         },
-//       ]
-//     );
-//   };
-
-//   // swipeable right actions
-//   const renderRightActions = (progress, dragX, project) => {
-//     return (
-//       <RectButton
-//         style={{
-//           width: 80,
-//           marginLeft: 10,
-//           justifyContent: 'center',
-//           alignItems: 'center',
-//           backgroundColor: '#FF3B30',
-//           borderRadius: 16,
-//           marginVertical: 4,
-//         }}
-//         onPress={() => confirmDelete(project)}
-//       >
-//         <Ionicons name="trash-outline" size={24} color="white" />
-//         {/* <Text style={{ color: 'white', fontSize: 12, marginTop: 4, fontFamily: 'Urbanist-Medium' }}>
-//           Delete
-//         </Text> */}
-//       </RectButton>
-//     );
-//   };
-
-//   // close other swipeable rows when one opens
-//   const onSwipeableOpen = useCallback((ref) => {
-//     if (swipeableRowRef.current && swipeableRowRef.current !== ref) {
-//       swipeableRowRef.current.close();
-//     }
-//     swipeableRowRef.current = ref;
-//   }, []);
-
-//   // search filtering
-//   const filteredProjects = useMemo(() => {
-//     const q = (searchQuery || '').trim().toLowerCase();
-//     if (!q) return projects;
-//     return projects.filter(
-//       (p) =>
-//         p.name.toLowerCase().includes(q) ||
-//         (p.location && p.location.toLowerCase().includes(q)) ||
-//         (p.status && p.status.toLowerCase().includes(q))
-//     );
-//   }, [projects, searchQuery]);
-
-//   // navigation handlers
-//   const handleAddProject = () => {
-//     console.log('Navigate -> CreateProjectScreen');
-//     navigation.navigate('CreateProjectScreen');
-//   };
-
-//   const handleViewDetails = (project) => {
-//     console.log('Navigate -> ViewDetails, project id:', project.id);
-//     navigation.navigate('ViewDetails', { project: project.raw || project });
-//   };
-
-//   const handleEditProject = (project) => {
-//     console.log('Edit Project:', project.id);
-//     navigation.navigate('CreateProjectScreen', { project: project.raw || project });
-//   };
-
-//   const handleFilter = () => {
-//     console.log('Filter pressed');
-//     navigation.navigate('FilterScreen');
-//   };
-
-//   // Project Card Component
-//   const ProjectCard = React.memo(({ project, index }) => (
-//     <Swipeable
-//       friction={2}
-//       rightThreshold={40}
-//       renderRightActions={(progress, dragX) => renderRightActions(progress, dragX, project)}
-//       onSwipeableWillOpen={() => onSwipeableOpen(swipeableRowRef.current)}
-//       ref={(ref) => {
-//         // Store ref without causing re-renders
-//         if (ref && !swipeableRowRef.current) {
-//           swipeableRowRef.current = ref;
-//         }
-//       }}
-//     >
-//       <View
-//         className="mb-4 rounded-2xl border-l-4 bg-white p-4 shadow"
-//         style={{ borderLeftColor: '#0066FF' }}
-//       >
-//         {/* Image + Title + Edit */}
-//         <View className="mb-3 flex-row items-start">
-//           <View className="mr-3 h-12 w-12 overflow-hidden rounded-lg bg-gray-200">
-//             {project.raw.projectImages && project.raw.projectImages !== "" ? (
-//               <Image
-//                 source={{ uri: project.raw.projectImages }}
-//                 className="h-full w-full"
-//                 resizeMode="cover"
-//               />
-//             ) : (
-//               <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-//                 <Text style={{ fontFamily: 'Urbanist-SemiBold', color: '#999' }}>No image</Text>
-//               </View>
-//             )}
-//           </View>
-
-//           <View className="flex-1">
-//             <Text style={{ fontFamily: 'Urbanist-Bold' }} className="mb-1 text-base text-black">
-//               {project.name}
-//             </Text>
-//             <Text style={{ fontFamily: 'Urbanist-Regular' }} className="text-xs leading-4 text-gray-500">
-//               {project.location}
-//             </Text>
-//           </View>
-
-//           <TouchableOpacity onPress={() => handleEditProject(project)} className="p-2">
-//             <Ionicons name="create-outline" size={20} color="#0066FF" />
-//           </TouchableOpacity>
-//         </View>
-
-//         {/* Due Date & Status */}
-//         <View className="mb-3 flex-row items-center justify-between">
-//           <View className="flex-row items-center">
-//             <Ionicons name="calendar-outline" size={16} color="#9CA3AF" />
-//             <Text style={{ fontFamily: 'Urbanist-Regular' }} className="ml-2 text-xs text-gray-500">
-//               Due date {project.dueDate}
-//             </Text>
-//           </View>
-//           <View className={`${project.statusColor} rounded-full px-3 py-1`}>
-//             <Text style={{ fontFamily: 'Urbanist-SemiBold' }} className="text-xs text-white">
-//               {project.status}
-//             </Text>
-//           </View>
-//         </View>
-
-//         {/* Progress Bar */}
-//         <View className="mb-3">
-//           <View className="h-2 overflow-hidden rounded-full bg-gray-200">
-//             <View
-//               className="h-full rounded-full bg-blue-600"
-//               style={{ width: `${project.progress}%` }}
-//             />
-//           </View>
-//         </View>
-
-//         {/* View Details */}
-//         <TouchableOpacity
-//           className="flex-row items-center justify-between border-t border-gray-100 pt-3"
-//           onPress={() => handleViewDetails(project)}
-//         >
-//           <Text style={{ fontFamily: 'Urbanist-Medium' }} className="text-sm text-gray-600">
-//             View Details
-//           </Text>
-//           <Text className="text-lg text-gray-400" style={{ fontFamily: 'Urbanist-Regular' }}>›</Text>
-//         </TouchableOpacity>
-//       </View>
-//     </Swipeable>
-//   ));
-
-//   // Loading state
-//   if (isLoading) {
-//     return (
-//       <GestureHandlerRootView style={{ flex: 1 }}>
-//         <View className="flex-1 bg-gray-50" style={{ justifyContent: 'center', alignItems: 'center' }}>
-//           <ActivityIndicator size="large" color="#0066FF" />
-//         </View>
-//       </GestureHandlerRootView>
-//     );
-//   }
-
-//   return (
-//     <GestureHandlerRootView style={{ flex: 1 }}>
-//       <View className="flex-1 bg-gray-50">
-//         {/* Header */}
-//         <Header
-//           title="My Projects"
-//           // showBackButton={true}
-//           rightIcon="filter-outline"
-//           onRightIconPress={handleFilter}
-//           backgroundColor="#0066FF"
-//           titleColor="white"
-//           iconColor="white"
-//         />
-
-//         <ScrollView
-//           className="flex-1 px-4 pt-4"
-//           showsVerticalScrollIndicator={false}
-//           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#0066FF" />}
-//         >
-//           {/* Search + Add Button */}
-//           <View className="mb-5 flex-row items-center">
-//             <View className="mr-3 flex-1 flex-row items-center rounded-xl bg-white px-4 py-3 shadow-sm">
-//               <Ionicons name="search" size={20} color="#9CA3AF" />
-//               <TextInput
-//                 placeholder="Projects..."
-//                 placeholderTextColor="#9CA3AF"
-//                 className="ml-2 flex-1 text-sm text-gray-600"
-//                 style={{ fontFamily: 'Urbanist-Regular' }}
-//                 value={searchQuery}
-//                 onChangeText={setSearchQuery}
-//               />
-//             </View>
-
-//             {/* + Button – Redirects to CreateProjectScreen */}
-//             <TouchableOpacity
-//               className="h-12 w-12 items-center justify-center rounded-full bg-blue-600 shadow-md"
-//               onPress={handleAddProject}
-//             >
-//               <Text className="text-2xl font-light text-white" style={{ fontFamily: 'Urbanist-Regular' }}>+</Text>
-//             </TouchableOpacity>
-//           </View>
-
-//           {/* Error */}
-//           {error ? (
-//             <View className="mb-4 px-2">
-//               <Text className="text-center text-sm text-red-500">{error}</Text>
-//               <TouchableOpacity onPress={fetchProjects} className="mt-3 rounded-md bg-blue-600 py-2 px-4">
-//                 <Text className="text-center text-white">Retry</Text>
-//               </TouchableOpacity>
-//             </View>
-//           ) : null}
-
-//           {/* Project Cards */}
-//           {filteredProjects.length === 0 ? (
-//             <Text style={{ textAlign: 'center', color: '#666666', fontSize: 16, marginTop: 50 }}>
-//               No projects found.
-//             </Text>
-//           ) : (
-//             filteredProjects.map((project, index) => (
-//               <ProjectCard 
-//                 key={project.id || index} 
-//                 project={project} 
-//                 index={index} 
-//               />
-//             ))
-//           )}
-
-//             {/* Go to Customer Dashboard Button */}
-//           <TouchableOpacity
-//             className="mx-4 mb-4 rounded-xl bg-blue-600 px-6 py-4 shadow-lg"
-//             activeOpacity={0.8}
-//             onPress={() => {
-//               navigation.navigate('CustomerChooseTemplate');
-//             }}>
-//             <Text className="text-center text-base font-semibold text-white">
-//               Go to Customer Dashboard
-//             </Text>
-//           </TouchableOpacity>
-//         </ScrollView>
-     
-//       </View>
-//     </GestureHandlerRootView>
-//   );
-// };
-
-// export default ProjectsListScreen;
 import {
   View,
   Text,
@@ -469,33 +12,32 @@ import {
   SafeAreaView,
   Dimensions,
   Animated,
+  StyleSheet,
 } from 'react-native';
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Header from 'components/Header';
 import { Ionicons } from '@expo/vector-icons';
-import BottomNavBar from 'components/BottomNavbar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
-import { RectButton } from 'react-native-gesture-handler';
 import Slider from '@react-native-community/slider';
 
 const API_URL = 'https://skystruct-lite-backend.vercel.app/api/projects';
 const TOKEN_KEY = 'userToken';
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const ProjectsListScreen = () => {
   const navigation = useNavigation();
 
-  // state
+  // State
   const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState(null);
   
-  // Filter bottom sheet state
+  // Filter state
   const [showFilter, setShowFilter] = useState(false);
   const [selectedSort, setSelectedSort] = useState('Default');
   const [budgetRange, setBudgetRange] = useState({ min: 25, max: 1000 });
@@ -505,8 +47,8 @@ const ProjectsListScreen = () => {
     Contractor: false,
   });
   const [projectType, setProjectType] = useState({
-    Vils: false,
-    Interior: false,
+    'Villas': false,
+    'Interior': false,
     'Commercial Building': false,
     'Residential Complex': false,
   });
@@ -514,41 +56,37 @@ const ProjectsListScreen = () => {
 
   const sortOptions = ['Default', 'Start Date', 'Budget', 'Progress'];
   const teamOptions = ['Project Manager', 'Consultant', 'Contractor'];
-  const projectTypeOptions = [
-    'Vils',
-    'Interior',
-    'Commercial Building',
-    'Residential Complex',
-  ];
+  const projectTypeOptions = ['Villas', 'Interior', 'Commercial Building', 'Residential Complex'];
 
-  const swipeableRowRef = useRef(null);
+  const openSwipeableRefs = useRef(new Map());
   
-  // Fast Bottom sheet animation
-  const BOTTOM_SHEET_HEIGHT = SCREEN_HEIGHT * 0.6;
+  // Bottom sheet animation
+  const BOTTOM_SHEET_HEIGHT = SCREEN_HEIGHT * 0.7;
   const translateY = useRef(new Animated.Value(BOTTOM_SHEET_HEIGHT)).current;
 
   const openFilter = () => {
     setShowFilter(true);
     translateY.setValue(BOTTOM_SHEET_HEIGHT);
     
-    Animated.timing(translateY, {
+    Animated.spring(translateY, {
       toValue: 0,
-      duration: 200,
       useNativeDriver: true,
+      tension: 65,
+      friction: 11,
     }).start();
   };
 
   const closeFilter = () => {
     Animated.timing(translateY, {
       toValue: BOTTOM_SHEET_HEIGHT,
-      duration: 150,
+      duration: 250,
       useNativeDriver: true,
     }).start(() => {
       setShowFilter(false);
     });
   };
 
-  // map API item -> UI project shape
+  // Map API item to UI project
   const mapItemToProject = (item) => {
     const name = item.name || item.title || 'Untitled Project';
     const location = item.location || item.address || (item.site && item.site.address) || 'Address not provided';
@@ -557,26 +95,26 @@ const ProjectsListScreen = () => {
     const status = item.status || (item.isActive ? 'In Progress' : 'Completed') || 'Unknown';
     const progress = typeof item.progress === 'number' ? item.progress : item.percentage || 0;
     const imageUrl = item.image || item.imageUrl || item.coverImage || item.thumbnail || null;
+    
     return {
       id: item._id || item.id || Math.random().toString(36).slice(2),
       name,
       location,
       dueDate,
       status,
-      statusColor: item.statusColor || (status === 'Completed' ? 'bg-emerald-500' : 'bg-blue-600'),
+      statusColor: status === 'Completed' ? '#10B981' : status === 'InProgress' ? '#3B82F6' : '#F59E0B',
       progress: Math.min(Math.max(parseInt(progress || 0, 10), 0), 100),
       imageUrl,
       raw: item,
     };
   };
 
-  // fetch projects with verbose logging
+  // Fetch projects
   const fetchProjects = useCallback(async () => {
     setError(null);
     try {
       if (!refreshing) setIsLoading(true);
 
-      console.log('[Projects] fetchProjects -> start');
       const token = await AsyncStorage.getItem(TOKEN_KEY);
 
       const response = await fetch(API_URL, {
@@ -587,11 +125,7 @@ const ProjectsListScreen = () => {
         },
       });
 
-      const json = await response.json().catch((e) => {
-        console.warn('[Projects] failed to parse JSON body', e);
-        return {};
-      });
-
+      const json = await response.json().catch(() => ({}));
       const items = Array.isArray(json) ? json : Array.isArray(json.data) ? json.data : [];
 
       if (!Array.isArray(items) || items.length === 0) {
@@ -602,7 +136,7 @@ const ProjectsListScreen = () => {
       }
     } catch (err) {
       console.error('[Projects] fetch error:', err);
-      setError('Failed to fetch projects. See console for details.');
+      setError('Failed to fetch projects');
       setProjects([]);
     } finally {
       setIsLoading(false);
@@ -610,35 +144,29 @@ const ProjectsListScreen = () => {
     }
   }, [refreshing]);
 
-  // run once on mount and again whenever screen focuses
   useFocusEffect(
     useCallback(() => {
       fetchProjects();
       return () => {
-        if (swipeableRowRef.current) {
-          swipeableRowRef.current.close();
-          swipeableRowRef.current = null;
-        }
+        openSwipeableRefs.current.forEach(ref => ref?.close());
+        openSwipeableRefs.current.clear();
       };
     }, [fetchProjects])
   );
 
-  // pull-to-refresh handler
   const onRefresh = () => {
     setRefreshing(true);
     fetchProjects();
   };
 
-  // delete project function
+  // Delete project
   const deleteProject = async (projectId) => {
     try {
       const token = await AsyncStorage.getItem(TOKEN_KEY);
       
-      if (swipeableRowRef.current) {
-        swipeableRowRef.current.close();
-        swipeableRowRef.current = null;
-      }
-
+      // Close swipeable and optimistically remove from UI
+      openSwipeableRefs.current.get(projectId)?.close();
+      openSwipeableRefs.current.delete(projectId);
       setProjects(prev => prev.filter(project => project.id !== projectId));
 
       const response = await fetch(`${API_URL}/${projectId}`, {
@@ -652,21 +180,13 @@ const ProjectsListScreen = () => {
       if (!response.ok) {
         throw new Error('Failed to delete project from server');
       }
-
-      console.log('[Projects] Project deleted successfully:', projectId);
-      
     } catch (error) {
       console.error('[Projects] Delete error:', error);
-      fetchProjects();
-      Alert.alert(
-        'Delete Failed',
-        'Failed to delete project. Please try again.',
-        [{ text: 'OK' }]
-      );
+      fetchProjects(); // Revert on error
+      Alert.alert('Delete Failed', 'Failed to delete project. Please try again.');
     }
   };
 
-  // confirm delete dialog
   const confirmDelete = (project) => {
     Alert.alert(
       'Delete Project',
@@ -676,10 +196,7 @@ const ProjectsListScreen = () => {
           text: 'Cancel',
           style: 'cancel',
           onPress: () => {
-            if (swipeableRowRef.current) {
-              swipeableRowRef.current.close();
-              swipeableRowRef.current = null;
-            }
+            openSwipeableRefs.current.get(project.id)?.close();
           },
         },
         {
@@ -691,33 +208,30 @@ const ProjectsListScreen = () => {
     );
   };
 
-  // swipeable right actions
+  // Render delete action
   const renderRightActions = (progress, dragX, project) => {
+    const trans = progress.interpolate({
+      inputRange: [0, 1],
+      outputRange: [100, 0],
+    });
+
     return (
-      <RectButton
-        style={{
-          width: 80,
-          marginLeft: 10,
-          justifyContent: 'center',
-          alignItems: 'center',
-          backgroundColor: '#FF3B30',
-          borderRadius: 16,
-          marginVertical: 4,
-        }}
-        onPress={() => confirmDelete(project)}
+      <Animated.View 
+        style={[
+          styles.deleteAction,
+          { transform: [{ translateX: trans }] }
+        ]}
       >
-        <Ionicons name="trash-outline" size={24} color="white" />
-      </RectButton>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => confirmDelete(project)}
+        >
+          <Ionicons name="trash-outline" size={24} color="white" />
+          <Text style={styles.deleteText}>Delete</Text>
+        </TouchableOpacity>
+      </Animated.View>
     );
   };
-
-  // close other swipeable rows when one opens
-  const onSwipeableOpen = useCallback((ref) => {
-    if (swipeableRowRef.current && swipeableRowRef.current !== ref) {
-      swipeableRowRef.current.close();
-    }
-    swipeableRowRef.current = ref;
-  }, []);
 
   // Filter functions
   const toggleTeam = (team) => {
@@ -751,8 +265,8 @@ const ProjectsListScreen = () => {
       Contractor: false,
     });
     setProjectType({
-      Vils: false,
-      Interior: false,
+      'Villas': false,
+      'Interior': false,
       'Commercial Building': false,
       'Residential Complex': false,
     });
@@ -770,7 +284,7 @@ const ProjectsListScreen = () => {
     closeFilter();
   };
 
-  // search filtering
+  // Search filtering
   const filteredProjects = useMemo(() => {
     const q = (searchQuery || '').trim().toLowerCase();
     if (!q) return projects;
@@ -782,7 +296,7 @@ const ProjectsListScreen = () => {
     );
   }, [projects, searchQuery]);
 
-  // navigation handlers
+  // Navigation handlers
   const handleAddProject = () => {
     navigation.navigate('CreateProjectScreen');
   };
@@ -795,97 +309,97 @@ const ProjectsListScreen = () => {
     navigation.navigate('CreateProjectScreen', { project: project.raw || project });
   };
 
-  const handleFilter = () => {
-    openFilter();
-  };
-
-  // Project Card Component
-  const ProjectCard = React.memo(({ project, index }) => (
+  // Project Card Component - UPDATED WITH YOUR PREFERRED DESIGN
+  const ProjectCard = React.memo(({ project }) => (
     <Swipeable
+      ref={(ref) => {
+        if (ref) {
+          openSwipeableRefs.current.set(project.id, ref);
+        }
+      }}
       friction={2}
       rightThreshold={40}
       renderRightActions={(progress, dragX) => renderRightActions(progress, dragX, project)}
-      onSwipeableWillOpen={() => onSwipeableOpen(swipeableRowRef.current)}
-      ref={(ref) => {
-        if (ref && !swipeableRowRef.current) {
-          swipeableRowRef.current = ref;
-        }
+      onSwipeableWillOpen={() => {
+        // Close other open swipeables
+        openSwipeableRefs.current.forEach((ref, id) => {
+          if (id !== project.id) {
+            ref?.close();
+          }
+        });
       }}
     >
-      <View
-        className="mb-4 rounded-2xl border-l-4 bg-white p-4 shadow"
-        style={{ borderLeftColor: '#0066FF' }}
-      >
+      <View style={styles.card}>
         {/* Image + Title + Edit */}
-        <View className="mb-3 flex-row items-start">
-          <View className="mr-3 h-12 w-12 overflow-hidden rounded-lg bg-gray-200">
+        <View style={styles.cardHeader}>
+          <View style={styles.imageContainer}>
             {project.raw.projectImages && project.raw.projectImages !== "" ? (
               <Image
                 source={{ uri: project.raw.projectImages }}
-                className="h-full w-full"
+                style={styles.projectImage}
                 resizeMode="cover"
               />
             ) : (
-              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <Text style={{ fontFamily: 'Urbanist-SemiBold', color: '#999' }}>No image</Text>
+              <View style={styles.imagePlaceholder}>
+                <Text style={styles.noImageText}>No image</Text>
               </View>
             )}
           </View>
 
-          <View className="flex-1">
-            <Text style={{ fontFamily: 'Urbanist-Bold' }} className="mb-1 text-base text-black">
+          <View style={styles.headerInfo}>
+            <Text style={styles.projectName} numberOfLines={2}>
               {project.name}
             </Text>
-            <Text style={{ fontFamily: 'Urbanist-Regular' }} className="text-xs leading-4 text-gray-500">
+            <Text style={styles.locationText} numberOfLines={1}>
               {project.location}
             </Text>
           </View>
 
-          <TouchableOpacity onPress={() => handleEditProject(project)} className="p-2">
+          <TouchableOpacity 
+            onPress={() => handleEditProject(project)} 
+            style={styles.editButton}
+          >
             <Ionicons name="create-outline" size={20} color="#0066FF" />
           </TouchableOpacity>
         </View>
 
         {/* Due Date & Status */}
-        <View className="mb-3 flex-row items-center justify-between">
-          <View className="flex-row items-center">
+        <View style={styles.metaRow}>
+          <View style={styles.dueDateContainer}>
             <Ionicons name="calendar-outline" size={16} color="#9CA3AF" />
-            <Text style={{ fontFamily: 'Urbanist-Regular' }} className="ml-2 text-xs text-gray-500">
-              Due date {project.dueDate}
-            </Text>
+            <Text style={styles.dueDateText}>Due date {project.dueDate}</Text>
           </View>
-          <View className={`${project.statusColor} rounded-full px-3 py-1`}>
-            <Text style={{ fontFamily: 'Urbanist-SemiBold' }} className="text-xs text-white">
-              {project.status}
-            </Text>
+          
+          <View style={[styles.statusBadge, { backgroundColor: project.statusColor }]}>
+            <Text style={styles.statusText}>{project.status}</Text>
           </View>
         </View>
 
         {/* Progress Bar */}
-        <View className="mb-3">
-          <View className="h-2 overflow-hidden rounded-full bg-gray-200">
-            <View
-              className="h-full rounded-full bg-blue-600"
-              style={{ width: `${project.progress}%` }}
+        <View style={styles.progressContainer}>
+          <View style={styles.progressBar}>
+            <View 
+              style={[
+                styles.progressFill, 
+                { width: `${project.progress}%` }
+              ]} 
             />
           </View>
         </View>
 
         {/* View Details */}
         <TouchableOpacity
-          className="flex-row items-center justify-between border-t border-gray-100 pt-3"
+          style={styles.detailsButton}
           onPress={() => handleViewDetails(project)}
         >
-          <Text style={{ fontFamily: 'Urbanist-Medium' }} className="text-sm text-gray-600">
-            View Details
-          </Text>
-          <Text className="text-lg text-gray-400" style={{ fontFamily: 'Urbanist-Regular' }}>›</Text>
+          <Text style={styles.detailsButtonText}>View Details</Text>
+          <Text style={styles.detailsArrow}>›</Text>
         </TouchableOpacity>
       </View>
     </Swipeable>
   ));
 
-  // Filter Bottom Sheet Component
+  // Filter Bottom Sheet
   const FilterBottomSheet = () => (
     <Modal
       visible={showFilter}
@@ -894,70 +408,59 @@ const ProjectsListScreen = () => {
       statusBarTranslucent={true}
       onRequestClose={closeFilter}
     >
-      <View className="flex-1">
-        {/* Static Backdrop - No animation to prevent blackish screen */}
-        <View className="flex-1 bg-black/50">
-          <TouchableOpacity 
-            className="flex-1" 
-            activeOpacity={1} 
-            onPress={closeFilter}
-          />
-        </View>
+      <View style={styles.modalContainer}>
+        <TouchableOpacity 
+          style={styles.backdrop} 
+          activeOpacity={1} 
+          onPress={closeFilter}
+        />
         
-        {/* Animated Bottom Sheet */}
         <Animated.View 
-          className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl"
-          style={{ 
-            height: BOTTOM_SHEET_HEIGHT,
-            transform: [{ translateY }],
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: -2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 10,
-          }}
+          style={[
+            styles.bottomSheet,
+            { 
+              height: BOTTOM_SHEET_HEIGHT,
+              transform: [{ translateY }]
+            }
+          ]}
         >
-          <SafeAreaView className="flex-1">
+          <SafeAreaView style={{ flex: 1 }}>
             {/* Drag Handle */}
-            <View className="items-center py-2">
-              <View className="w-12 h-1 bg-gray-300 rounded-full" />
+            <View style={styles.dragHandleContainer}>
+              <View style={styles.dragHandle} />
             </View>
 
             {/* Header */}
-            <View className="px-4 pb-2 border-b border-gray-100">
-              <View className="flex-row items-center justify-between">
-                <Text className="text-lg font-bold text-gray-900">Filters</Text>
-                <TouchableOpacity 
-                  onPress={closeFilter} 
-                  className="p-1"
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
-                  <Ionicons name="close" size={20} color="#6B7280" />
-                </TouchableOpacity>
-              </View>
+            <View style={styles.sheetHeader}>
+              <Text style={styles.sheetTitle}>Filter Projects</Text>
+              <TouchableOpacity onPress={closeFilter} style={styles.closeButton}>
+                <Ionicons name="close" size={24} color="#6B7280" />
+              </TouchableOpacity>
             </View>
 
-            {/* Scrollable Content */}
+            {/* Content */}
             <ScrollView
-              className="flex-1"
+              style={styles.sheetContent}
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 80 }}
+              contentContainerStyle={styles.sheetContentContainer}
             >
               {/* Sort By */}
-              <View className="mx-4 mb-3 mt-3 rounded-xl bg-gray-50 p-3">
-                <Text className="mb-2 text-base font-semibold text-gray-900">Sort by</Text>
-                <View className="flex-row flex-wrap gap-1">
+              <View style={styles.filterSection}>
+                <Text style={styles.filterSectionTitle}>Sort by</Text>
+                <View style={styles.chipContainer}>
                   {sortOptions.map((option) => (
                     <TouchableOpacity
                       key={option}
                       onPress={() => setSelectedSort(option)}
-                      className={`rounded-lg px-3 py-2 ${
-                        selectedSort === option ? 'bg-blue-500' : 'bg-white'
-                      }`}>
-                      <Text
-                        className={`text-xs font-medium ${
-                          selectedSort === option ? 'text-white' : 'text-gray-700'
-                        }`}>
+                      style={[
+                        styles.chip,
+                        selectedSort === option && styles.chipSelected
+                      ]}
+                    >
+                      <Text style={[
+                        styles.chipText,
+                        selectedSort === option && styles.chipTextSelected
+                      ]}>
                         {option}
                       </Text>
                     </TouchableOpacity>
@@ -966,33 +469,21 @@ const ProjectsListScreen = () => {
               </View>
 
               {/* Budget Range */}
-              <View className="mx-4 mb-3 rounded-xl bg-gray-50 p-3">
-                <Text className="mb-2 text-base font-semibold text-gray-900">Budget</Text>
-                <View className="mb-3 flex-row justify-between">
-                  <View className="rounded-lg bg-white px-3 py-2">
-                    <Text className="text-xs font-semibold text-gray-600">
-                      ${budgetRange.min}
-                    </Text>
+              <View style={styles.filterSection}>
+                <Text style={styles.filterSectionTitle}>Budget Range</Text>
+                <View style={styles.budgetDisplay}>
+                  <View style={styles.budgetValue}>
+                    <Text style={styles.budgetValueText}>${budgetRange.min}</Text>
                   </View>
-                  <View className="rounded-lg bg-white px-3 py-2">
-                    <Text className="text-xs font-semibold text-gray-600">
-                      ${budgetRange.max}
-                    </Text>
+                  <Text style={styles.budgetSeparator}>—</Text>
+                  <View style={styles.budgetValue}>
+                    <Text style={styles.budgetValueText}>${budgetRange.max}</Text>
                   </View>
                 </View>
 
-                <View className="relative h-12 justify-center">
-                  <View className="absolute left-0 right-0 top-5 h-1 rounded-full bg-gray-300" />
-                  <View
-                    className="absolute top-5 h-1 rounded-full bg-blue-500"
-                    style={{
-                      left: `${(budgetRange.min / 1000) * 100}%`,
-                      right: `${100 - (budgetRange.max / 1000) * 100}%`,
-                    }}
-                  />
-
+                <View style={styles.sliderContainer}>
                   <Slider
-                    style={{ width: '100%', height: 30, position: 'absolute' }}
+                    style={styles.slider}
                     minimumValue={0}
                     maximumValue={1000}
                     value={budgetRange.min}
@@ -1003,26 +494,8 @@ const ProjectsListScreen = () => {
                         min: Math.round(newMin / 25) * 25,
                       }));
                     }}
-                    minimumTrackTintColor="transparent"
-                    maximumTrackTintColor="transparent"
-                    thumbTintColor="#3B82F6"
-                    step={25}
-                  />
-
-                  <Slider
-                    style={{ width: '100%', height: 30, position: 'absolute' }}
-                    minimumValue={0}
-                    maximumValue={1000}
-                    value={budgetRange.max}
-                    onValueChange={(v) => {
-                      const newMax = Math.max(v, budgetRange.min + 25);
-                      setBudgetRange((p) => ({
-                        ...p,
-                        max: Math.round(newMax / 25) * 25,
-                      }));
-                    }}
-                    minimumTrackTintColor="transparent"
-                    maximumTrackTintColor="transparent"
+                    minimumTrackTintColor="#3B82F6"
+                    maximumTrackTintColor="#E5E7EB"
                     thumbTintColor="#3B82F6"
                     step={25}
                   />
@@ -1030,20 +503,21 @@ const ProjectsListScreen = () => {
               </View>
 
               {/* Assigned Team */}
-              <View className="mx-4 mb-3 rounded-xl bg-gray-50 p-3">
-                <Text className="mb-2 text-base font-semibold text-gray-900">Team</Text>
+              <View style={styles.filterSection}>
+                <Text style={styles.filterSectionTitle}>Assigned Team</Text>
                 {teamOptions.map((team) => (
                   <TouchableOpacity
                     key={team}
                     onPress={() => toggleTeam(team)}
-                    className="flex-row items-center justify-between py-2">
-                    <Text className="text-sm font-medium text-gray-700">{team}</Text>
-                    <View
-                      className={`h-5 w-5 items-center justify-center rounded ${
-                        assignedTeam[team] ? 'bg-blue-500' : 'border-2 border-gray-300'
-                      }`}>
+                    style={styles.checkboxRow}
+                  >
+                    <Text style={styles.checkboxLabel}>{team}</Text>
+                    <View style={[
+                      styles.checkbox,
+                      assignedTeam[team] && styles.checkboxChecked
+                    ]}>
                       {assignedTeam[team] && (
-                        <Ionicons name="checkmark" size={12} color="white" />
+                        <Ionicons name="checkmark" size={16} color="white" />
                       )}
                     </View>
                   </TouchableOpacity>
@@ -1051,18 +525,21 @@ const ProjectsListScreen = () => {
               </View>
 
               {/* Project Type */}
-              <View className="mx-4 mb-3 rounded-xl bg-gray-50 p-3">
-                <Text className="mb-2 text-base font-semibold text-gray-900">Project Type</Text>
+              <View style={styles.filterSection}>
+                <Text style={styles.filterSectionTitle}>Project Type</Text>
                 
                 <TouchableOpacity
                   onPress={handleSelectAll}
-                  className="mb-2 flex-row items-center justify-between py-1">
-                  <Text className="text-sm font-medium text-gray-700">Select All</Text>
-                  <View
-                    className={`h-5 w-5 items-center justify-center rounded ${
-                      selectAll ? 'bg-blue-500' : 'border-2 border-gray-300'
-                    }`}>
-                    {selectAll && <Ionicons name="checkmark" size={12} color="white" />}
+                  style={[styles.checkboxRow, styles.selectAllRow]}
+                >
+                  <Text style={styles.selectAllLabel}>Select All</Text>
+                  <View style={[
+                    styles.checkbox,
+                    selectAll && styles.checkboxChecked
+                  ]}>
+                    {selectAll && (
+                      <Ionicons name="checkmark" size={16} color="white" />
+                    )}
                   </View>
                 </TouchableOpacity>
 
@@ -1070,14 +547,15 @@ const ProjectsListScreen = () => {
                   <TouchableOpacity
                     key={type}
                     onPress={() => toggleProjectType(type)}
-                    className="flex-row items-center justify-between py-1">
-                    <Text className="text-sm font-medium text-gray-700">{type}</Text>
-                    <View
-                      className={`h-5 w-5 items-center justify-center rounded ${
-                        projectType[type] ? 'bg-blue-500' : 'border-2 border-gray-300'
-                      }`}>
+                    style={styles.checkboxRow}
+                  >
+                    <Text style={styles.checkboxLabel}>{type}</Text>
+                    <View style={[
+                      styles.checkbox,
+                      projectType[type] && styles.checkboxChecked
+                    ]}>
                       {projectType[type] && (
-                        <Ionicons name="checkmark" size={12} color="white" />
+                        <Ionicons name="checkmark" size={16} color="white" />
                       )}
                     </View>
                   </TouchableOpacity>
@@ -1085,20 +563,20 @@ const ProjectsListScreen = () => {
               </View>
             </ScrollView>
 
-            {/* Bottom Buttons */}
-            <View className="absolute bottom-0 left-0 right-0 bg-white px-4 py-3 border-t border-gray-100">
-              <View className="flex-row gap-2">
-                <TouchableOpacity
-                  onPress={handleResetFilters}
-                  className="flex-1 items-center rounded-lg border border-gray-300 bg-white py-3">
-                  <Text className="text-sm font-semibold text-gray-700">Reset</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={handleApplyFilters}
-                  className="flex-1 items-center rounded-lg bg-blue-500 py-3">
-                  <Text className="text-sm font-semibold text-white">Apply</Text>
-                </TouchableOpacity>
-              </View>
+            {/* Action Buttons */}
+            <View style={styles.actionButtons}>
+              <TouchableOpacity
+                onPress={handleResetFilters}
+                style={styles.resetButton}
+              >
+                <Text style={styles.resetButtonText}>Reset</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleApplyFilters}
+                style={styles.applyButton}
+              >
+                <Text style={styles.applyButtonText}>Apply Filters</Text>
+              </TouchableOpacity>
             </View>
           </SafeAreaView>
         </Animated.View>
@@ -1106,12 +584,12 @@ const ProjectsListScreen = () => {
     </Modal>
   );
 
-  // Loading state
   if (isLoading) {
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <View className="flex-1 bg-gray-50" style={{ justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color="#0066FF" />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#3B82F6" />
+          <Text style={styles.loadingText}>Loading projects...</Text>
         </View>
       </GestureHandlerRootView>
     );
@@ -1119,88 +597,587 @@ const ProjectsListScreen = () => {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <View className="flex-1 bg-gray-50">
-        {/* Header */}
+      <View style={styles.container}>
         <Header
           title="My Projects"
           rightIcon="filter-outline"
-          onRightIconPress={handleFilter}
-          backgroundColor="#0066FF"
+          onRightIconPress={openFilter}
+          backgroundColor="#3B82F6"
           titleColor="white"
           iconColor="white"
         />
 
         <ScrollView
-          className="flex-1 px-4 pt-4"
+          style={styles.scrollView}
           showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#0066FF" />}
+          refreshControl={
+            <RefreshControl 
+              refreshing={refreshing} 
+              onRefresh={onRefresh} 
+              tintColor="#3B82F6" 
+            />
+          }
         >
-          {/* Search + Add Button */}
-          <View className="mb-5 flex-row items-center">
-            <View className="mr-3 flex-1 flex-row items-center rounded-xl bg-white px-4 py-3 shadow-sm">
+          {/* Search Bar */}
+          <View style={styles.searchContainer}>
+            <View style={styles.searchBar}>
               <Ionicons name="search" size={20} color="#9CA3AF" />
               <TextInput
-                placeholder="Projects..."
+                placeholder="Search projects..."
                 placeholderTextColor="#9CA3AF"
-                className="ml-2 flex-1 text-sm text-gray-600"
-                style={{ fontFamily: 'Urbanist-Regular' }}
+                style={styles.searchInput}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
               />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setSearchQuery('')}>
+                  <Ionicons name="close-circle" size={20} color="#9CA3AF" />
+                </TouchableOpacity>
+              )}
             </View>
 
             <TouchableOpacity
-              className="h-12 w-12 items-center justify-center rounded-full bg-blue-600 shadow-md"
+              style={styles.addButton}
               onPress={handleAddProject}
             >
-              <Text className="text-2xl font-light text-white" style={{ fontFamily: 'Urbanist-Regular' }}>+</Text>
+              <Ionicons name="add" size={24} color="white" />
             </TouchableOpacity>
           </View>
 
-          {/* Error */}
-          {error ? (
-            <View className="mb-4 px-2">
-              <Text className="text-center text-sm text-red-500">{error}</Text>
-              <TouchableOpacity onPress={fetchProjects} className="mt-3 rounded-md bg-blue-600 py-2 px-4">
-                <Text className="text-center text-white">Retry</Text>
+          {/* Error Message */}
+          {error && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+              <TouchableOpacity onPress={fetchProjects} style={styles.retryButton}>
+                <Text style={styles.retryButtonText}>Retry</Text>
               </TouchableOpacity>
             </View>
-          ) : null}
-
-          {/* Project Cards */}
-          {filteredProjects.length === 0 ? (
-            <Text style={{ textAlign: 'center', color: '#666666', fontSize: 16, marginTop: 50 }}>
-              No projects found.
-            </Text>
-          ) : (
-            filteredProjects.map((project, index) => (
-              <ProjectCard 
-                key={project.id || index} 
-                project={project} 
-                index={index} 
-              />
-            ))
           )}
 
-          {/* Go to Customer Dashboard Button */}
+          {/* Projects List */}
+          <View style={styles.projectsList}>
+            {filteredProjects.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Ionicons name="folder-open-outline" size={64} color="#D1D5DB" />
+                <Text style={styles.emptyStateText}>No projects found</Text>
+                <Text style={styles.emptyStateSubtext}>
+                  {searchQuery ? 'Try adjusting your search' : 'Create your first project to get started'}
+                </Text>
+              </View>
+            ) : (
+              filteredProjects.map((project) => (
+                <ProjectCard 
+                  key={project.id} 
+                  project={project} 
+                />
+              ))
+            )}
+          </View>
+
+          {/* Customer Dashboard Button */}
           <TouchableOpacity
-            className="mx-4 mb-4 rounded-xl bg-blue-600 px-6 py-4 shadow-lg"
-            activeOpacity={0.8}
-            onPress={() => {
-              navigation.navigate('CustomerChooseTemplate');
-            }}>
-            <Text className="text-center text-base font-semibold text-white">
-              Go to Customer Dashboard
-            </Text>
+            style={styles.dashboardButton}
+            onPress={() => navigation.navigate('CustomerChooseTemplate')}
+          >
+            <Ionicons name="grid-outline" size={20} color="white" style={{ marginRight: 8 }} />
+            <Text style={styles.dashboardButtonText}>Go to Customer Dashboard</Text>
           </TouchableOpacity>
+
+          <View style={{ height: 20 }} />
         </ScrollView>
 
-        {/* Filter Bottom Sheet */}
         <FilterBottomSheet />
-     
       </View>
     </GestureHandlerRootView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: '#6B7280',
+    fontFamily: 'Urbanist-Medium',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 12,
+    gap: 12,
+  },
+  searchBar: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 12,
+    fontSize: 15,
+    color: '#111827',
+    fontFamily: 'Urbanist-Regular',
+  },
+  addButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#3B82F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  errorContainer: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 16,
+    backgroundColor: '#FEE2E2',
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#DC2626',
+    marginBottom: 12,
+    fontFamily: 'Urbanist-Medium',
+  },
+  retryButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    backgroundColor: '#DC2626',
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontFamily: 'Urbanist-SemiBold',
+  },
+  projectsList: {
+    paddingHorizontal: 16,
+  },
+  
+  // UPDATED CARD STYLES - Using your preferred design
+  card: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+    borderLeftWidth: 4,
+    borderLeftColor: '#0066FF',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  imageContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#F3F4F6',
+    marginRight: 12,
+  },
+  projectImage: {
+    width: '100%',
+    height: '100%',
+  },
+  imagePlaceholder: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+  },
+  noImageText: {
+    fontFamily: 'Urbanist-SemiBold',
+    color: '#999',
+    fontSize: 10,
+  },
+  headerInfo: {
+    flex: 1,
+    marginRight: 8,
+  },
+  projectName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 4,
+    fontFamily: 'Urbanist-Bold',
+  },
+  locationText: {
+    fontSize: 12,
+    color: '#6B7280',
+    fontFamily: 'Urbanist-Regular',
+    lineHeight: 16,
+  },
+  editButton: {
+    padding: 4,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  dueDateContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dueDateText: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginLeft: 6,
+    fontFamily: 'Urbanist-Regular',
+  },
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  statusText: {
+    fontSize: 12,
+    color: 'white',
+    fontWeight: '600',
+    fontFamily: 'Urbanist-SemiBold',
+  },
+  progressContainer: {
+    marginBottom: 12,
+  },
+  progressBar: {
+    height: 8,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#3B82F6',
+    borderRadius: 4,
+  },
+  detailsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  detailsButtonText: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontFamily: 'Urbanist-Medium',
+  },
+  detailsArrow: {
+    fontSize: 18,
+    color: '#9CA3AF',
+    fontFamily: 'Urbanist-Regular',
+  },
+
+  deleteAction: {
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    marginBottom: 12,
+  },
+  deleteButton: {
+    backgroundColor: '#EF4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 90,
+    height: '100%',
+    borderTopRightRadius: 16,
+    borderBottomRightRadius: 16,
+    marginLeft: 12,
+  },
+  deleteText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 4,
+    fontFamily: 'Urbanist-SemiBold',
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#374151',
+    marginTop: 16,
+    fontFamily: 'Urbanist-SemiBold',
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    color: '#9CA3AF',
+    marginTop: 8,
+    textAlign: 'center',
+    paddingHorizontal: 32,
+    fontFamily: 'Urbanist-Regular',
+  },
+  dashboardButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#3B82F6',
+    marginHorizontal: 16,
+    marginTop: 8,
+    paddingVertical: 16,
+    borderRadius: 12,
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  dashboardButtonText: {
+    color: 'white',
+    fontSize: 15,
+    fontWeight: '600',
+    fontFamily: 'Urbanist-SemiBold',
+  },
+  // Modal & Bottom Sheet Styles
+  modalContainer: {
+    flex: 1,
+  },
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  bottomSheet: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'white',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 20,
+  },
+  dragHandleContainer: {
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  dragHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 2,
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  sheetTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111827',
+    fontFamily: 'Urbanist-Bold',
+  },
+  closeButton: {
+    padding: 4,
+  },
+  sheetContent: {
+    flex: 1,
+  },
+  sheetContentContainer: {
+    paddingBottom: 100,
+  },
+  filterSection: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  filterSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 12,
+    fontFamily: 'Urbanist-SemiBold',
+  },
+  chipContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  chip: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  chipSelected: {
+    backgroundColor: '#3B82F6',
+    borderColor: '#3B82F6',
+  },
+  chipText: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontWeight: '500',
+    fontFamily: 'Urbanist-Medium',
+  },
+  chipTextSelected: {
+    color: 'white',
+  },
+  budgetDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  budgetValue: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 10,
+    minWidth: 100,
+    alignItems: 'center',
+  },
+  budgetValueText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+    fontFamily: 'Urbanist-SemiBold',
+  },
+  budgetSeparator: {
+    fontSize: 16,
+    color: '#9CA3AF',
+    fontFamily: 'Urbanist-Regular',
+  },
+  sliderContainer: {
+    paddingHorizontal: 4,
+  },
+  slider: {
+    width: '100%',
+    height: 40,
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+  },
+  selectAllRow: {
+    marginBottom: 8,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  checkboxLabel: {
+    fontSize: 15,
+    color: '#374151',
+    fontFamily: 'Urbanist-Regular',
+  },
+  selectAllLabel: {
+    fontSize: 15,
+    color: '#111827',
+    fontWeight: '600',
+    fontFamily: 'Urbanist-SemiBold',
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#D1D5DB',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: '#3B82F6',
+    borderColor: '#3B82F6',
+  },
+  actionButtons: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: 'white',
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+    gap: 12,
+  },
+  resetButton: {
+    flex: 1,
+    paddingVertical: 16,
+    borderRadius: 12,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  resetButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#6B7280',
+    fontFamily: 'Urbanist-SemiBold',
+  },
+  applyButton: {
+    flex: 1,
+    paddingVertical: 16,
+    borderRadius: 12,
+    backgroundColor: '#3B82F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  applyButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: 'white',
+    fontFamily: 'Urbanist-SemiBold',
+  },
+});
 
 export default ProjectsListScreen;
