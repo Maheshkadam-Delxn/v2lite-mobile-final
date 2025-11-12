@@ -86,7 +86,7 @@ const PlansScreen = () => {
       const formatted = folders.map((folder) => {
         const id = folder._id || folder.id || Math.random().toString();
         const title = folder.name || folder.title || 'Untitled Folder';
-        const docs = folder.documents || folder.docs || folder.files || [];
+        const docs = folder.fileUrls || folder.docs || folder.files || [];
 
         const plans = docs.map((doc) => {
           const url = doc.url || doc.path || doc.fileUrl || '';
@@ -281,7 +281,7 @@ const PlansScreen = () => {
       const body = {
         projectId,
         name: folderName,
-        documents: documentMeta,
+        fileUrls: documentMeta,
       };
       console.log('Creating folder with body:', body, 'POST', url);
       const res = await fetch(url, {
