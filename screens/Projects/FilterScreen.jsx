@@ -294,7 +294,7 @@ const FilterScreen = () => {
               <Text className="font-semibold text-white">Apply</Text>
             </TouchableOpacity>
           </View>
-          <BottomNavBar />
+         
         </View>
       </View>
     </SafeAreaView>

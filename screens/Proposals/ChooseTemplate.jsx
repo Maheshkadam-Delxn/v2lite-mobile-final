@@ -2,7 +2,6 @@ import { View, Text, TextInput, ScrollView, TouchableOpacity, Image, SafeAreaVie
 import React, { useState } from 'react'
 import { Feather } from '@expo/vector-icons'
 import Header from '../../components/Header'
-import BottomNavBar from 'components/BottomNavbar'
 
 const ChooseTemplate = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('')

@@ -1,7 +1,7 @@
 import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
 import React, { useState } from 'react';
 import { Feather } from '@expo/vector-icons';
-import BottomNavbar from '../../components/BottomNavbar';
+// import BottomNavbar from '../../components/BottomNavbar';
 import Header from '../../components/Header';
 
 const SubmitProposal = ({ navigation }) => {
@@ -362,7 +362,7 @@ const SubmitProposal = ({ navigation }) => {
       </View>
 
       {/* Bottom Navigation */}
-      <BottomNavbar />
+      {/* <BottomNavbar /> */}
     </SafeAreaView>
   );
 };
