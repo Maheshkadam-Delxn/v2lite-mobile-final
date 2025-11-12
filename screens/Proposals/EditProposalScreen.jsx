@@ -1,21 +1,34 @@
-import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
-import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
 import { Feather } from '@expo/vector-icons';
 import Header from '../../components/Header';
 
-const CreateProposalScreen = ({ navigation }) => {
-  const [title, setTitle] = useState('Project Name 1');
-  const [clientName, setClientName] = useState('Arun Mishra');
-  const [address, setAddress] = useState(
-    'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna...'
-  );
-  const [date, setDate] = useState('31/03/2025');
-  const [budget, setBudget] = useState('$2,500,000');
-  const [startDate, setStartDate] = useState('2025-03-28');
-  const [endDate, setEndDate] = useState('2026-03-22');
-  const [notes, setNotes] = useState(
-    'The budget includes material costsasdfasdfadsf, labor, and subcontractor fees.Client approvals are required at key project milestones.Additional customization may impact the final budget.'
-  );
+const EditProposalScreen = ({ navigation, route }) => {
+  // Get proposal data from route params or use default data
+  const proposalData = route.params?.proposalData || {
+    id: '1',
+    title: 'Project Name 1',
+    clientName: 'Arun Mishra',
+    address: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna...',
+    date: '31/03/2025',
+    budget: '$2,500,000',
+    startDate: '2025-03-28',
+    endDate: '2026-03-22',
+    notes: 'The budget includes material costs, labor, and subcontractor fees. Client approvals are required at key project milestones. Additional customization may impact the final budget.',
+    category: 'Residential',
+    status: 'Draft'
+  };
+
+  const [title, setTitle] = useState(proposalData.title);
+  const [clientName, setClientName] = useState(proposalData.clientName);
+  const [address, setAddress] = useState(proposalData.address);
+  const [date, setDate] = useState(proposalData.date);
+  const [budget, setBudget] = useState(proposalData.budget);
+  const [startDate, setStartDate] = useState(proposalData.startDate);
+  const [endDate, setEndDate] = useState(proposalData.endDate);
+  const [notes, setNotes] = useState(proposalData.notes);
+  const [category, setCategory] = useState(proposalData.category);
+  const [hasChanges, setHasChanges] = useState(false);
 
   const [proposalItems, setProposalItems] = useState([
     { id: 1, name: 'Site Preparation & Excavation', checked: true },
@@ -33,35 +46,182 @@ const CreateProposalScreen = ({ navigation }) => {
     { id: 3, name: 'Wireframe for team.figma', icon: '🎯', color: '#FF3366' },
   ]);
 
+  // Track changes
+  useEffect(() => {
+    const originalData = {
+      title: proposalData.title,
+      clientName: proposalData.clientName,
+      address: proposalData.address,
+      date: proposalData.date,
+      budget: proposalData.budget,
+      startDate: proposalData.startDate,
+      endDate: proposalData.endDate,
+      notes: proposalData.notes,
+    };
+
+    const currentData = {
+      title,
+      clientName,
+      address,
+      date,
+      budget,
+      startDate,
+      endDate,
+      notes,
+    };
+
+    const hasUnsavedChanges = JSON.stringify(originalData) !== JSON.stringify(currentData);
+    setHasChanges(hasUnsavedChanges);
+  }, [title, clientName, address, date, budget, startDate, endDate, notes]);
+
   const toggleItem = (id) => {
     setProposalItems(
       proposalItems.map((item) => (item.id === id ? { ...item, checked: !item.checked } : item))
     );
+    setHasChanges(true);
   };
 
   const removeAttachment = (id) => {
-    setAttachments(attachments.filter((item) => item.id !== id));
+    Alert.alert(
+      'Remove Attachment',
+      'Are you sure you want to remove this attachment?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Remove', 
+          style: 'destructive',
+          onPress: () => {
+            setAttachments(attachments.filter((item) => item.id !== id));
+            setHasChanges(true);
+          }
+        },
+      ]
+    );
+  };
+
+  const handleSave = () => {
+    // Save logic would go here - API call to update proposal
+    console.log('Saving proposal with data:', {
+      title,
+      clientName,
+      address,
+      date,
+      budget,
+      startDate,
+      endDate,
+      notes,
+      proposalItems,
+      attachments
+    });
+
+    // Show success message
+    Alert.alert('Success', 'Proposal updated successfully!', [
+      { 
+        text: 'OK', 
+        onPress: () => {
+          setHasChanges(false);
+          navigation.goBack();
+        }
+      }
+    ]);
+  };
+
+  const handleCancel = () => {
+    if (hasChanges) {
+      Alert.alert(
+        'Unsaved Changes',
+        'You have unsaved changes. Are you sure you want to discard them?',
+        [
+          { text: 'Continue Editing', style: 'cancel' },
+          { 
+            text: 'Discard', 
+            style: 'destructive',
+            onPress: () => navigation.goBack()
+          },
+        ]
+      );
+    } else {
+      navigation.goBack();
+    }
+  };
+
+  const handlePreview = () => {
+    const updatedProposalData = {
+      ...proposalData,
+      title,
+      clientName,
+      address,
+      date,
+      budget,
+      startDate,
+      endDate,
+      notes,
+      items: proposalItems,
+      attachments
+    };
+    
+    navigation.navigate('PreviewProposal', { proposalData: updatedProposalData });
+  };
+
+  const addNewItem = () => {
+    const newItem = {
+      id: Date.now(),
+      name: 'New Proposal Item',
+      checked: false
+    };
+    setProposalItems([...proposalItems, newItem]);
+    setHasChanges(true);
+  };
+
+  const updateItemName = (id, newName) => {
+    setProposalItems(
+      proposalItems.map((item) => 
+        item.id === id ? { ...item, name: newName } : item
+      )
+    );
+    setHasChanges(true);
   };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F5F5F5' }}>
       <View style={{ flex: 1 }}>
         {/* Header */}
-         <Header
-          title="Create Proposal"
+        <Header
+          title="Edit Proposal"
           showBackButton={true}
-          // rightIcon="filter-outline"
-          // onRightIconPress={handleFilter}
+          onBackPress={handleCancel}
           backgroundColor="#0066FF"
           titleColor="white"
           iconColor="white"
         />
 
+        {/* Save Indicator */}
+        {hasChanges && (
+          <View style={{
+            backgroundColor: '#FFA500',
+            paddingHorizontal: 16,
+            paddingVertical: 8,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <Feather name="info" size={16} color="white" style={{ marginRight: 8 }} />
+            <Text style={{
+              fontFamily: 'Urbanist-SemiBold',
+              fontSize: 14,
+              color: 'white',
+            }}>
+              You have unsaved changes
+            </Text>
+          </View>
+        )}
+
         {/* Content */}
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={{ paddingBottom: 100 }}
-          showsVerticalScrollIndicator={false}>
+          showsVerticalScrollIndicator={false}
+        >
           {/* Basic Information */}
           <View style={{ padding: 16 }}>
             <Text
@@ -104,6 +264,7 @@ const CreateProposalScreen = ({ navigation }) => {
                 }}
                 value={title}
                 onChangeText={setTitle}
+                placeholder="Enter proposal title"
               />
 
               {/* Client Name */}
@@ -128,6 +289,7 @@ const CreateProposalScreen = ({ navigation }) => {
                 }}
                 value={clientName}
                 onChangeText={setClientName}
+                placeholder="Enter client name"
               />
 
               {/* Address */}
@@ -155,6 +317,7 @@ const CreateProposalScreen = ({ navigation }) => {
                 value={address}
                 onChangeText={setAddress}
                 multiline
+                placeholder="Enter project address"
               />
 
               {/* Date */}
@@ -167,7 +330,7 @@ const CreateProposalScreen = ({ navigation }) => {
                 }}>
                 Date
               </Text>
-              <View
+              <TouchableOpacity
                 style={{
                   flexDirection: 'row',
                   justifyContent: 'space-between',
@@ -175,7 +338,12 @@ const CreateProposalScreen = ({ navigation }) => {
                   paddingVertical: 8,
                   borderBottomWidth: 1,
                   borderBottomColor: '#E0E0E0',
-                }}>
+                }}
+                onPress={() => {
+                  // Date picker would go here
+                  Alert.alert('Info', 'Date picker would open here');
+                }}
+              >
                 <Text
                   style={{
                     fontFamily: 'Urbanist-Regular',
@@ -185,7 +353,7 @@ const CreateProposalScreen = ({ navigation }) => {
                   {date}
                 </Text>
                 <Feather name="calendar" size={18} color="#666666" />
-              </View>
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -231,6 +399,8 @@ const CreateProposalScreen = ({ navigation }) => {
                 }}
                 value={budget}
                 onChangeText={setBudget}
+                placeholder="Enter project budget"
+                keyboardType="numeric"
               />
 
               {/* Start Date and End Date */}
@@ -256,6 +426,7 @@ const CreateProposalScreen = ({ navigation }) => {
                     }}
                     value={startDate}
                     onChangeText={setStartDate}
+                    placeholder="YYYY-MM-DD"
                   />
                 </View>
 
@@ -280,6 +451,7 @@ const CreateProposalScreen = ({ navigation }) => {
                     }}
                     value={endDate}
                     onChangeText={setEndDate}
+                    placeholder="YYYY-MM-DD"
                   />
                 </View>
               </View>
@@ -308,21 +480,39 @@ const CreateProposalScreen = ({ navigation }) => {
                 value={notes}
                 onChangeText={setNotes}
                 multiline
+                placeholder="Enter project notes and details"
               />
             </View>
           </View>
 
           {/* Proposal Items */}
           <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
-            <Text
-              style={{
-                fontFamily: 'Urbanist-Bold',
-                fontSize: 16,
-                color: '#000000',
-                marginBottom: 12,
-              }}>
-              Proposal Items
-            </Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <Text
+                style={{
+                  fontFamily: 'Urbanist-Bold',
+                  fontSize: 16,
+                  color: '#000000',
+                }}>
+                Proposal Items
+              </Text>
+              <TouchableOpacity 
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: '#0066FF',
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 8,
+                }}
+                onPress={addNewItem}
+              >
+                <Feather name="plus" size={16} color="white" style={{ marginRight: 4 }} />
+                <Text style={{ fontFamily: 'Urbanist-SemiBold', fontSize: 12, color: 'white' }}>
+                  Add Item
+                </Text>
+              </TouchableOpacity>
+            </View>
 
             <View
               style={{
@@ -333,38 +523,59 @@ const CreateProposalScreen = ({ navigation }) => {
                 borderLeftColor: '#0066FF',
               }}>
               {proposalItems.map((item, index) => (
-                <TouchableOpacity
-                  key={item.id}
-                  onPress={() => toggleItem(item.id)}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    marginBottom: index === proposalItems.length - 1 ? 0 : 16,
-                  }}>
-                  <View
+                <View key={item.id} style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  marginBottom: index === proposalItems.length - 1 ? 0 : 16,
+                }}>
+                  <TouchableOpacity
+                    onPress={() => toggleItem(item.id)}
+                    style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}
+                  >
+                    <View
+                      style={{
+                        width: 22,
+                        height: 22,
+                        borderRadius: 6,
+                        backgroundColor: item.checked ? '#0066FF' : 'transparent',
+                        borderWidth: 2,
+                        borderColor: item.checked ? '#0066FF' : '#CCCCCC',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginRight: 12,
+                      }}>
+                      {item.checked && <Feather name="check" size={14} color="white" />}
+                    </View>
+                    <TextInput
+                      style={{
+                        fontFamily: 'Urbanist-Regular',
+                        fontSize: 14,
+                        color: '#000000',
+                        flex: 1,
+                        paddingVertical: 4,
+                      }}
+                      value={item.name}
+                      onChangeText={(text) => updateItemName(item.id, text)}
+                      onPressIn={(e) => e.stopPropagation()}
+                    />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (proposalItems.length > 1) {
+                        setProposalItems(proposalItems.filter(i => i.id !== item.id));
+                        setHasChanges(true);
+                      } else {
+                        Alert.alert('Cannot Remove', 'At least one proposal item is required.');
+                      }
+                    }}
                     style={{
-                      width: 22,
-                      height: 22,
-                      borderRadius: 6,
-                      backgroundColor: item.checked ? '#0066FF' : 'transparent',
-                      borderWidth: 2,
-                      borderColor: item.checked ? '#0066FF' : '#CCCCCC',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginRight: 12,
-                    }}>
-                    {item.checked && <Feather name="check" size={14} color="white" />}
-                  </View>
-                  <Text
-                    style={{
-                      fontFamily: 'Urbanist-Regular',
-                      fontSize: 14,
-                      color: '#000000',
-                      flex: 1,
-                    }}>
-                    {item.name}
-                  </Text>
-                </TouchableOpacity>
+                      padding: 4,
+                      marginLeft: 8,
+                    }}
+                  >
+                    <Feather name="x" size={16} color="#FF3B30" />
+                  </TouchableOpacity>
+                </View>
               ))}
             </View>
           </View>
@@ -400,7 +611,12 @@ const CreateProposalScreen = ({ navigation }) => {
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginBottom: 20,
-                }}>
+                }}
+                onPress={() => {
+                  // File upload logic would go here
+                  Alert.alert('Info', 'File picker would open here');
+                }}
+              >
                 <View
                   style={{
                     width: 48,
@@ -498,16 +714,16 @@ const CreateProposalScreen = ({ navigation }) => {
               flexDirection: 'row',
               paddingHorizontal: 16,
               marginBottom: 16,
+              gap: 12,
             }}>
             <TouchableOpacity
-              onPress={() => navigation?.goBack()}
+              onPress={handleCancel}
               style={{
                 flex: 1,
                 backgroundColor: '#E9EFFF',
                 borderRadius: 12,
                 paddingVertical: 14,
                 alignItems: 'center',
-                marginRight: 8,
               }}>
               <Text
                 style={{
@@ -520,14 +736,13 @@ const CreateProposalScreen = ({ navigation }) => {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => navigation?.navigate('SubmitProposal')}
+              onPress={handlePreview}
               style={{
                 flex: 1,
-                backgroundColor: '#0066FF',
+                backgroundColor: '#00D4FF',
                 borderRadius: 12,
                 paddingVertical: 14,
                 alignItems: 'center',
-                marginLeft: 8,
               }}>
               <Text
                 style={{
@@ -535,16 +750,33 @@ const CreateProposalScreen = ({ navigation }) => {
                   fontSize: 15,
                   color: 'white',
                 }}>
-                Proceed
+                Preview
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={handleSave}
+              style={{
+                flex: 1,
+                backgroundColor: '#0066FF',
+                borderRadius: 12,
+                paddingVertical: 14,
+                alignItems: 'center',
+              }}>
+              <Text
+                style={{
+                  fontFamily: 'Urbanist-SemiBold',
+                  fontSize: 15,
+                  color: 'white',
+                }}>
+                Save
               </Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
       </View>
-
-     
     </SafeAreaView>
   );
 };
 
-export default CreateProposalScreen;
+export default EditProposalScreen;

@@ -2,7 +2,6 @@ import { View, Text, ScrollView, TouchableOpacity, Image, SafeAreaView } from 'r
 import React from 'react'
 import { Feather } from '@expo/vector-icons'
 import Header from '../../components/Header'
-import BottomNavbar from '../../components/BottomNavbar'
 
 const ViewProposal = ({ navigation }) => {
   const attachmentDocuments = [
@@ -434,7 +433,6 @@ const ViewProposal = ({ navigation }) => {
         </ScrollView>
       </View>
 
-      {/* Bottom Navigation */}
      
     </SafeAreaView>
   )
