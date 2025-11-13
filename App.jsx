@@ -84,6 +84,12 @@ import MaterialDetailScreen from 'screens/Materials/MaterialDetailScreen';
 import PreviewProposalScreen from 'screens/Proposals/PreviewProposalScreen';
 import EditProposalScreen from 'screens/Proposals/EditProposalScreen';
 
+
+//Issues, Risk Screens
+import RiskCategoriesScreen from 'screens/Issues/RiskCategoriesScreen';
+import EscalationMatrixScreen from 'screens/Issues/EscalationMatrixScreen';
+
+
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const TOKEN_KEY = 'userToken';
@@ -129,6 +135,14 @@ const ProfileStack = () => (
     <Stack.Screen name="ProfileMain" component={ProfilePageScreen} />
     <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
     <Stack.Screen name="PrivacyPolicyScreen" component={PrivacyPolicyScreen} />
+  </Stack.Navigator>
+);
+
+
+const IssuesStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="RiskCategoriesScreen" component={RiskCategoriesScreen} />
+    <Stack.Screen name='EscalationMatrixScreen' component={EscalationMatrixScreen}/>
   </Stack.Navigator>
 );
 
