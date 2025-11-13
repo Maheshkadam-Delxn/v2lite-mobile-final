@@ -279,6 +279,8 @@ import ApproveSurveyScreen from 'screens/Surveys/ApproveSurveyScreen';
 import PlansScreen from 'screens/Design-Management/PlansScreen';
 import MaterialsListScreen from 'screens/Materials/MaterialsListScreen';
 import AttendanceScreen from 'screens/Attendance/AttendaceScreen';
+import FileScreen from 'screens/Document-Management/FileScreen';
+
 
 
 const ViewDetailsScreen = () => {
@@ -315,6 +317,7 @@ console.log("asdfasdfasdf",project);
     { id: 'Plans', label: 'Plans' },
     { id: 'Material', label: 'Material' },
     { id: 'Attendance', label: 'Attendance' },
+    { id: 'Files', label: 'Files' },
   ];
 
   const viewTabs = [
@@ -386,9 +389,14 @@ console.log("asdfasdfasdf",project);
         // Render the PaymentsTransaction component inline
         return <MaterialsListScreen project={project} />;
 
-            case 'Attendance':
+          case 'Attendance':
         // Render the PaymentsTransaction component inline
         return <AttendanceScreen project={project} />;
+
+          case 'Files':
+        // Render the PaymentsTransaction component inline
+        return <FileScreen project={project} />;
+
       
       default:
         return null;
