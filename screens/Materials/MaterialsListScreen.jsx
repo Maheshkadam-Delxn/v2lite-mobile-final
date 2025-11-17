@@ -985,6 +985,7 @@
 // export default MaterialsListScreen;
 
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
@@ -996,22 +997,63 @@ import {
   Modal,
   ScrollView,
   Platform,
+  Alert,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Header from 'components/Header';
+import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
+
 
 const BASE_URL = 'https://skystruct-lite-backend.vercel.app';
 const MATERIALS_API = `${BASE_URL}/api/materials`;
 const TOKEN_KEY = 'userToken';
+
+// === Constant arrays ===
+const subTabs = [
+  { id: 'Inventory', label: 'Inventory' },
+  { id: 'Request', label: 'Request' },
+  { id: 'Received', label: 'Received' },
+  { id: 'Used', label: 'Used' },
+];
+
+const categories = [
+  'Cement',
+  'Steel',
+  'Bricks',
+  'Sand',
+  'Aggregate',
+  'Wood',
+  'Electrical',
+  'Plumbing',
+  'Paint',
+  'Tools',
+  'Other'
+];
+
+const units = [
+  'nos',
+  'kg',
+  'ton',
+  'm',
+  'sqm',
+  'cum',
+  'ltr',
+  'set',
+  'box',
+  'packet'
+];
+
+const gstRates = ['0', '5.0', '12.0', '18.0', '28.0'];
 
 const MaterialsListScreen = () => {
   const navigation = useNavigation();
   const [activeSubTab, setActiveSubTab] = useState('Inventory');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // === Modals (UNCHANGED) ===
+  // === Modals ===
   const [materialActionModalVisible, setMaterialActionModalVisible] = useState(false);
   const [receivedModalVisible, setReceivedModalVisible] = useState(false);
   const [materialLibraryModalVisible, setMaterialLibraryModalVisible] = useState(false);
@@ -1019,14 +1061,23 @@ const MaterialsListScreen = () => {
   const [requestMaterialModalVisible, setRequestMaterialModalVisible] = useState(false);
   const [addMaterialPurchaseModalVisible, setAddMaterialPurchaseModalVisible] = useState(false);
   const [usedModalVisible, setUsedModalVisible] = useState(false);
+  const [editMaterialModalVisible, setEditMaterialModalVisible] = useState(false);
 
-  // === Dates (UNCHANGED) ===
+  // === Selection Modals ===
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showUnitModal, setShowUnitModal] = useState(false);
+  const [showGstModal, setShowGstModal] = useState(false);
+  const [showEditCategoryModal, setShowEditCategoryModal] = useState(false);
+  const [showEditUnitModal, setShowEditUnitModal] = useState(false);
+  const [showEditGstModal, setShowEditGstModal] = useState(false);
+
+  // === Dates ===
   const [date, setDate] = useState(new Date());
   const [purchaseDate, setPurchaseDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showPurchaseDatePicker, setShowPurchaseDatePicker] = useState(false);
 
-  // === Forms (UNCHANGED) ===
+  // === Forms ===
   const [receivedForm, setReceivedForm] = useState({
     partyName: 'XYZ Constructions Ltd.',
     materialName: 'Test Material',
@@ -1039,9 +1090,27 @@ const MaterialsListScreen = () => {
   const [newMaterialForm, setNewMaterialForm] = useState({
     materialName: '',
     unit: 'nos',
-    gst: '18.0 %',
+    gst: '18.0',
     hsnCode: '',
-    category: 'Select category',
+    category: '',
+    quantity: '',
+    stock: '',
+    price: '',
+    minStock: '',
+    description: ''
+  });
+
+  const [editMaterialForm, setEditMaterialForm] = useState({
+    id: '',
+    materialName: '',
+    unit: 'nos',
+    gst: '18.0',
+    hsnCode: '',
+    category: '',
+    quantity: '',
+    stock: '',
+    price: '',
+    minStock: '',
     description: ''
   });
 
@@ -1070,7 +1139,13 @@ const MaterialsListScreen = () => {
     notes: ''
   });
 
-  // === Static data for non-Inventory tabs (UNCHANGED) ===
+  // === API State ===
+  const [inventoryApi, setInventoryApi] = useState([]);
+  const [loadingInventory, setLoadingInventory] = useState(false);
+  const [creatingMaterial, setCreatingMaterial] = useState(false);
+  const [updatingMaterial, setUpdatingMaterial] = useState(false);
+
+  // === Static data for non-Inventory tabs ===
   const requestData = [
     { id: '1', date: '03 Apr', name: 'Milk 1 Test', qty: '10 nos', status: 'Requested' },
     { id: '2', date: '03 Apr', name: 'Milk 1 Test', qty: '10 nos', status: 'Requested' },
@@ -1092,43 +1167,25 @@ const MaterialsListScreen = () => {
     { id: '4', name: 'Test material', category: 'Cement', unit: 'nos' },
   ];
 
-  // === NEW: Inventory from API (replaces static inventoryData) ===
-  const [inventoryApi, setInventoryApi] = useState([]); // raw from server
-  const [loadingInventory, setLoadingInventory] = useState(false);
-
-  // Helper: format dates like "30 v04" you used earlier is unclear; we'll show "dd Mon" or dd MMM yyyy if needed
-  const formatDate = (d) => {
-    if (!d) return '';
-    const date = new Date(d);
-    if (isNaN(date.getTime())) return '';
-    return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: undefined }).replace(',', '');
+  // === Date Handlers ===
+  const onDateChange = (event, selectedDate) => {
+    const currentDate = selectedDate || date;
+    setShowDatePicker(Platform.OS === 'ios');
+    setDate(currentDate);
   };
 
-  // Map server records -> UI shape your item render expects (name, date, stock)
-  const mappedInventory = useMemo(() => {
-    // Try to map server fields safely
-    // Expected server fields (guess): _id, name/title, stock/quantity, createdAt/updatedAt
-    return (inventoryApi || []).map((m) => ({
-      _id: m._id || m.id || String(Math.random()),
-      name: m.name || m.title || 'Material',
-      date: formatDate(m.createdAt || m.updatedAt || new Date()),
-      stock: typeof m.stock === 'number' ? m.stock : (typeof m.quantity === 'number' ? m.quantity : 0),
-      __raw: m,
-    }));
-  }, [inventoryApi]);
+  const onPurchaseDateChange = (event, selectedDate) => {
+    const currentDate = selectedDate || purchaseDate;
+    setShowPurchaseDatePicker(Platform.OS === 'ios');
+    setPurchaseDate(currentDate);
+  };
 
-  // Search filter on mapped inventory (keeps UI same)
-  const filteredInventory = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return mappedInventory;
-    return mappedInventory.filter((item) => item.name.toLowerCase().includes(q));
-  }, [mappedInventory, searchQuery]);
+  const formatDate = (date) => {
+    const options = { day: '2-digit', month: 'long', year: 'numeric' };
+    return date.toLocaleDateString('en-GB', options).replace(',', '');
+  };
 
-  const filteredLibrary = materialLibraryData.filter((item) =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  // === API: Fetch materials ===
+  // === API Functions ===
   const fetchMaterials = async () => {
     try {
       setLoadingInventory(true);
@@ -1153,32 +1210,333 @@ const MaterialsListScreen = () => {
         throw new Error(typeof json === 'object' && json?.message ? json.message : `Failed with ${res.status}`);
       }
 
-      // Support both array and {data: []}
       const list = Array.isArray(json) ? json : Array.isArray(json?.data) ? json.data : [];
       setInventoryApi(list);
     } catch (err) {
       console.error('[Materials] GET error:', err);
-      // Do not change UI; silently keep previous list
+      Alert.alert('Error', 'Failed to fetch materials');
     } finally {
       setLoadingInventory(false);
     }
+  };
+
+  // === CREATE NEW MATERIAL API ===
+  const createNewMaterial = async () => {
+    try {
+      if (!newMaterialForm.materialName.trim()) {
+        Alert.alert('Error', 'Please enter material name');
+        return;
+      }
+
+      if (!newMaterialForm.category.trim()) {
+        Alert.alert('Error', 'Please select a category');
+        return;
+      }
+
+      setCreatingMaterial(true);
+
+      const token = await AsyncStorage.getItem(TOKEN_KEY);
+      let projectId = await AsyncStorage.getItem("activeProjectId");
+
+      if (!projectId) {
+        projectId = "691189346522d6945d920bac";
+        await AsyncStorage.setItem("activeProjectId", projectId);
+        console.log("[Create Material] ⚙️ Using fallback projectId:", projectId);
+      }
+
+      const materialData = {
+        name: newMaterialForm.materialName.trim(),
+        unit: newMaterialForm.unit,
+        gst: parseFloat(newMaterialForm.gst) || 0,
+        hsnCode: newMaterialForm.hsnCode.trim(),
+        category: newMaterialForm.category,
+        description: newMaterialForm.description.trim(),
+        quantity: parseFloat(newMaterialForm.quantity) || 0,
+        stock: parseFloat(newMaterialForm.stock) || parseFloat(newMaterialForm.quantity) || 0,
+        price: parseFloat(newMaterialForm.price) || 0,
+        minStock: parseFloat(newMaterialForm.minStock) || 0,
+        projectId
+      };
+
+      console.log("[Create Material] 🚀 Sending data:", materialData);
+
+      const res = await fetch(`${BASE_URL}/api/materials`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(materialData),
+      });
+
+      const text = await res.text();
+      let json;
+      try { json = JSON.parse(text); } catch { json = text; }
+
+      console.log("[Create Material] POST status:", res.status);
+      console.log("[Create Material] Response:", json);
+
+      if (!res.ok) {
+        throw new Error(
+          typeof json === "object" && json?.message
+            ? json.message
+            : `Request failed with ${res.status}`
+        );
+      }
+
+      Alert.alert("Success", "Material created successfully!");
+      setCreateNewMaterialModalVisible(false);
+
+      setNewMaterialForm({
+        materialName: "",
+        unit: "nos",
+        gst: "18.0",
+        hsnCode: "",
+        category: "",
+        quantity: "",
+        stock: "",
+        price: "",
+        minStock: "",
+        description: "",
+      });
+
+      fetchMaterials();
+    } catch (err) {
+      console.error("[Create Material] ❌ Error:", err);
+      Alert.alert("Error", err.message || "Failed to create material");
+    } finally {
+      setCreatingMaterial(false);
+    }
+  };
+
+  // === DELETE MATERIAL API ===
+  const deleteMaterial = async (id) => {
+    try {
+      if (!id) return Alert.alert('Error', 'Invalid material ID');
+      Alert.alert(
+        'Confirm Delete',
+        'Are you sure you want to delete this material?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: async () => {
+              const token = await AsyncStorage.getItem(TOKEN_KEY);
+              const res = await fetch(`${BASE_URL}/api/materials/${id}`, {
+                method: 'DELETE',
+                headers: {
+                  'Content-Type': 'application/json',
+                  ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+              });
+
+              const text = await res.text();
+              let json;
+              try { json = JSON.parse(text); } catch { json = text; }
+
+              console.log('[Delete Material] 🗑️ Status:', res.status, json);
+
+              if (!res.ok) throw new Error(json?.message || 'Failed to delete');
+
+              Alert.alert('Deleted', 'Material deleted successfully.');
+              fetchMaterials();
+            },
+          },
+        ]
+      );
+    } catch (err) {
+      console.error('[Delete Material] ❌', err);
+      Alert.alert('Error', err.message || 'Failed to delete material');
+    }
+  };
+
+  // === UPDATE MATERIAL API ===
+  const updateMaterial = async (id, updatedData) => {
+    try {
+      const token = await AsyncStorage.getItem(TOKEN_KEY);
+      const res = await fetch(`${BASE_URL}/api/materials/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(updatedData),
+      });
+
+      const text = await res.text();
+      let json;
+      try { json = JSON.parse(text); } catch { json = text; }
+
+      console.log('[Update Material] ✏️ Status:', res.status, json);
+
+      if (!res.ok) throw new Error(json?.message || 'Failed to update material');
+
+      Alert.alert('Updated', 'Material updated successfully.');
+      fetchMaterials();
+    } catch (err) {
+      console.error('[Update Material] ❌', err);
+      Alert.alert('Error', err.message || 'Failed to update material');
+    }
+  };
+
+  // === EDIT MATERIAL FUNCTIONS ===
+  const openEditModal = (material) => {
+    const rawMaterial = material.__raw || material;
+    setEditMaterialForm({
+      id: rawMaterial._id || rawMaterial.id,
+      materialName: rawMaterial.name || '',
+      unit: rawMaterial.unit || 'nos',
+      gst: String(rawMaterial.gst || '18.0'),
+      hsnCode: rawMaterial.hsnCode || '',
+      category: rawMaterial.category || '',
+      quantity: String(rawMaterial.quantity || ''),
+      stock: String(rawMaterial.stock || ''),
+      price: String(rawMaterial.price || ''),
+      minStock: String(rawMaterial.minStock || ''),
+      description: rawMaterial.description || ''
+    });
+    setEditMaterialModalVisible(true);
+  };
+
+  const handleEditMaterial = async () => {
+    try {
+      if (!editMaterialForm.materialName.trim()) {
+        Alert.alert('Error', 'Please enter material name');
+        return;
+      }
+
+      if (!editMaterialForm.category.trim()) {
+        Alert.alert('Error', 'Please select a category');
+        return;
+      }
+
+      setUpdatingMaterial(true);
+
+      const token = await AsyncStorage.getItem(TOKEN_KEY);
+      let projectId = await AsyncStorage.getItem("activeProjectId");
+
+      if (!projectId) {
+        projectId = "691189346522d6945d920bac";
+        await AsyncStorage.setItem("activeProjectId", projectId);
+      }
+
+      const materialData = {
+        name: editMaterialForm.materialName.trim(),
+        unit: editMaterialForm.unit,
+        gst: parseFloat(editMaterialForm.gst) || 0,
+        hsnCode: editMaterialForm.hsnCode.trim(),
+        category: editMaterialForm.category,
+        description: editMaterialForm.description.trim(),
+        quantity: parseFloat(editMaterialForm.quantity) || 0,
+        stock: parseFloat(editMaterialForm.stock) || 0,
+        price: parseFloat(editMaterialForm.price) || 0,
+        minStock: parseFloat(editMaterialForm.minStock) || 0,
+        projectId
+      };
+
+      console.log("[Edit Material] 🚀 Sending data:", materialData);
+
+      const res = await fetch(`${BASE_URL}/api/materials/${editMaterialForm.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(materialData),
+      });
+
+      const text = await res.text();
+      let json;
+      try { json = JSON.parse(text); } catch { json = text; }
+
+      console.log("[Edit Material] PUT status:", res.status);
+      console.log("[Edit Material] Response:", json);
+
+      if (!res.ok) {
+        throw new Error(
+          typeof json === "object" && json?.message
+            ? json.message
+            : `Request failed with ${res.status}`
+        );
+      }
+
+      Alert.alert("Success", "Material updated successfully!");
+      setEditMaterialModalVisible(false);
+      fetchMaterials();
+    } catch (err) {
+      console.error("[Edit Material] ❌ Error:", err);
+      Alert.alert("Error", err.message || "Failed to update material");
+    } finally {
+      setUpdatingMaterial(false);
+    }
+  };
+
+  const selectEditCategory = (category) => {
+    setEditMaterialForm({...editMaterialForm, category});
+    setShowEditCategoryModal(false);
+  };
+
+  const selectEditUnit = (unit) => {
+    setEditMaterialForm({...editMaterialForm, unit});
+    setShowEditUnitModal(false);
+  };
+
+  const selectEditGst = (gst) => {
+    setEditMaterialForm({...editMaterialForm, gst});
+    setShowEditGstModal(false);
   };
 
   useEffect(() => {
     fetchMaterials();
   }, []);
 
-  // === Existing handlers (UNCHANGED behavior) ===
-  const onDateChange = (event, selectedDate) => {
-    const currentDate = selectedDate || date;
-    setShowDatePicker(Platform.OS === 'ios');
-    setDate(currentDate);
+  const formatItemDate = (d) => {
+    if (!d) return '';
+    const date = new Date(d);
+    if (isNaN(date.getTime())) return '';
+    return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: undefined }).replace(',', '');
   };
 
-  const onPurchaseDateChange = (event, selectedDate) => {
-    const currentDate = selectedDate || purchaseDate;
-    setShowPurchaseDatePicker(Platform.OS === 'ios');
-    setPurchaseDate(currentDate);
+  const mappedInventory = useMemo(() => {
+    return (inventoryApi || []).map((m) => {
+      const id = m._id || m.id || String(Math.random());
+      return {
+        _id: id,
+        name: m.name || m.title || 'Unknown Material',
+        date: formatItemDate(m.createdAt || m.updatedAt || new Date()),
+        stock: typeof m.stock === 'number' 
+          ? m.stock 
+          : (typeof m.quantity === 'number' ? m.quantity : 0),
+        unit: m.unit || 'nos',
+        __raw: m,
+      };
+    });
+  }, [inventoryApi]);
+
+  const filteredInventory = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return mappedInventory;
+    return mappedInventory.filter((item) => item.name.toLowerCase().includes(q));
+  }, [mappedInventory, searchQuery]);
+
+  const filteredLibrary = materialLibraryData.filter((item) =>
+    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const selectCategory = (category) => {
+    setNewMaterialForm({...newMaterialForm, category});
+    setShowCategoryModal(false);
+  };
+
+  const selectUnit = (unit) => {
+    setNewMaterialForm({...newMaterialForm, unit});
+    setShowUnitModal(false);
+  };
+
+  const selectGst = (gst) => {
+    setNewMaterialForm({...newMaterialForm, gst});
+    setShowGstModal(false);
   };
 
   const toggleMaterial = (id) => {
@@ -1187,14 +1545,6 @@ const MaterialsListScreen = () => {
     );
   };
 
-  const subTabs = [
-    { id: 'Inventory', label: 'Inventory' },
-    { id: 'Request', label: 'Request' },
-    { id: 'Received', label: 'Received' },
-    { id: 'Used', label: 'Used' },
-  ];
-
-  // === Renderers (UNCHANGED visually) ===
   const renderSubTab = ({ item }) => (
     <TouchableOpacity
       className={`mx-1.5 px-4 py-1.5 ${
@@ -1210,13 +1560,41 @@ const MaterialsListScreen = () => {
     </TouchableOpacity>
   );
 
+  // === Swipeable Right Actions (Delete) ===
+  const renderRightActions = (item) => (
+    <View className="bg-red-500 justify-center items-center w-[80px] rounded-r-xl mb-2">
+      <TouchableOpacity
+        className="flex-1 justify-center items-center w-full"
+        onPress={() => deleteMaterial(item._id)}
+      >
+        <Ionicons name="trash" size={22} color="white" />
+        <Text className="text-white text-xs mt-1">Delete</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  // === Inventory Item Renderer ===
   const renderInventoryItem = ({ item }) => (
-    <TouchableOpacity
-      className="mb-2 rounded-xl bg-white p-3"
-      onPress={() => navigation.navigate('MaterialDetailScreen', { item: item.__raw || item })}
-    >
-      <View className="flex-row items-center justify-between">
-        <View className="flex-1 flex-row items-center">
+    <Swipeable renderRightActions={() => renderRightActions(item)}>
+      <TouchableOpacity
+        className="mb-2 rounded-xl bg-white p-3 flex-row justify-between items-center"
+        onPress={() => {
+          const materialId = item.__raw?._id || item._id;
+          if (!materialId || materialId.includes('random')) {
+            Alert.alert('Error', 'Invalid material selected');
+            return;
+          }
+
+          navigation.navigate('Materials', {
+            screen: 'MaterialDetailScreen',
+            params: {
+              materialId,
+              item: item.__raw,
+            },
+          });
+        }}
+      >
+        <View className="flex-row items-center flex-1">
           <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-blue-100">
             <MaterialCommunityIcons name="cube-outline" size={24} color="#0066FF" />
           </View>
@@ -1225,11 +1603,19 @@ const MaterialsListScreen = () => {
             <Text className="mt-0.5 text-sm text-gray-500">{item.date}</Text>
           </View>
         </View>
-        <Text className="text-base font-semibold text-gray-900">
-          {loadingInventory ? '...' : item.stock}
-        </Text>
-      </View>
-    </TouchableOpacity>
+
+        <View className="items-end">
+          <Text className="text-base font-semibold text-gray-900">
+            {loadingInventory ? '...' : `${item.stock} ${item.unit}`}
+          </Text>
+          <TouchableOpacity
+            onPress={() => openEditModal(item)}
+          >
+            <Text className="text-xs text-blue-600 mt-2">Edit</Text>
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+    </Swipeable>
   );
 
   const renderRequestItem = ({ item }) => (
@@ -1292,12 +1678,6 @@ const MaterialsListScreen = () => {
     </View>
   );
 
-  // Keep your original date formatter for header chips
-  const formatHeaderDate = (date) => {
-    const options = { day: '2-digit', month: 'long', year: 'numeric' };
-    return date.toLocaleDateString('en-GB', options).replace(',', '');
-  };
-
   const renderLibraryItem = ({ item }) => (
     <TouchableOpacity
       className="flex-row items-center border-b border-gray-200 py-3"
@@ -1323,14 +1703,15 @@ const MaterialsListScreen = () => {
             <Text className="text-sm font-semibold text-gray-600">Material</Text>
             <Text className="text-sm font-semibold text-gray-600">In Stock</Text>
           </View>
-          <FlatList
-            data={filteredInventory}
-            renderItem={renderInventoryItem}
-            keyExtractor={(item) => item._id || item.id}
-            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
-            showsVerticalScrollIndicator={false}
-            // NO visual changes; we won't add pull-to-refresh controls here
-          />
+          <GestureHandlerRootView style={{ flex: 1 }}>
+            <FlatList
+              data={filteredInventory}
+              renderItem={renderInventoryItem}
+              keyExtractor={(item) => item._id || item.id}
+              contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
+              showsVerticalScrollIndicator={false}
+            />
+          </GestureHandlerRootView>
         </>
       );
     }
@@ -1388,7 +1769,7 @@ const MaterialsListScreen = () => {
         />
       </View>
 
-      {/* === Search (UNCHANGED) === */}
+      {/* === Search === */}
       <View className="mx-4 mt-1 h-12 flex-row items-center rounded-xl bg-white px-3">
         <Ionicons name="search" size={20} color="#9CA3AF" className="mr-2" />
         <TextInput
@@ -1400,10 +1781,10 @@ const MaterialsListScreen = () => {
         />
       </View>
 
-      {/* === Content (UNCHANGED) === */}
+      {/* === Content === */}
       <View className="flex-1">{renderContent()}</View>
 
-      {/* === Bottom Buttons (UNCHANGED) === */}
+      {/* === Bottom Buttons === */}
       <View
         className="absolute inset-x-0 bottom-16 left-4 right-4 flex-row items-center justify-between px-2"
         style={{ zIndex: 10 }}>
@@ -1427,7 +1808,7 @@ const MaterialsListScreen = () => {
         </TouchableOpacity>
       </View>
 
-      {/* === ACTION MODAL (UNCHANGED) === */}
+      {/* === ACTION MODAL === */}
       <Modal
         visible={materialActionModalVisible}
         transparent={true}
@@ -1490,7 +1871,7 @@ const MaterialsListScreen = () => {
         </TouchableOpacity>
       </Modal>
 
-      {/* === MATERIAL LIBRARY MODAL (UNCHANGED) === */}
+      {/* === MATERIAL LIBRARY MODAL === */}
       <Modal
         visible={materialLibraryModalVisible}
         transparent={true}
@@ -1554,106 +1935,575 @@ const MaterialsListScreen = () => {
         </TouchableOpacity>
       </Modal>
 
-      {/* === CREATE NEW MATERIAL MODAL (UNCHANGED VISUALLY) === */}
+      {/* === CREATE NEW MATERIAL MODAL === */}
       <Modal
         visible={createNewMaterialModalVisible}
         transparent={true}
         animationType="slide"
-        onRequestClose={() => setCreateNewMaterialModalVisible(false)}>
+        onRequestClose={() => !creatingMaterial && setCreateNewMaterialModalVisible(false)}>
         <TouchableOpacity
           className="flex-1 justify-end bg-black/50"
           activeOpacity={1}
-          onPress={() => setCreateNewMaterialModalVisible(false)}
+          onPress={() => !creatingMaterial && setCreateNewMaterialModalVisible(false)}
         >
-          <TouchableOpacity activeOpacity={1} className="max-h-[90%] rounded-t-3xl bg-white p-5" onPress={() => {}}>
+          <TouchableOpacity 
+            activeOpacity={1} 
+            className="h-[85%] rounded-t-3xl bg-white p-5" 
+            onPress={() => {}}
+          >
             <View className="mb-4 flex-row items-center justify-between">
               <Text className="text-lg font-bold text-gray-900">Create New Material</Text>
-              <TouchableOpacity onPress={() => setCreateNewMaterialModalVisible(false)}>
+              <TouchableOpacity 
+                onPress={() => !creatingMaterial && setCreateNewMaterialModalVisible(false)}
+                disabled={creatingMaterial}
+              >
                 <Ionicons name="close" size={24} color="#6B7280" />
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
+              {/* Material Name Field */}
               <View className="mb-4">
-                <Text className="mb-1 text-sm font-medium text-gray-700">Material Name</Text>
+                <Text className="mb-2 text-sm font-medium text-gray-700">Material Name *</Text>
                 <TextInput
-                  className="text-base text-gray-900"
+                  className="text-base text-gray-900 p-4 border border-gray-300 rounded-xl"
                   placeholder="Enter material name"
                   placeholderTextColor="#9CA3AF"
                   value={newMaterialForm.materialName}
                   onChangeText={(text) => setNewMaterialForm({...newMaterialForm, materialName: text})}
+                  editable={!creatingMaterial}
                 />
-                <View className="mt-1 h-px bg-gray-300" />
               </View>
 
+              {/* Unit Field */}
               <View className="mb-4">
-                <Text className="mb-1 text-sm font-medium text-gray-700">Unit</Text>
-                <View className="flex-row items-center justify-between">
-                  <Text className="text-base text-gray-900">{newMaterialForm.unit}</Text>
+                <Text className="mb-2 text-sm font-medium text-gray-700">Unit *</Text>
+                <TouchableOpacity 
+                  className="flex-row items-center justify-between p-4 border border-gray-300 rounded-xl"
+                  onPress={() => !creatingMaterial && setShowUnitModal(true)}
+                  disabled={creatingMaterial}
+                >
+                  <Text className={`text-base ${newMaterialForm.unit ? 'text-gray-900' : 'text-gray-400'}`}>
+                    {newMaterialForm.unit || 'Select unit'}
+                  </Text>
                   <Ionicons name="chevron-down" size={20} color="#9CA3AF" />
-                </View>
-                <View className="mt-1 h-px bg-gray-300" />
+                </TouchableOpacity>
               </View>
 
+              {/* GST Field */}
               <View className="mb-4">
-                <Text className="mb-1 text-sm font-medium text-gray-700">GST %</Text>
-                <View className="flex-row items-center justify-between">
-                  <Text className="text-base text-gray-900">{newMaterialForm.gst}</Text>
+                <Text className="mb-2 text-sm font-medium text-gray-700">GST % *</Text>
+                <TouchableOpacity 
+                  className="flex-row items-center justify-between p-4 border border-gray-300 rounded-xl"
+                  onPress={() => !creatingMaterial && setShowGstModal(true)}
+                  disabled={creatingMaterial}
+                >
+                  <Text className="text-base text-gray-900">{newMaterialForm.gst}%</Text>
                   <Ionicons name="chevron-down" size={20} color="#9CA3AF" />
-                </View>
-                <View className="mt-1 h-px bg-gray-300" />
+                </TouchableOpacity>
               </View>
 
+              {/* HSN Code Field */}
               <View className="mb-4">
-                <Text className="mb-1 text-sm font-medium text-gray-700">HSN Code</Text>
+                <Text className="mb-2 text-sm font-medium text-gray-700">HSN/SAC Code</Text>
                 <TextInput
-                  className="text-base text-gray-900"
-                  placeholder="Enter HSN code"
+                  className="text-base text-gray-900 p-4 border border-gray-300 rounded-xl"
+                  placeholder="Enter HSN/SAC code"
                   placeholderTextColor="#9CA3AF"
                   value={newMaterialForm.hsnCode}
                   onChangeText={(text) => setNewMaterialForm({...newMaterialForm, hsnCode: text})}
+                  editable={!creatingMaterial}
+                  keyboardType="numeric"
                 />
-                <View className="mt-1 h-px bg-gray-300" />
               </View>
 
+              {/* Category Field */}
               <View className="mb-4">
-                <Text className="mb-1 text-sm font-medium text-gray-700">Category</Text>
-                <View className="flex-row items-center justify-between">
-                  <Text className="text-base text-gray-400">{newMaterialForm.category}</Text>
+                <Text className="mb-2 text-sm font-medium text-gray-700">Category *</Text>
+                <TouchableOpacity 
+                  className="flex-row items-center justify-between p-4 border border-gray-300 rounded-xl"
+                  onPress={() => !creatingMaterial && setShowCategoryModal(true)}
+                  disabled={creatingMaterial}
+                >
+                  <Text className={`text-base ${newMaterialForm.category ? 'text-gray-900' : 'text-gray-400'}`}>
+                    {newMaterialForm.category || 'Select category'}
+                  </Text>
                   <Ionicons name="chevron-down" size={20} color="#9CA3AF" />
-                </View>
-                <View className="mt-1 h-px bg-gray-300" />
+                </TouchableOpacity>
               </View>
 
-              <View className="mb-6">
-                <Text className="mb-1 text-sm font-medium text-gray-700">Description</Text>
+              {/* Quantity Field */}
+              <View className="mb-4">
+                <Text className="mb-2 text-sm font-medium text-gray-700">Quantity *</Text>
                 <TextInput
-                  className="h-20 text-base text-gray-900"
+                  className="text-base text-gray-900 p-4 border border-gray-300 rounded-xl"
+                  placeholder="Enter quantity"
+                  placeholderTextColor="#9CA3AF"
+                  value={newMaterialForm.quantity}
+                  onChangeText={(text) => setNewMaterialForm({...newMaterialForm, quantity: text})}
+                  keyboardType="numeric"
+                  editable={!creatingMaterial}
+                />
+              </View>
+
+              {/* Stock Field */}
+              <View className="mb-4">
+                <Text className="mb-2 text-sm font-medium text-gray-700">Current Stock</Text>
+                <TextInput
+                  className="text-base text-gray-900 p-4 border border-gray-300 rounded-xl"
+                  placeholder="Enter current stock"
+                  placeholderTextColor="#9CA3AF"
+                  value={newMaterialForm.stock}
+                  onChangeText={(text) => setNewMaterialForm({...newMaterialForm, stock: text})}
+                  keyboardType="numeric"
+                  editable={!creatingMaterial}
+                />
+              </View>
+
+              {/* Price Field */}
+              <View className="mb-4">
+                <Text className="mb-2 text-sm font-medium text-gray-700">Price</Text>
+                <TextInput
+                  className="text-base text-gray-900 p-4 border border-gray-300 rounded-xl"
+                  placeholder="Enter price"
+                  placeholderTextColor="#9CA3AF"
+                  value={newMaterialForm.price}
+                  onChangeText={(text) => setNewMaterialForm({...newMaterialForm, price: text})}
+                  keyboardType="numeric"
+                  editable={!creatingMaterial}
+                />
+              </View>
+
+              {/* Minimum Stock Field */}
+              <View className="mb-4">
+                <Text className="mb-2 text-sm font-medium text-gray-700">Minimum Stock</Text>
+                <TextInput
+                  className="text-base text-gray-900 p-4 border border-gray-300 rounded-xl"
+                  placeholder="Enter minimum stock"
+                  placeholderTextColor="#9CA3AF"
+                  value={newMaterialForm.minStock}
+                  onChangeText={(text) => setNewMaterialForm({...newMaterialForm, minStock: text})}
+                  keyboardType="numeric"
+                  editable={!creatingMaterial}
+                />
+              </View>
+
+              {/* Description Field */}
+              <View className="mb-6">
+                <Text className="mb-2 text-sm font-medium text-gray-700">Description</Text>
+                <TextInput
+                  className="h-32 text-base text-gray-900 p-4 border border-gray-300 rounded-xl"
                   placeholder="Enter description..."
                   placeholderTextColor="#9CA3AF"
                   value={newMaterialForm.description}
                   onChangeText={(text) => setNewMaterialForm({...newMaterialForm, description: text})}
                   multiline
+                  editable={!creatingMaterial}
+                  textAlignVertical="top"
+                  numberOfLines={5}
                 />
               </View>
             </ScrollView>
 
-            {/* Button keeps same look; action will be integrated later when POST is required */}
-            <TouchableOpacity
-              className="flex-row items-center justify-center rounded-xl bg-blue-600 py-3.5"
-              onPress={() => {
-                // Keeping behavior same: just close for now (API to be added later steps)
-                setCreateNewMaterialModalVisible(false);
-              }}
+            <TouchableOpacity 
+              className={`flex-row items-center justify-center rounded-xl py-4 ${
+                creatingMaterial ? 'bg-blue-400' : 'bg-blue-600'
+              } mt-4`}
+              onPress={createNewMaterial}
+              disabled={creatingMaterial}
             >
-              <Text className="text-base font-semibold text-white">Create Material</Text>
-              <Ionicons name="checkmark" size={20} color="white" style={{ marginLeft: 6 }} />
+              {creatingMaterial ? (
+                <Text className="text-base font-semibold text-white">Creating...</Text>
+              ) : (
+                <>
+                  <Text className="text-base font-semibold text-white">Create Material</Text>
+                  <Ionicons name="checkmark" size={20} color="white" style={{ marginLeft: 6 }} />
+                </>
+              )}
             </TouchableOpacity>
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
 
-      {/* === REQUEST MATERIAL MODAL (UNCHANGED) === */}
+      {/* === EDIT MATERIAL MODAL === */}
+      <Modal
+        visible={editMaterialModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => !updatingMaterial && setEditMaterialModalVisible(false)}>
+        <TouchableOpacity
+          className="flex-1 justify-end bg-black/50"
+          activeOpacity={1}
+          onPress={() => !updatingMaterial && setEditMaterialModalVisible(false)}
+        >
+          <TouchableOpacity 
+            activeOpacity={1} 
+            className="h-[85%] rounded-t-3xl bg-white p-5" 
+            onPress={() => {}}
+          >
+            <View className="mb-4 flex-row items-center justify-between">
+              <Text className="text-lg font-bold text-gray-900">Edit Material</Text>
+              <TouchableOpacity 
+                onPress={() => !updatingMaterial && setEditMaterialModalVisible(false)}
+                disabled={updatingMaterial}
+              >
+                <Ionicons name="close" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
+              {/* Material Name Field */}
+              <View className="mb-4">
+                <Text className="mb-2 text-sm font-medium text-gray-700">Material Name *</Text>
+                <TextInput
+                  className="text-base text-gray-900 p-4 border border-gray-300 rounded-xl"
+                  placeholder="Enter material name"
+                  placeholderTextColor="#9CA3AF"
+                  value={editMaterialForm.materialName}
+                  onChangeText={(text) => setEditMaterialForm({...editMaterialForm, materialName: text})}
+                  editable={!updatingMaterial}
+                />
+              </View>
+
+              {/* Unit Field */}
+              <View className="mb-4">
+                <Text className="mb-2 text-sm font-medium text-gray-700">Unit *</Text>
+                <TouchableOpacity 
+                  className="flex-row items-center justify-between p-4 border border-gray-300 rounded-xl"
+                  onPress={() => !updatingMaterial && setShowEditUnitModal(true)}
+                  disabled={updatingMaterial}
+                >
+                  <Text className={`text-base ${editMaterialForm.unit ? 'text-gray-900' : 'text-gray-400'}`}>
+                    {editMaterialForm.unit || 'Select unit'}
+                  </Text>
+                  <Ionicons name="chevron-down" size={20} color="#9CA3AF" />
+                </TouchableOpacity>
+              </View>
+
+              {/* GST Field */}
+              <View className="mb-4">
+                <Text className="mb-2 text-sm font-medium text-gray-700">GST % *</Text>
+                <TouchableOpacity 
+                  className="flex-row items-center justify-between p-4 border border-gray-300 rounded-xl"
+                  onPress={() => !updatingMaterial && setShowEditGstModal(true)}
+                  disabled={updatingMaterial}
+                >
+                  <Text className="text-base text-gray-900">{editMaterialForm.gst}%</Text>
+                  <Ionicons name="chevron-down" size={20} color="#9CA3AF" />
+                </TouchableOpacity>
+              </View>
+
+              {/* HSN Code Field */}
+              <View className="mb-4">
+                <Text className="mb-2 text-sm font-medium text-gray-700">HSN/SAC Code</Text>
+                <TextInput
+                  className="text-base text-gray-900 p-4 border border-gray-300 rounded-xl"
+                  placeholder="Enter HSN/SAC code"
+                  placeholderTextColor="#9CA3AF"
+                  value={editMaterialForm.hsnCode}
+                  onChangeText={(text) => setEditMaterialForm({...editMaterialForm, hsnCode: text})}
+                  editable={!updatingMaterial}
+                  keyboardType="numeric"
+                />
+              </View>
+
+              {/* Category Field */}
+              <View className="mb-4">
+                <Text className="mb-2 text-sm font-medium text-gray-700">Category *</Text>
+                <TouchableOpacity 
+                  className="flex-row items-center justify-between p-4 border border-gray-300 rounded-xl"
+                  onPress={() => !updatingMaterial && setShowEditCategoryModal(true)}
+                  disabled={updatingMaterial}
+                >
+                  <Text className={`text-base ${editMaterialForm.category ? 'text-gray-900' : 'text-gray-400'}`}>
+                    {editMaterialForm.category || 'Select category'}
+                  </Text>
+                  <Ionicons name="chevron-down" size={20} color="#9CA3AF" />
+                </TouchableOpacity>
+              </View>
+
+              {/* Quantity Field */}
+              <View className="mb-4">
+                <Text className="mb-2 text-sm font-medium text-gray-700">Quantity *</Text>
+                <TextInput
+                  className="text-base text-gray-900 p-4 border border-gray-300 rounded-xl"
+                  placeholder="Enter quantity"
+                  placeholderTextColor="#9CA3AF"
+                  value={editMaterialForm.quantity}
+                  onChangeText={(text) => setEditMaterialForm({...editMaterialForm, quantity: text})}
+                  keyboardType="numeric"
+                  editable={!updatingMaterial}
+                />
+              </View>
+
+              {/* Stock Field */}
+              <View className="mb-4">
+                <Text className="mb-2 text-sm font-medium text-gray-700">Current Stock</Text>
+                <TextInput
+                  className="text-base text-gray-900 p-4 border border-gray-300 rounded-xl"
+                  placeholder="Enter current stock"
+                  placeholderTextColor="#9CA3AF"
+                  value={editMaterialForm.stock}
+                  onChangeText={(text) => setEditMaterialForm({...editMaterialForm, stock: text})}
+                  keyboardType="numeric"
+                  editable={!updatingMaterial}
+                />
+              </View>
+
+              {/* Price Field */}
+              <View className="mb-4">
+                <Text className="mb-2 text-sm font-medium text-gray-700">Price</Text>
+                <TextInput
+                  className="text-base text-gray-900 p-4 border border-gray-300 rounded-xl"
+                  placeholder="Enter price"
+                  placeholderTextColor="#9CA3AF"
+                  value={editMaterialForm.price}
+                  onChangeText={(text) => setEditMaterialForm({...editMaterialForm, price: text})}
+                  keyboardType="numeric"
+                  editable={!updatingMaterial}
+                />
+              </View>
+
+              {/* Minimum Stock Field */}
+              <View className="mb-4">
+                <Text className="mb-2 text-sm font-medium text-gray-700">Minimum Stock</Text>
+                <TextInput
+                  className="text-base text-gray-900 p-4 border border-gray-300 rounded-xl"
+                  placeholder="Enter minimum stock"
+                  placeholderTextColor="#9CA3AF"
+                  value={editMaterialForm.minStock}
+                  onChangeText={(text) => setEditMaterialForm({...editMaterialForm, minStock: text})}
+                  keyboardType="numeric"
+                  editable={!updatingMaterial}
+                />
+              </View>
+
+              {/* Description Field */}
+              <View className="mb-6">
+                <Text className="mb-2 text-sm font-medium text-gray-700">Description</Text>
+                <TextInput
+                  className="h-32 text-base text-gray-900 p-4 border border-gray-300 rounded-xl"
+                  placeholder="Enter description..."
+                  placeholderTextColor="#9CA3AF"
+                  value={editMaterialForm.description}
+                  onChangeText={(text) => setEditMaterialForm({...editMaterialForm, description: text})}
+                  multiline
+                  editable={!updatingMaterial}
+                  textAlignVertical="top"
+                  numberOfLines={5}
+                />
+              </View>
+            </ScrollView>
+
+            <TouchableOpacity 
+              className={`flex-row items-center justify-center rounded-xl py-4 ${
+                updatingMaterial ? 'bg-blue-400' : 'bg-blue-600'
+              } mt-4`}
+              onPress={handleEditMaterial}
+              disabled={updatingMaterial}
+            >
+              {updatingMaterial ? (
+                <Text className="text-base font-semibold text-white">Updating...</Text>
+              ) : (
+                <>
+                  <Text className="text-base font-semibold text-white">Update Material</Text>
+                  <Ionicons name="checkmark" size={20} color="white" style={{ marginLeft: 6 }} />
+                </>
+              )}
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* === DROPDOWN SELECTION MODALS === */}
+
+      {/* Category Selection Modal */}
+      <Modal
+        visible={showCategoryModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowCategoryModal(false)}
+      >
+        <View className="flex-1 justify-end bg-black/50">
+          <View className="h-1/2 bg-white rounded-t-3xl p-5">
+            <View className="flex-row justify-between items-center mb-4">
+              <Text className="text-lg font-bold text-gray-900">Select Category</Text>
+              <TouchableOpacity onPress={() => setShowCategoryModal(false)}>
+                <Ionicons name="close" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={categories}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  className="py-4 border-b border-gray-200"
+                  onPress={() => selectCategory(item)}
+                >
+                  <Text className="text-base text-gray-900">{item}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Unit Selection Modal */}
+      <Modal
+        visible={showUnitModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowUnitModal(false)}
+      >
+        <View className="flex-1 justify-end bg-black/50">
+          <View className="h-1/2 bg-white rounded-t-3xl p-5">
+            <View className="flex-row justify-between items-center mb-4">
+              <Text className="text-lg font-bold text-gray-900">Select Unit</Text>
+              <TouchableOpacity onPress={() => setShowUnitModal(false)}>
+                <Ionicons name="close" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={units}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  className="py-4 border-b border-gray-200"
+                  onPress={() => selectUnit(item)}
+                >
+                  <Text className="text-base text-gray-900">{item}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* GST Selection Modal */}
+      <Modal
+        visible={showGstModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowGstModal(false)}
+      >
+        <View className="flex-1 justify-end bg-black/50">
+          <View className="h-1/2 bg-white rounded-t-3xl p-5">
+            <View className="flex-row justify-between items-center mb-4">
+              <Text className="text-lg font-bold text-gray-900">Select GST Rate</Text>
+              <TouchableOpacity onPress={() => setShowGstModal(false)}>
+                <Ionicons name="close" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={gstRates}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  className="py-4 border-b border-gray-200"
+                  onPress={() => selectGst(item)}
+                >
+                  <Text className="text-base text-gray-900">{item}%</Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Edit Category Selection Modal */}
+      <Modal
+        visible={showEditCategoryModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowEditCategoryModal(false)}
+      >
+        <View className="flex-1 justify-end bg-black/50">
+          <View className="h-1/2 bg-white rounded-t-3xl p-5">
+            <View className="flex-row justify-between items-center mb-4">
+              <Text className="text-lg font-bold text-gray-900">Select Category</Text>
+              <TouchableOpacity onPress={() => setShowEditCategoryModal(false)}>
+                <Ionicons name="close" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={categories}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  className="py-4 border-b border-gray-200"
+                  onPress={() => selectEditCategory(item)}
+                >
+                  <Text className="text-base text-gray-900">{item}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Edit Unit Selection Modal */}
+      <Modal
+        visible={showEditUnitModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowEditUnitModal(false)}
+      >
+        <View className="flex-1 justify-end bg-black/50">
+          <View className="h-1/2 bg-white rounded-t-3xl p-5">
+            <View className="flex-row justify-between items-center mb-4">
+              <Text className="text-lg font-bold text-gray-900">Select Unit</Text>
+              <TouchableOpacity onPress={() => setShowEditUnitModal(false)}>
+                <Ionicons name="close" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={units}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  className="py-4 border-b border-gray-200"
+                  onPress={() => selectEditUnit(item)}
+                >
+                  <Text className="text-base text-gray-900">{item}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Edit GST Selection Modal */}
+      <Modal
+        visible={showEditGstModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowEditGstModal(false)}
+      >
+        <View className="flex-1 justify-end bg-black/50">
+          <View className="h-1/2 bg-white rounded-t-3xl p-5">
+            <View className="flex-row justify-between items-center mb-4">
+              <Text className="text-lg font-bold text-gray-900">Select GST Rate</Text>
+              <TouchableOpacity onPress={() => setShowEditGstModal(false)}>
+                <Ionicons name="close" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={gstRates}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  className="py-4 border-b border-gray-200"
+                  onPress={() => selectEditGst(item)}
+                >
+                  <Text className="text-base text-gray-900">{item}%</Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* === REQUEST MATERIAL MODAL === */}
       <Modal
         visible={requestMaterialModalVisible}
         transparent={true}
@@ -1761,7 +2611,7 @@ const MaterialsListScreen = () => {
         </TouchableOpacity>
       </Modal>
 
-      {/* === PURCHASED MODAL (UNCHANGED) === */}
+      {/* === PURCHASED MODAL === */}
       <Modal
         visible={addMaterialPurchaseModalVisible}
         transparent={true}
@@ -1781,7 +2631,7 @@ const MaterialsListScreen = () => {
             </View>
             
             <View className="mb-4 flex-row items-center justify-between">
-              <Text className="text-sm text-gray-600">{formatHeaderDate(purchaseDate)}</Text>
+              <Text className="text-sm text-gray-600">{formatDate(purchaseDate)}</Text>
               <TouchableOpacity onPress={() => setShowPurchaseDatePicker(true)}>
                 <Ionicons name="calendar-outline" size={20} color="#3B82F6" />
               </TouchableOpacity>
@@ -1884,7 +2734,7 @@ const MaterialsListScreen = () => {
         </TouchableOpacity>
       </Modal>
 
-      {/* === RECEIVED MODAL (UNCHANGED) === */}
+      {/* === RECEIVED MODAL === */}
       <Modal
         visible={receivedModalVisible}
         transparent={true}
@@ -1903,7 +2753,7 @@ const MaterialsListScreen = () => {
               </TouchableOpacity>
             </View>
             <View className="mb-4 flex-row items-center justify-between">
-              <Text className="text-sm text-gray-600">{formatHeaderDate(date)}</Text>
+              <Text className="text-sm text-gray-600">{formatDate(date)}</Text>
               <TouchableOpacity onPress={() => setShowDatePicker(true)}>
                 <Ionicons name="calendar-outline" size={20} color="#3B82F6" />
               </TouchableOpacity>
@@ -1991,7 +2841,7 @@ const MaterialsListScreen = () => {
         </TouchableOpacity>
       </Modal>
 
-      {/* === USED MODAL (UNCHANGED) === */}
+      {/* === USED MODAL === */}
       <Modal
         visible={usedModalVisible}
         transparent={true}

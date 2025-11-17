@@ -81,6 +81,11 @@ import PrivacyPolicyScreen from 'screens/Profile/PrivacyPolicyScreen';
 // Materials Screens
 import MaterialsListScreen from 'screens/Materials/MaterialsListScreen';
 import MaterialDetailScreen from 'screens/Materials/MaterialDetailScreen';
+import PreviewProposalScreen from 'screens/Proposals/PreviewProposalScreen';
+import EditProposalScreen from 'screens/Proposals/EditProposalScreen';
+import ImagePreviewScreen from 'screens/Design-Management/ImagePreviewScreen';
+// Design Management
+
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -98,6 +103,7 @@ const ProjectStack = () => (
     <Stack.Screen name="AddNewTask" component={AddNewTask} />
     <Stack.Screen name="TaskScreen" component={TaskScreen} />
     <Stack.Screen name="AddMembers" component={AddMembers} />
+    <Stack.Screen name="ImagePreview" component={ImagePreviewScreen} />
   </Stack.Navigator>
 );
 
@@ -109,6 +115,8 @@ const ProposalStack = () => (
     <Stack.Screen name="SubmitProposal" component={SubmitProposal} />
     <Stack.Screen name="ViewProposal" component={ViewProposal} />
     <Stack.Screen name="ChooseTemplate" component={ChooseTemplate} />
+    <Stack.Screen name="PreviewProposalScreen"component={PreviewProposalScreen}/>
+    <Stack.Screen name="EditProposalScreen"component={EditProposalScreen}/>
   </Stack.Navigator>
 );
 

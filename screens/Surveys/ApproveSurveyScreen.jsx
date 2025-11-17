@@ -142,7 +142,7 @@ const ApproveSurveyScreen = () => {
         </ScrollView>
       </View>
 
-  <BottomNavBar/>
+
     </SafeAreaView>
   );
 };

@@ -17,6 +17,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import * as Crypto from 'expo-crypto';
 import { useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 
 const API_BASE = 'https://skystruct-lite-backend.vercel.app';
 const CLOUDINARY_CONFIG = {
@@ -31,6 +32,7 @@ const fallbackImage = require('../../assets/plan1.jpg'); // fallback / placehold
 const PlansScreen = () => {
   const route = useRoute();
   const projectId = route?.params?.projectId || route?.params?.project?._id || null;
+const navigation = useNavigation();
 
   const [planCategories, setPlanCategories] = useState([]);
   const [expandedSections, setExpandedSections] = useState({});
@@ -86,7 +88,7 @@ const PlansScreen = () => {
       const formatted = folders.map((folder) => {
         const id = folder._id || folder.id || Math.random().toString();
         const title = folder.name || folder.title || 'Untitled Folder';
-        const docs = folder.documents || folder.docs || folder.files || [];
+        const docs = folder.fileUrls || folder.docs || folder.files || [];
 
         const plans = docs.map((doc) => {
           const url = doc.url || doc.path || doc.fileUrl || '';
@@ -281,7 +283,7 @@ const PlansScreen = () => {
       const body = {
         projectId,
         name: folderName,
-        documents: documentMeta,
+        fileUrls: documentMeta,
       };
       console.log('Creating folder with body:', body, 'POST', url);
       const res = await fetch(url, {
@@ -304,11 +306,11 @@ const PlansScreen = () => {
   const addDocumentToFolder = async (folderId, documentMeta) => {
     // documentMeta: { name, url, mimeType }
     try {
-      const url = `${API_BASE}/api/documents/folders/${folderId}/documents`;
+      const url = `${API_BASE}/api/documents/folders/${folderId}`;
       const headers = await getAuthHeaders();
       console.log('Adding document to folder:', url, documentMeta);
       const res = await fetch(url, {
-        method: 'POST',
+        method: 'PUT',
         headers,
         body: JSON.stringify(documentMeta),
       });
@@ -325,6 +327,7 @@ const PlansScreen = () => {
   };
 
   // -----------------------
+  
   // Submit new plan flow
   // -----------------------
   const handleSubmit = async () => {
@@ -527,15 +530,15 @@ const PlansScreen = () => {
                     <View className="flex-row flex-wrap -mx-2">
                       {category.plans.map((plan) => (
                         <View key={plan.id} className="w-1/2 px-2 mb-4">
-                          <TouchableOpacity className="bg-gray-50 rounded-xl p-3 border border-gray-100">
-                            <View className="bg-white rounded-lg mb-3 overflow-hidden border border-gray-200">
-                              <Image source={plan.image} className="w-full h-32" resizeMode="contain" />
-                            </View>
-                            <View className="items-center">
-                              <Text className="text-gray-900 text-base font-semibold mb-1">{plan.title}</Text>
-                              <Text className="text-gray-400 text-sm">{plan.subtitle}</Text>
-                            </View>
-                          </TouchableOpacity>
+                          <TouchableOpacity 
+  className="bg-white rounded-lg mb-3 overflow-hidden border border-gray-200"
+  onPress={() => navigation.navigate('ImagePreview', {
+    imageSource: plan.image,
+    planTitle: plan.title
+  })}
+>
+  <Image source={plan.image} className="w-full h-32" resizeMode="contain" />
+</TouchableOpacity>
                         </View>
                       ))}
                     </View>
