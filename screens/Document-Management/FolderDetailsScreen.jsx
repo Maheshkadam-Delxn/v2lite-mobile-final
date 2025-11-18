@@ -1,6 +1,7 @@
 import { View, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native'
 import React from 'react'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
+import Header from 'components/Header'
 
 const FolderDetailsScreen = ({ route }) => {
   const { folderName } = route.params || { folderName: 'Sample Reports' }
@@ -34,6 +35,7 @@ const FolderDetailsScreen = ({ route }) => {
 
   return (
     <View className="flex-1 bg-gray-100">
+      <Header title="Sample Reports" showBackButton={true} onRightIconPress={() => {}} backgroundColor="#0066FF" titleColor="white" iconColor="white" />
       <ScrollView 
         className="flex-1 px-5" 
         showsVerticalScrollIndicator={false}

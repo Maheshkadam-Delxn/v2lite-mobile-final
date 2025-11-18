@@ -77,6 +77,7 @@ import SubmitProposalCustomer from 'screens/HomeOwner/SubmitProposalCustomer';
 // Profile Screens
 import EditProfileScreen from 'screens/Profile/EditProfileScreen';
 import PrivacyPolicyScreen from 'screens/Profile/PrivacyPolicyScreen';
+import CustomerSupport from 'screens/Profile/CustomerSupport';
 
 // Materials Screens
 import MaterialsListScreen from 'screens/Materials/MaterialsListScreen';
@@ -86,6 +87,16 @@ import EditProposalScreen from 'screens/Proposals/EditProposalScreen';
 import ImagePreviewScreen from 'screens/Design-Management/ImagePreviewScreen';
 // Design Management
 
+
+
+//Issues, Risk Screens
+import RiskCategoriesScreen from 'screens/Issues/RiskCategoriesScreen';
+import EscalationMatrixScreen from 'screens/Issues/EscalationMatrixScreen';
+
+// Reports
+import ReportsListScreen from 'screens/Reports/ReportsListScreen';
+import ReportDetailScreen from 'screens/Reports/ReportDetailScreen';
+import FolderDetailsScreen from 'screens/Document-Management/FolderDetailsScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -104,6 +115,8 @@ const ProjectStack = () => (
     <Stack.Screen name="TaskScreen" component={TaskScreen} />
     <Stack.Screen name="AddMembers" component={AddMembers} />
     <Stack.Screen name="ImagePreview" component={ImagePreviewScreen} />
+    <Stack.Screen name="ReportDetailScreen" component={ReportDetailScreen} />
+    <Stack.Screen name="FolderDetails" component={FolderDetailsScreen} />
   </Stack.Navigator>
 );
 
@@ -133,6 +146,23 @@ const ProfileStack = () => (
     <Stack.Screen name="ProfileMain" component={ProfilePageScreen} />
     <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
     <Stack.Screen name="PrivacyPolicyScreen" component={PrivacyPolicyScreen} />
+    <Stack.Screen name="Customer Support" component={CustomerSupport} />
+  </Stack.Navigator>
+);
+
+
+const IssuesStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="RiskCategoriesScreen" component={RiskCategoriesScreen} />
+    <Stack.Screen name='EscalationMatrixScreen' component={EscalationMatrixScreen}/>
+  </Stack.Navigator>
+);
+
+// Reports Stack Navigator
+const ReportsStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="ReportsList" component={ReportsListScreen} />
+    <Stack.Screen name='ReportDetailScreen' component={ReportDetailScreen}/>
   </Stack.Navigator>
 );
 
@@ -181,6 +211,7 @@ const HomeOwnerStack = () => (
     <Stack.Screen name="QualityChecks" component={QualityChecks} />
     <Stack.Screen name="ChangeRequests" component={ChangeRequests} />
     <Stack.Screen name="MaterialStatus" component={MaterialStatus} />
+    
     <Stack.Screen name="Overview" component={Overview} />
     <Stack.Screen name="CustomerChooseTemplate" component={CustomerChooseTemplate} />
     <Stack.Screen name="CustomerCreateProposal" component={CustomerCreateProposal} />
@@ -238,6 +269,7 @@ function MainTabs() {
         <Tab.Screen name="Users" component={UsersStack} options={{ title: 'Users' }} />
         <Tab.Screen name="Materials" component={MaterialsStack} options={{ title: 'Materials' }} />
         <Tab.Screen name="Account" component={ProfileStack} options={{ title: 'Account' }} />
+        
       </Tab.Navigator>
     </SafeAreaView>
   );

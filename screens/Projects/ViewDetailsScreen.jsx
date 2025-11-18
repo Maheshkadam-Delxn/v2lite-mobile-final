@@ -279,8 +279,9 @@ import ApproveSurveyScreen from 'screens/Surveys/ApproveSurveyScreen';
 import PlansScreen from 'screens/Design-Management/PlansScreen';
 import MaterialsListScreen from 'screens/Materials/MaterialsListScreen';
 import AttendanceScreen from 'screens/Attendance/AttendaceScreen';
-import FileScreen from 'screens/Document-Management/FileScreen';
-
+import RiskCategoriesScreen from 'screens/Issues/RiskCategoriesScreen';
+import ReportssListScreen from 'screens/Reports/ReportsListScreen'
+import FilesScreen from 'screens/Document-Management/FileScreen';
 
 
 const ViewDetailsScreen = () => {
@@ -313,11 +314,13 @@ console.log("asdfasdfasdf",project);
     { id: 'Details', label: 'Details' },
     { id: 'Task', label: 'Task' },
     { id: 'Transaction', label: 'Transaction' },
+    { id: 'Files', label: 'Files' },
     { id: 'Sites', label: 'Sites' },
     { id: 'Plans', label: 'Plans' },
     { id: 'Material', label: 'Material' },
     { id: 'Attendance', label: 'Attendance' },
-    { id: 'Files', label: 'Files' },
+    { id: 'Issues', label: 'Issues'},
+    { id: 'Reports', label: 'Reports'},
   ];
 
   const viewTabs = [
@@ -378,6 +381,10 @@ console.log("asdfasdfasdf",project);
         // Render the PaymentsTransaction component inline
         return <PaymentsTransaction project={project} />;
 
+      case 'Files':
+        // Render the PaymentsTransaction component inline
+        return <FilesScreen project={project} />;
+
           case 'Sites':
         // Render the PaymentsTransaction component inline
         return <ApproveSurveyScreen project={project} />;
@@ -393,10 +400,13 @@ console.log("asdfasdfasdf",project);
         // Render the PaymentsTransaction component inline
         return <AttendanceScreen project={project} />;
 
-          case 'Files':
+             case 'Issues':
         // Render the PaymentsTransaction component inline
-        return <FileScreen project={project} />;
+        return <RiskCategoriesScreen project={project} />;
 
+           case 'Reports':
+        // Render the PaymentsTransaction component inline
+        return <ReportssListScreen project={project} />;
       
       default:
         return null;

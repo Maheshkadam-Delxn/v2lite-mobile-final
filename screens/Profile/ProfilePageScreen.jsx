@@ -680,6 +680,7 @@ import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Header from '../../components/Header';
+import CustomerSupport from './CustomerSupport';
 
 const API_URL = 'https://skystruct-lite-backend.vercel.app/api/users';
 
@@ -955,7 +956,7 @@ const ProfilePageScreen = () => {
           <MenuItem
             icon="help-circle"
             title="Help Center"
-            onPress={() => navigation.navigate('HelpCenter')}
+            onPress={() => navigation.navigate('Customer Support')}
           />
           <View className="h-[1px] bg-[#E5E5EA] ml-12" />
           <MenuItem
