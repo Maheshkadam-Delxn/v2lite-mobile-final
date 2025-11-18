@@ -10,7 +10,7 @@ import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 
-import "./global.css";
+import './global.css';
 
 // Auth Screens
 import Splash1 from './screens/Auth/SplashScreen';
@@ -23,7 +23,7 @@ import OTPVerificationScreen from 'screens/Auth/OTPVerificationScreen';
 import CreatePasswordScreen from 'screens/Auth/ChangePasswordScreen';
 
 // Main Tab Screens
-import ProjectListScreen from './screens/Projects/ProjectsListScreen'; 
+import ProjectListScreen from './screens/Projects/ProjectsListScreen';
 import ProposalsListScreen from './screens/Proposals/ProposalsListScreen';
 import UsersScreen from 'screens/Users/UsersScreen';
 import ProfilePageScreen from 'screens/Profile/ProfilePageScreen';
@@ -41,6 +41,8 @@ import CreateProposalScreen from 'screens/Proposals/CreateProposal';
 import SubmitProposal from 'screens/Proposals/SubmitProposal';
 import ViewProposal from 'screens/Proposals/ViewProposal';
 import ChooseTemplate from 'screens/Proposals/ChooseTemplate';
+import PreviewProposalScreen from 'screens/Proposals/PreviewProposalScreen';
+import EditProposalScreen from 'screens/Proposals/EditProposalScreen';
 
 // Accounting & Payment Screens
 import Transaction from 'screens/AccountingPayement/Transaction';
@@ -57,7 +59,7 @@ import TransactionApproval from 'screens/AccountingPayement/TransactionApproval'
 
 // Survey Screens
 import ApproveSurveyScreen from 'screens/Surveys/ApproveSurveyScreen';
-import SurveyRequestScreen from 'screens/Surveys/SurveyRequestScreen'; 
+import SurveyRequestScreen from 'screens/Surveys/SurveyRequestScreen';
 import SurveyApprovalScreen from 'screens/Surveys/SurveyApprovalScreen';
 import NewSurveyScreen from 'screens/Surveys/NewSurveyScreen';
 import SurveyDetailScreen from 'screens/Surveys/SurveyDetailScreen';
@@ -82,21 +84,18 @@ import CustomerSupport from 'screens/Profile/CustomerSupport';
 // Materials Screens
 import MaterialsListScreen from 'screens/Materials/MaterialsListScreen';
 import MaterialDetailScreen from 'screens/Materials/MaterialDetailScreen';
-import PreviewProposalScreen from 'screens/Proposals/PreviewProposalScreen';
-import EditProposalScreen from 'screens/Proposals/EditProposalScreen';
 import ImagePreviewScreen from 'screens/Design-Management/ImagePreviewScreen';
-// Design Management
 
-
-
-//Issues, Risk Screens
+// Issues & Risk Screens
 import RiskCategoriesScreen from 'screens/Issues/RiskCategoriesScreen';
 import EscalationMatrixScreen from 'screens/Issues/EscalationMatrixScreen';
 
-// Reports
+// Reports & Documents
 import ReportsListScreen from 'screens/Reports/ReportsListScreen';
 import ReportDetailScreen from 'screens/Reports/ReportDetailScreen';
 import FolderDetailsScreen from 'screens/Document-Management/FolderDetailsScreen';
+import AddDocumentScreen from 'screens/Document-Management/AddDocumentScreen';
+import TasksTab from 'components/Project/TasksTab';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -117,6 +116,7 @@ const ProjectStack = () => (
     <Stack.Screen name="ImagePreview" component={ImagePreviewScreen} />
     <Stack.Screen name="ReportDetailScreen" component={ReportDetailScreen} />
     <Stack.Screen name="FolderDetails" component={FolderDetailsScreen} />
+    <Stack.Screen name="AddDocumentScreen" component={AddDocumentScreen} />
   </Stack.Navigator>
 );
 
@@ -128,8 +128,8 @@ const ProposalStack = () => (
     <Stack.Screen name="SubmitProposal" component={SubmitProposal} />
     <Stack.Screen name="ViewProposal" component={ViewProposal} />
     <Stack.Screen name="ChooseTemplate" component={ChooseTemplate} />
-    <Stack.Screen name="PreviewProposalScreen"component={PreviewProposalScreen}/>
-    <Stack.Screen name="EditProposalScreen"component={EditProposalScreen}/>
+    <Stack.Screen name="PreviewProposalScreen" component={PreviewProposalScreen} />
+    <Stack.Screen name="EditProposalScreen" component={EditProposalScreen} />
   </Stack.Navigator>
 );
 
@@ -146,15 +146,15 @@ const ProfileStack = () => (
     <Stack.Screen name="ProfileMain" component={ProfilePageScreen} />
     <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
     <Stack.Screen name="PrivacyPolicyScreen" component={PrivacyPolicyScreen} />
-    <Stack.Screen name="Customer Support" component={CustomerSupport} />
+    <Stack.Screen name="CustomerSupport" component={CustomerSupport} />
   </Stack.Navigator>
 );
 
-
+// Issues Stack Navigator
 const IssuesStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="RiskCategoriesScreen" component={RiskCategoriesScreen} />
-    <Stack.Screen name='EscalationMatrixScreen' component={EscalationMatrixScreen}/>
+    <Stack.Screen name="EscalationMatrixScreen" component={EscalationMatrixScreen} />
   </Stack.Navigator>
 );
 
@@ -162,7 +162,7 @@ const IssuesStack = () => (
 const ReportsStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="ReportsList" component={ReportsListScreen} />
-    <Stack.Screen name='ReportDetailScreen' component={ReportDetailScreen}/>
+    <Stack.Screen name="ReportDetailScreen" component={ReportDetailScreen} />
   </Stack.Navigator>
 );
 
@@ -202,25 +202,7 @@ const MaterialsStack = () => (
   </Stack.Navigator>
 );
 
-// Home Owner Stack Navigator
-const HomeOwnerStack = () => (
-  <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="ProjectTimeline" component={ProjectTimeline} />
-    <Stack.Screen name="BudgetTracker" component={BudgetTracker} />
-    <Stack.Screen name="DesignApprovals" component={DesignApprovals} />
-    <Stack.Screen name="QualityChecks" component={QualityChecks} />
-    <Stack.Screen name="ChangeRequests" component={ChangeRequests} />
-    <Stack.Screen name="MaterialStatus" component={MaterialStatus} />
-    
-    <Stack.Screen name="Overview" component={Overview} />
-    <Stack.Screen name="CustomerChooseTemplate" component={CustomerChooseTemplate} />
-    <Stack.Screen name="CustomerCreateProposal" component={CustomerCreateProposal} />
-    <Stack.Screen name="SubmitProposalCustomer" component={SubmitProposalCustomer} />
-    <Stack.Screen name="ViewCustomerProposal" component={ViewProposal} />
-  </Stack.Navigator>
-);
-
-// ✅ Main Tab Navigator — cleaned bottom bar (no shadow, no elevation)
+// Main Tab Navigator (Bottom Tabs)
 function MainTabs() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['bottom']}>
@@ -228,12 +210,11 @@ function MainTabs() {
         screenOptions={({ route }) => ({
           tabBarIcon: ({ focused, color, size }) => {
             let iconName;
-
             if (route.name === 'Projects') iconName = focused ? 'apps-sharp' : 'apps-outline';
-            else if (route.name === 'Templates') iconName = focused ? 'document-text' : 'document-text-outline';
-            else if (route.name === 'Surveys') iconName = focused ? 'clipboard' : 'clipboard-outline';
-            else if (route.name === 'Materials') iconName = focused ? 'cube' : 'cube-outline';
+            else if (route.name === 'Templates')
+              iconName = focused ? 'document-text' : 'document-text-outline';
             else if (route.name === 'Users') iconName = focused ? 'people' : 'people-outline';
+            else if (route.name === 'Materials') iconName = focused ? 'cube' : 'cube-outline';
             else if (route.name === 'Account') iconName = focused ? 'person' : 'person-outline';
 
             return <Ionicons name={iconName} size={size} color={color} />;
@@ -245,15 +226,8 @@ function MainTabs() {
             paddingBottom: 10,
             paddingTop: 10,
             backgroundColor: '#fff',
-
-            // 🚫 remove shadows completely
-            elevation: 0, // Android
-            shadowColor: 'transparent', // iOS
+            elevation: 0,
             shadowOpacity: 0,
-            shadowOffset: { width: 0, height: 0 },
-            shadowRadius: 0,
-
-            // remove border line if you want flat clean look
             borderTopWidth: 0,
           },
           tabBarLabelStyle: {
@@ -262,20 +236,18 @@ function MainTabs() {
             marginTop: 4,
           },
           headerShown: false,
-        })}
-      >
+        })}>
         <Tab.Screen name="Projects" component={ProjectStack} options={{ title: 'Projects' }} />
         <Tab.Screen name="Templates" component={ProposalStack} options={{ title: 'Templates' }} />
         <Tab.Screen name="Users" component={UsersStack} options={{ title: 'Users' }} />
         <Tab.Screen name="Materials" component={MaterialsStack} options={{ title: 'Materials' }} />
         <Tab.Screen name="Account" component={ProfileStack} options={{ title: 'Account' }} />
-        
       </Tab.Navigator>
     </SafeAreaView>
   );
 }
 
-// Auth Stack Navigator
+// Auth Stack
 const AuthStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="Splash1" component={Splash1} />
@@ -305,10 +277,7 @@ export default function App() {
     const checkAuth = async () => {
       try {
         const token = await AsyncStorage.getItem(TOKEN_KEY);
-        console.log('[App] startup token present:', !!token);
-
-        if (token) setInitialRoute('MainApp');
-        else setInitialRoute('Auth');
+        setInitialRoute(token ? 'MainApp' : 'Auth');
       } catch (err) {
         console.error('[App] auth check error:', err);
         setInitialRoute('Auth');
@@ -320,9 +289,15 @@ export default function App() {
     if (fontsLoaded) checkAuth();
   }, [fontsLoaded]);
 
-  if (!fontsLoaded || isCheckingAuth || !initialRoute) {
+  if (!fontsLoaded || isCheckingAuth) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: '#fff',
+        }}>
         <ActivityIndicator size="large" color="#0066FF" />
       </View>
     );
@@ -332,16 +307,36 @@ export default function App() {
     <View style={{ flex: 1 }}>
       <StatusBar style="light" backgroundColor="#ffffff" />
       <NavigationContainer ref={navigationRef}>
-        <Stack.Navigator initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          {/* Auth Flow */}
           <Stack.Screen name="Auth" component={AuthStack} />
+
+          {/* Main App with Bottom Tabs */}
           <Stack.Screen name="MainApp" component={MainTabs} />
-          <Stack.Screen name="HomeOwner" component={HomeOwnerStack} />
+
+          {/* All Screens Now Reachable Directly */}
+          <Stack.Screen name="AddDocumentScreen" component={AddDocumentScreen} />
+          <Stack.Screen name="CustomerChooseTemplate" component={CustomerChooseTemplate} />
+          <Stack.Screen name="CustomerCreateProposal" component={CustomerCreateProposal} />
+          <Stack.Screen name="SubmitProposalCustomer" component={SubmitProposalCustomer} />
+          <Stack.Screen name="Overview" component={Overview} />
+          <Stack.Screen name="ProjectTimeline" component={ProjectTimeline} />
+          <Stack.Screen name="BudgetTracker" component={BudgetTracker} />
+          <Stack.Screen name="DesignApprovals" component={DesignApprovals} />
+          <Stack.Screen name="QualityChecks" component={QualityChecks} />
+          <Stack.Screen name="ChangeRequests" component={ChangeRequests} />
+          <Stack.Screen name="MaterialStatus" component={MaterialStatus} />
+          <Stack.Screen name="SurveyRequestScreen" component={SurveyRequestScreen} />
+          <Stack.Screen name="SurveyApprovalScreen" component={SurveyApprovalScreen} />
+          <Stack.Screen name="NewSurveyScreen" component={NewSurveyScreen} />
+          <Stack.Screen name="TasksTab" component={TasksTab}/>
+
+
+          {/* Modal Example */}
           <Stack.Screen
             name="TransactionModal"
             component={Transaction}
-            options={{
-              presentation: 'modal',
-            }}
+            options={{ presentation: 'modal' }}
           />
         </Stack.Navigator>
       </NavigationContainer>
