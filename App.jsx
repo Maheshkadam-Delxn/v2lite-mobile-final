@@ -97,6 +97,10 @@ import FolderDetailsScreen from 'screens/Document-Management/FolderDetailsScreen
 import AddDocumentScreen from 'screens/Document-Management/AddDocumentScreen';
 import TasksTab from 'components/Project/TasksTab';
 import AuditDashboard from 'screens/Audit/AuditDashboard';
+import AddSnagItem from 'screens/Audit/AddSnagItem';
+import AssignedSnag from 'screens/Audit/AssignedSnag';
+import SnagDetailScreen from 'screens/Audit/SangDetailScreen';
+import RequestReworkScreen from 'screens/Audit/RequestReworkScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -170,6 +174,10 @@ const ReportsStack = () => (
 const AuditStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="AuditDashboard" component={AuditDashboard} />
+    <Stack.Screen name="AddSnagItem" component={AddSnagItem}/>
+    <Stack.Screen name="AssignedSnag" component={AssignedSnag}/>
+    <Stack.Screen name="SnagDetailScreen" component={SnagDetailScreen}/>
+    <Stack.Screen name='RequestReworkScreen' component={RequestReworkScreen}/>
   </Stack.Navigator>
 );
 
