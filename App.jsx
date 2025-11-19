@@ -96,6 +96,7 @@ import ReportDetailScreen from 'screens/Reports/ReportDetailScreen';
 import FolderDetailsScreen from 'screens/Document-Management/FolderDetailsScreen';
 import AddDocumentScreen from 'screens/Document-Management/AddDocumentScreen';
 import TasksTab from 'components/Project/TasksTab';
+import AuditDashboard from 'screens/Audit/AuditDashboard';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -166,6 +167,12 @@ const ReportsStack = () => (
   </Stack.Navigator>
 );
 
+const AuditStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="AuditDashboard" component={AuditDashboard} />
+  </Stack.Navigator>
+);
+
 // Accounting Stack Navigator
 const AccountingStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -216,6 +223,7 @@ function MainTabs() {
             else if (route.name === 'Users') iconName = focused ? 'people' : 'people-outline';
             else if (route.name === 'Materials') iconName = focused ? 'cube' : 'cube-outline';
             else if (route.name === 'Account') iconName = focused ? 'person' : 'person-outline';
+            else if (route.name === 'Audit') iconName = focused ? 'person' : 'person-outline';
 
             return <Ionicons name={iconName} size={size} color={color} />;
           },
@@ -242,6 +250,7 @@ function MainTabs() {
         <Tab.Screen name="Users" component={UsersStack} options={{ title: 'Users' }} />
         <Tab.Screen name="Materials" component={MaterialsStack} options={{ title: 'Materials' }} />
         <Tab.Screen name="Account" component={ProfileStack} options={{ title: 'Account' }} />
+        <Tab.Screen name="Audit" component={AuditStack} options={{ title: 'Audit' }} />
       </Tab.Navigator>
     </SafeAreaView>
   );
