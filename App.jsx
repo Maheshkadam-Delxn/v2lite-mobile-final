@@ -97,6 +97,7 @@ import EscalationMatrixScreen from 'screens/Issues/EscalationMatrixScreen';
 import ReportsListScreen from 'screens/Reports/ReportsListScreen';
 import ReportDetailScreen from 'screens/Reports/ReportDetailScreen';
 import FolderDetailsScreen from 'screens/Document-Management/FolderDetailsScreen';
+import GenerateReportScreen from 'screens/Reports/GenerateReportScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -117,6 +118,7 @@ const ProjectStack = () => (
     <Stack.Screen name="ImagePreview" component={ImagePreviewScreen} />
     <Stack.Screen name="ReportDetailScreen" component={ReportDetailScreen} />
     <Stack.Screen name="FolderDetails" component={FolderDetailsScreen} />
+    <Stack.Screen name="View Report" component={GenerateReportScreen} />
   </Stack.Navigator>
 );
 

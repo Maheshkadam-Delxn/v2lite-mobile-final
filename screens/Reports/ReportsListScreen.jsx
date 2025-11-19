@@ -76,7 +76,7 @@ const ReportsListScreen = () => {
   const navigation = useNavigation();
     
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 ">
       <StatusBar barStyle="light-content" backgroundColor="#0066FF" />
       
       {/* Header */}
