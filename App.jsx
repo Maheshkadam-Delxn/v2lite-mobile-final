@@ -105,6 +105,7 @@ import AddSnagItem from 'screens/Audit/AddSnagItem';
 import AssignedSnag from 'screens/Audit/AssignedSnag';
 import SnagDetailScreen from 'screens/Audit/SangDetailScreen';
 import RequestReworkScreen from 'screens/Audit/RequestReworkScreen';
+import FeedsScreen from 'screens/Feeds/FeedsScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -358,6 +359,7 @@ export default function App() {
           <Stack.Screen name="NewSurveyScreen" component={NewSurveyScreen} />
           <Stack.Screen name="TasksTab" component={TasksTab}/>
           <Stack.Screen name='SurveyDetailScreen' component={SurveyDetailScreen}/>
+          <Stack.Screen name='FeedsScreen' component={FeedsScreen}/>
 
 
           {/* Modal Example */}
