@@ -9,6 +9,7 @@ import {
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 
+
 const CustomerBottomNavBar = () => {
   const navigation = useNavigation();
   const route = useRoute();
@@ -16,6 +17,8 @@ const CustomerBottomNavBar = () => {
   // Customer tabs – **hard-coded** (no role detection needed)
   const tabs = [
     { label: "Home",     icon: "home-outline",   route: "CustomerChooseTemplate",},
+    { label: "Feeds",     icon: "home-outline",   route: "FeedsScreen",},
+
     { label: "Budget", icon: "folder-outline",   route: "BudgetTracker",  },
     { label: "ChangeRequest", icon: "refresh",      route: "ChangeRequests", isMaterial: true },
      { label: "Material", icon: "status",      route: "MaterialStatus", isMaterial: true },

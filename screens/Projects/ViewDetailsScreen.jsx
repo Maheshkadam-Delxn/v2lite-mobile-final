@@ -322,7 +322,7 @@ console.log("asdfasdfasdf",project);
     { id: 'Attendance', label: 'Attendance' },
     { id: 'Issues', label: 'Issues'},
     { id: 'Reports', label: 'Reports'},
-    { id: 'Feeds', label: 'Feeds'},
+    
   ];
 
   const viewTabs = [
@@ -409,11 +409,6 @@ console.log("asdfasdfasdf",project);
            case 'Reports':
         // Render the PaymentsTransaction component inline
         return <ReportssListScreen project={project} />;
-
-        
-           case 'Feeds':
-        // Render the PaymentsTransaction component inline
-        return <FeedsScreen project={project} />;
       
       default:
         return null;

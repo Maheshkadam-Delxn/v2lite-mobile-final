@@ -43,6 +43,7 @@ import ProjectDetailsScreen from "../screens/ProjectDetailsScreen";
 // Separate NavBars
 import CustomerBottomNavBar from "./CustomerBottomNavBar";
 import AdminBottomNavBar from "./AdminBottomNavBar";   // (you can create the admin version the same way)
+import FeedsScreen from "screens/Feeds/FeedsScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -60,8 +61,9 @@ export default function BottomTabsLayout() {
         {isCustomer ? (
           <>
             <Stack.Screen name="CustomerChooseTemplate" component={CustomerChooseTemplate} />
-            <Stack.Screen name="CustomerProjects" component={CustomerProjectsScreen} />
-            <Stack.Screen name="CustomerPayments" component={CustomerPaymentsScreen} />
+            {/* <Stack.Screen name="CustomerProjects" component={CustomerProjectsScreen} />
+            <Stack.Screen name="CustomerPayments" component={CustomerPaymentsScreen} /> */}
+            <Stack.Screen name="FeedsScreen" component={FeedsScreen} />
           </>
         ) : (
           <>

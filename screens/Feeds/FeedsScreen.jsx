@@ -46,13 +46,17 @@ const FeedsScreen = ({ navigation }) => {
   return (
     <SafeAreaView className="flex-1 bg-[#F5F5F5]">
       <StatusBar barStyle="light-content" backgroundColor="#0066FF" />
+      <Header title="Feeds" showBackButton={true} onRightIconPress={() => {}} backgroundColor="#0066FF" titleColor="white" iconColor="white" />
 
       <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
         {feedData.map((feed) => (
           <View key={feed.id} className="bg-white mt-4 rounded-[20px] overflow-hidden" style={{ borderLeftWidth: 4, borderLeftColor: '#0066FF' }}>
             <View className="px-4 py-4">
               {/* User Info */}
-              <View className="flex-row items-start mb-3">
+              <TouchableOpacity
+                className="flex-row items-start mb-3"
+                onPress={() => navigation.navigate("FeedDetails", { feed })}
+              >
                 <View className="w-12 h-12 rounded-full bg-[#E0E0E0] overflow-hidden mr-3">
                   {/* Profile Image - You can replace with actual image */}
                   <Image 
@@ -74,7 +78,7 @@ const FeedsScreen = ({ navigation }) => {
                     {feed.timestamp}
                   </Text>
                 </View>
-              </View>
+              </TouchableOpacity>
 
               {/* Content */}
               <Text className="text-[#1E1E1E] text-[14px] leading-5 mb-4" style={{ fontFamily: 'Urbanist-Regular' }}>
