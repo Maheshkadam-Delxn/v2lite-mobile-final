@@ -78,7 +78,21 @@ const ModernSignInScreen = () => {
       setIsLoading(false)
     }
   }
+useEffect(() => {
+  const checkStorage = async () => {
+    const token = await AsyncStorage.getItem('userToken');
+    console.log("🔍 TOKEN ON SCREEN LOAD on splash screen:", token);
 
+    const user = await AsyncStorage.getItem('userData');
+    console.log("🔍 USER ON SCREEN LOAD on splash screen:", user);
+     const userData = JSON.parse(user); 
+    if(userData.role=="admin"){
+       navigation.navigate('MainApp');
+    }
+  };
+
+  checkStorage();
+}, []);
   useEffect(() => {
     const loadRememberedEmail = async () => {
       try {

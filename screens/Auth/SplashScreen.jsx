@@ -1,7 +1,8 @@
 
-import React from 'react';
+import React,{useEffect} from 'react';
 import { View, Text, Image, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 const SplashScreen = () => {
@@ -10,7 +11,21 @@ const SplashScreen = () => {
   const handleGetStarted = () => {
     navigation.navigate('Onboarding'); 
     };
+useEffect(() => {
+  const checkStorage = async () => {
+    const token = await AsyncStorage.getItem('userToken');
+    console.log("🔍 TOKEN ON SCREEN LOAD on splash screen:", token);
 
+    const user = await AsyncStorage.getItem('userData');
+    console.log("🔍 USER ON SCREEN LOAD on splash screen:", user);
+     const userData = JSON.parse(user); 
+    if(userData.role=="admin"){
+       navigation.navigate('MainApp');
+    }
+  };
+
+  checkStorage();
+}, []);
   return (
     <View className="flex-1 bg-white items-center justify-center px-8">
       {/* Logo */}

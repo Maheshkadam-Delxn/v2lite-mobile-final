@@ -225,6 +225,18 @@ const MaterialsStack = () => (
 
 // Main Tab Navigator (Bottom Tabs)
 function MainTabs() {
+useEffect(() => {
+  const checkStorage = async () => {
+    const token = await AsyncStorage.getItem('userToken');
+    console.log("🔍 TOKEN ON SCREEN LOAD:", token);
+
+    const user = await AsyncStorage.getItem('userData');
+    console.log("🔍 USER ON SCREEN LOAD:", user);
+  };
+
+  checkStorage();
+}, []);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['bottom']}>
       <Tab.Navigator
