@@ -64,13 +64,13 @@ const AssignedSnag = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
-      <StatusBar barStyle="light-content" backgroundColor="#3B82F6" />
+      <StatusBar barStyle="light-content" backgroundColor="#0066FF" />
 
       {/* Header */}
       <Header
         title="Assigned Snag"
         showBackButton={true}
-        backgroundColor="#3B82F6"
+        backgroundColor="#0066FF"
         titleColor="white"
         iconColor="white"
       />
@@ -122,7 +122,7 @@ const AssignedSnag = () => {
                   <Switch
                     value={isFixed}
                     onValueChange={setIsFixed}
-                    trackColor={{ false: '#E2E8F0', true: '#3B82F6' }}
+                    trackColor={{ false: '#E2E8F0', true: '#0066FF' }}
                     thumbColor={isFixed ? '#FFFFFF' : '#94A3B8'}
                     ios_backgroundColor="#E2E8F0"
                   />

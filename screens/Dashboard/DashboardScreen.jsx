@@ -20,7 +20,7 @@
 //   const navigation = useNavigation();
 
 //   const quickActions = [
-//     { title: 'Send Money', icon: 'send', color: '#3B82F6' },
+//     { title: 'Send Money', icon: 'send', color: '#0066FF' },
 //     { title: 'Request', icon: 'download', color: '#10B981' },
 //     { title: 'Top-up', icon: 'add-circle', color: '#F59E0B' },
 //     { title: 'Bills', icon: 'receipt', color: '#EF4444' },

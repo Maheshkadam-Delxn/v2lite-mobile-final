@@ -63,7 +63,7 @@ const ChangeRequests = () => {
         {/* Icon + Content */}
         <View className="mr-3 mt-1">
           <View className="h-6 w-6 items-center justify-center rounded-full bg-blue-100">
-            <Ionicons name="add" size={14} color="#3b82f6" />
+            <Ionicons name="add" size={14} color="#0066FF" />
           </View>
         </View>
 
@@ -105,7 +105,7 @@ const ChangeRequests = () => {
       <View className="flex-row items-start">
         <View className="mr-3 mt-1">
           <View className="h-6 w-6 items-center justify-center rounded-full bg-blue-100">
-            <Ionicons name="add" size={14} color="#3b82f6" />
+            <Ionicons name="add" size={14} color="#0066FF" />
           </View>
         </View>
 

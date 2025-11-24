@@ -22,7 +22,7 @@ const RequestReworkScreen = () => {
       <Header
         title="Assigned Snag"
         showBackButton={true}
-        backgroundColor="#3B82F6"
+        backgroundColor="#0066FF"
         titleColor="white"
         iconColor="white"
       />

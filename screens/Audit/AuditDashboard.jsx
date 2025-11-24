@@ -141,12 +141,12 @@ const AuditDashboard = () => {
   return (
     <>
       <View className="flex-1 bg-gray-100">
-        <StatusBar barStyle="light-content" backgroundColor="#3B82F6" />
+        <StatusBar barStyle="light-content" backgroundColor="#0066FF" />
         
         <Header
           title="Dashboard"
           rightIcon="filter-outline"
-          backgroundColor="#3B82F6"
+          backgroundColor="#0066FF"
           titleColor="white"
           iconColor="white"
         />

@@ -44,7 +44,7 @@ const FilesScreen = () => {
               onPress={() => handleFolderPress(folder.name)}
             >
               <View className="flex-row items-center gap-3">
-                <Icon name="folder" size={24} color="#3B82F6" />
+                <Icon name="folder" size={24} color="#0066FF" />
                 <Text className="text-base font-semibold text-gray-900">
                   {folder.name}
                 </Text>

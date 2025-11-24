@@ -46,7 +46,7 @@ const SnagDetailScreen = () => {
   ];
 
   const timelineData = [
-    { icon: 'create-outline', color: '#3B82F6', title: 'Snag Created by PM', desc: "That's a fantastic new app feature" },
+    { icon: 'create-outline', color: '#0066FF', title: 'Snag Created by PM', desc: "That's a fantastic new app feature" },
     { icon: 'person-outline', color: '#8B5CF6', title: 'Assigned to Contractor A', desc: "That's a fantastic new app feature" },
     { icon: 'camera-outline', color: '#10B981', title: 'Photo Evidence Uploaded', desc: "That's a fantastic new app feature" },
     { icon: 'document-text-outline', color: '#F59E0B', title: 'Note Added by Contractor A', desc: "That's a fantastic new app feature" },
@@ -60,7 +60,7 @@ const SnagDetailScreen = () => {
       <Header
         title="Assigned Snag"
         showBackButton={true}
-        backgroundColor="#3B82F6"
+        backgroundColor="#0066FF"
         titleColor="white"
         iconColor="white"
       />

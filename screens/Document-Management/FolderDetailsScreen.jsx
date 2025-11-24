@@ -22,7 +22,7 @@ const FolderDetailsScreen = ({ route, navigation }) => {
       name: 'DetailProjectReport.docx', 
       size: '300 kb',
       icon: 'file-word',
-      iconColor: '#3B82F6',
+      iconColor: '#0066FF',
       iconBg: '#DBEAFE'
     },
     { 

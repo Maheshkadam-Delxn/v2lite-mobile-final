@@ -473,7 +473,7 @@
 //                 setCreateNewMaterialModalVisible(true);
 //               }}
 //             >
-//               <Ionicons name="add" size={20} color="#3B82F6" />
+//               <Ionicons name="add" size={20} color="#0066FF" />
 //               <Text className="ml-1 font-medium text-blue-600">Create New Material</Text>
 //             </TouchableOpacity>
 
@@ -615,7 +615,7 @@
 //                 <View className="flex-row items-center justify-between">
 //                   <Text className="text-base text-gray-900">{requestForm.date}</Text>
 //                   <TouchableOpacity onPress={() => setShowDatePicker(true)}>
-//                     <Ionicons name="calendar-outline" size={20} color="#3B82F6" />
+//                     <Ionicons name="calendar-outline" size={20} color="#0066FF" />
 //                   </TouchableOpacity>
 //                 </View>
 //                 <View className="mt-1 h-px bg-gray-300" />
@@ -627,7 +627,7 @@
 //                   setRequestMaterialModalVisible(false);
 //                   setMaterialLibraryModalVisible(true);
 //                 }}>
-//                 <Ionicons name="add" size={20} color="#3B82F6" />
+//                 <Ionicons name="add" size={20} color="#0066FF" />
 //                 <Text className="ml-1 font-medium text-blue-600">+ Add Material</Text>
 //               </TouchableOpacity>
 
@@ -710,7 +710,7 @@
 //             <View className="mb-4 flex-row items-center justify-between">
 //               <Text className="text-sm text-gray-600">{formatDate(purchaseDate)}</Text>
 //               <TouchableOpacity onPress={() => setShowPurchaseDatePicker(true)}>
-//                 <Ionicons name="calendar-outline" size={20} color="#3B82F6" />
+//                 <Ionicons name="calendar-outline" size={20} color="#0066FF" />
 //               </TouchableOpacity>
 //             </View>
 //             {showPurchaseDatePicker && (
@@ -741,7 +741,7 @@
 //                   setAddMaterialPurchaseModalVisible(false);
 //                   setMaterialLibraryModalVisible(true);
 //                 }}>
-//                 <Ionicons name="add" size={20} color="#3B82F6" />
+//                 <Ionicons name="add" size={20} color="#0066FF" />
 //                 <Text className="ml-1 font-medium text-blue-600">+ Add Material</Text>
 //               </TouchableOpacity>
 
@@ -832,7 +832,7 @@
 //             <View className="mb-4 flex-row items-center justify-between">
 //               <Text className="text-sm text-gray-600">{formatDate(date)}</Text>
 //               <TouchableOpacity onPress={() => setShowDatePicker(true)}>
-//                 <Ionicons name="calendar-outline" size={20} color="#3B82F6" />
+//                 <Ionicons name="calendar-outline" size={20} color="#0066FF" />
 //               </TouchableOpacity>
 //             </View>
 //             {showDatePicker && (
@@ -854,7 +854,7 @@
 //                   setReceivedModalVisible(false);
 //                   setMaterialLibraryModalVisible(true);
 //                 }}>
-//                 <Ionicons name="add" size={20} color="#3B82F6" />
+//                 <Ionicons name="add" size={20} color="#0066FF" />
 //                 <Text className="ml-1 font-medium text-blue-600">+ Add Material</Text>
 //               </TouchableOpacity>
 //               <View className="mb-4">
@@ -1922,7 +1922,7 @@ const MaterialsListScreen = () => {
                 setCreateNewMaterialModalVisible(true);
               }}
             >
-              <Ionicons name="add" size={20} color="#3B82F6" />
+              <Ionicons name="add" size={20} color="#0066FF" />
               <Text className="ml-1 font-medium text-blue-600">Create New Material</Text>
             </TouchableOpacity>
 
@@ -2540,7 +2540,7 @@ const MaterialsListScreen = () => {
                 <View className="flex-row items-center justify-between">
                   <Text className="text-base text-gray-900">{requestForm.date}</Text>
                   <TouchableOpacity onPress={() => setShowDatePicker(true)}>
-                    <Ionicons name="calendar-outline" size={20} color="#3B82F6" />
+                    <Ionicons name="calendar-outline" size={20} color="#0066FF" />
                   </TouchableOpacity>
                 </View>
                 <View className="mt-1 h-px bg-gray-300" />
@@ -2552,7 +2552,7 @@ const MaterialsListScreen = () => {
                   setRequestMaterialModalVisible(false);
                   setMaterialLibraryModalVisible(true);
                 }}>
-                <Ionicons name="add" size={20} color="#3B82F6" />
+                <Ionicons name="add" size={20} color="#0066FF" />
                 <Text className="ml-1 font-medium text-blue-600">+ Add Material</Text>
               </TouchableOpacity>
 
@@ -2635,7 +2635,7 @@ const MaterialsListScreen = () => {
             <View className="mb-4 flex-row items-center justify-between">
               <Text className="text-sm text-gray-600">{formatDate(purchaseDate)}</Text>
               <TouchableOpacity onPress={() => setShowPurchaseDatePicker(true)}>
-                <Ionicons name="calendar-outline" size={20} color="#3B82F6" />
+                <Ionicons name="calendar-outline" size={20} color="#0066FF" />
               </TouchableOpacity>
             </View>
             {showPurchaseDatePicker && (
@@ -2666,7 +2666,7 @@ const MaterialsListScreen = () => {
                   setAddMaterialPurchaseModalVisible(false);
                   setMaterialLibraryModalVisible(true);
                 }}>
-                <Ionicons name="add" size={20} color="#3B82F6" />
+                <Ionicons name="add" size={20} color="#0066FF" />
                 <Text className="ml-1 font-medium text-blue-600">+ Add Material</Text>
               </TouchableOpacity>
 
@@ -2757,7 +2757,7 @@ const MaterialsListScreen = () => {
             <View className="mb-4 flex-row items-center justify-between">
               <Text className="text-sm text-gray-600">{formatDate(date)}</Text>
               <TouchableOpacity onPress={() => setShowDatePicker(true)}>
-                <Ionicons name="calendar-outline" size={20} color="#3B82F6" />
+                <Ionicons name="calendar-outline" size={20} color="#0066FF" />
               </TouchableOpacity>
             </View>
             {showDatePicker && (
@@ -2779,7 +2779,7 @@ const MaterialsListScreen = () => {
                   setReceivedModalVisible(false);
                   setMaterialLibraryModalVisible(true);
                 }}>
-                <Ionicons name="add" size={20} color="#3B82F6" />
+                <Ionicons name="add" size={20} color="#0066FF" />
                 <Text className="ml-1 font-medium text-blue-600">+ Add Material</Text>
               </TouchableOpacity>
               <View className="mb-4">

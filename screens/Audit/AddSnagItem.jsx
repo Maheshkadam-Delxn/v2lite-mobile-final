@@ -44,13 +44,13 @@ const AddSnagItem = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
-      <StatusBar barStyle="light-content" backgroundColor="#3B82F6" />
+      <StatusBar barStyle="light-content" backgroundColor="#0066FF" />
 
       {/* Header */}
       <Header
         title="Add Snag Item"
         showBackButton={true}
-        backgroundColor="#3B82F6"
+        backgroundColor="#0066FF"
         titleColor="white"
         iconColor="white"
       />
