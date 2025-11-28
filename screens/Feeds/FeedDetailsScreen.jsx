@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 import Header from 'components/Header'
 import * as DocumentPicker from 'expo-document-picker'
+import CustomerBottomNavBar from 'components/CustomerBottomNavBar'
 
 const FeedDetailsScreen = ({ route, navigation }) => {
   const { feed } = route.params
@@ -199,6 +200,10 @@ const FeedDetailsScreen = ({ route, navigation }) => {
             <Ionicons name="send" size={22} color="white" />
           </TouchableOpacity>
         </View>
+      </View>
+       {/* Bottom Navigation */}
+      <View className="absolute bottom-0 left-0 right-0">
+        <CustomerBottomNavBar />
       </View>
     </SafeAreaView>
   )

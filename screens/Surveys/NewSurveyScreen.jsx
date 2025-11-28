@@ -31,7 +31,7 @@ const NewSurveyScreen = () => {
 
   const handleCreateProject = () => {
     console.log('Submit:', formData);
-    navigation.navigate('Tasks');
+    navigation.navigate('SurveyDetailScreen');
   };
 
   const handleSaveDraft = () => {

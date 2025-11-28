@@ -190,7 +190,7 @@ const Overview = () => {
                       update.iconColor === 'text-green-500'
                         ? '#22c55e'
                         : update.iconColor === 'text-blue-500'
-                          ? '#3b82f6'
+                          ? '#0066FF'
                           : update.iconColor === 'text-yellow-500'
                             ? '#eab308'
                             : '#8b5cf6'

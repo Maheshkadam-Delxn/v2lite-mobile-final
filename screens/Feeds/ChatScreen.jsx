@@ -2,6 +2,7 @@ import { View, Text, SafeAreaView, StatusBar, TouchableOpacity, TextInput, Scrol
 import React, { useState } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 import Header from 'components/Header'
+import CustomerBottomNavBar from 'components/CustomerBottomNavBar'
 
 const ChatScreen = ({ navigation }) => {
   const [message, setMessage] = useState('')
@@ -31,14 +32,15 @@ const ChatScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      <StatusBar backgroundColor="#0066FF" barStyle="light-content" />
+      {/* <StatusBar backgroundColor="#0066FF" barStyle="light-content" /> */}
       
       {/* Header */}
       <Header 
         title="Chat" 
         showBackButton={true} 
         onRightIconPress={() => {}} 
-        backgroundColor="#0066FF" 
+        // backgroundColor="#0066FF" 
+        backgroundImage={require('../../assets/header.png') }
         titleColor="white" 
         iconColor="white" 
       />
@@ -70,7 +72,10 @@ const ChatScreen = ({ navigation }) => {
         {/* Bottom Spacing */}
         <View className="h-20"></View>
       </ScrollView>
-
+         {/* Bottom Navigation */}
+      <View className="absolute bottom-0 left-0 right-0">
+        <CustomerBottomNavBar />
+      </View>
     
     </SafeAreaView>
   )

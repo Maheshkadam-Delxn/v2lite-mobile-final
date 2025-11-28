@@ -2,6 +2,7 @@ import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, StatusBar, Imag
 import React, { useState } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 import Header from 'components/Header'
+import CustomerBottomNavBar from 'components/CustomerBottomNavBar'
 
 const FeedsScreen = ({ navigation }) => {
   const [feedData] = useState([
@@ -144,6 +145,10 @@ const FeedsScreen = ({ navigation }) => {
         {/* Bottom Spacing */}
         <View className="h-6"></View>
       </ScrollView>
+       {/* Bottom Navigation */}
+      <View className="absolute bottom-0 left-0 right-0">
+        <CustomerBottomNavBar />
+      </View>
     </SafeAreaView>
   )
 }

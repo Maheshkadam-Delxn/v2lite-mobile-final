@@ -194,7 +194,7 @@ const FilterScreen = () => {
                 }}
                 minimumTrackTintColor="transparent"
                 maximumTrackTintColor="transparent"
-                thumbTintColor="#3B82F6"
+                thumbTintColor="#0066FF"
                 step={25}
               />
 
@@ -213,7 +213,7 @@ const FilterScreen = () => {
                 }}
                 minimumTrackTintColor="transparent"
                 maximumTrackTintColor="transparent"
-                thumbTintColor="#3B82F6"
+                thumbTintColor="#0066FF"
                 step={25}
               />
             </View>

@@ -83,7 +83,7 @@ const DeliveryItem = ({ item, isLast }) => (
       <View className="flex-row items-start flex-1">
         <View className="mr-3 mt-1">
           <View className="h-6 w-6 items-center justify-center rounded-full bg-blue-100">
-            <Ionicons name="calendar-outline" size={14} color="#3b82f6" />
+            <Ionicons name="calendar-outline" size={14} color="#0066FF" />
           </View>
         </View>
 
@@ -115,7 +115,7 @@ const DeliveryItem = ({ item, isLast }) => (
       <View className="flex-row items-start flex-1">
         <View className="mr-3 mt-1">
           <View className="h-6 w-6 items-center justify-center rounded-full bg-blue-100">
-            <Ionicons name="cube-outline" size={14} color="#3b82f6" />
+            <Ionicons name="cube-outline" size={14} color="#0066FF" />
           </View>
         </View>
 

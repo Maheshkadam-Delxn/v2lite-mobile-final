@@ -36,7 +36,7 @@ const ProjectsListScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState(null);
-  
+
   // Filter state
   const [showFilter, setShowFilter] = useState(false);
   const [selectedSort, setSelectedSort] = useState('Default');
@@ -47,8 +47,8 @@ const ProjectsListScreen = () => {
     Contractor: false,
   });
   const [projectType, setProjectType] = useState({
-    'Villas': false,
-    'Interior': false,
+    Villas: false,
+    Interior: false,
     'Commercial Building': false,
     'Residential Complex': false,
   });
@@ -59,7 +59,7 @@ const ProjectsListScreen = () => {
   const projectTypeOptions = ['Villas', 'Interior', 'Commercial Building', 'Residential Complex'];
 
   const openSwipeableRefs = useRef(new Map());
-  
+
   // Bottom sheet animation
   const BOTTOM_SHEET_HEIGHT = SCREEN_HEIGHT * 0.7;
   const translateY = useRef(new Animated.Value(BOTTOM_SHEET_HEIGHT)).current;
@@ -67,7 +67,7 @@ const ProjectsListScreen = () => {
   const openFilter = () => {
     setShowFilter(true);
     translateY.setValue(BOTTOM_SHEET_HEIGHT);
-    
+
     Animated.spring(translateY, {
       toValue: 0,
       useNativeDriver: true,
@@ -89,20 +89,28 @@ const ProjectsListScreen = () => {
   // Map API item to UI project
   const mapItemToProject = (item) => {
     const name = item.name || item.title || 'Untitled Project';
-    const location = item.location || item.address || (item.site && item.site.address) || 'Address not provided';
+    const location =
+      item.location || item.address || (item.site && item.site.address) || 'Address not provided';
     const dueDateRaw = item.dueDate || item.deadline || item.endDate || item.due || item.createdAt;
-    const dueDate = dueDateRaw ? new Date(dueDateRaw).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+    const dueDate = dueDateRaw
+      ? new Date(dueDateRaw).toLocaleDateString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        })
+      : '—';
     const status = item.status || (item.isActive ? 'In Progress' : 'Completed') || 'Unknown';
     const progress = typeof item.progress === 'number' ? item.progress : item.percentage || 0;
     const imageUrl = item.image || item.imageUrl || item.coverImage || item.thumbnail || null;
-    
+
     return {
       id: item._id || item.id || Math.random().toString(36).slice(2),
       name,
       location,
       dueDate,
       status,
-      statusColor: status === 'Completed' ? '#10B981' : status === 'InProgress' ? '#3B82F6' : '#F59E0B',
+      statusColor:
+        status === 'Completed' ? '#10B981' : status === 'InProgress' ? '#0066FF' : '#F59E0B',
       progress: Math.min(Math.max(parseInt(progress || 0, 10), 0), 100),
       imageUrl,
       raw: item,
@@ -148,7 +156,7 @@ const ProjectsListScreen = () => {
     useCallback(() => {
       fetchProjects();
       return () => {
-        openSwipeableRefs.current.forEach(ref => ref?.close());
+        openSwipeableRefs.current.forEach((ref) => ref?.close());
         openSwipeableRefs.current.clear();
       };
     }, [fetchProjects])
@@ -163,11 +171,11 @@ const ProjectsListScreen = () => {
   const deleteProject = async (projectId) => {
     try {
       const token = await AsyncStorage.getItem(TOKEN_KEY);
-      
+
       // Close swipeable and optimistically remove from UI
       openSwipeableRefs.current.get(projectId)?.close();
       openSwipeableRefs.current.delete(projectId);
-      setProjects(prev => prev.filter(project => project.id !== projectId));
+      setProjects((prev) => prev.filter((project) => project.id !== projectId));
 
       const response = await fetch(`${API_URL}/${projectId}`, {
         method: 'DELETE',
@@ -188,24 +196,20 @@ const ProjectsListScreen = () => {
   };
 
   const confirmDelete = (project) => {
-    Alert.alert(
-      'Delete Project',
-      `Are you sure you want to delete "${project.name}"?`,
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-          onPress: () => {
-            openSwipeableRefs.current.get(project.id)?.close();
-          },
+    Alert.alert('Delete Project', `Are you sure you want to delete "${project.name}"?`, [
+      {
+        text: 'Cancel',
+        style: 'cancel',
+        onPress: () => {
+          openSwipeableRefs.current.get(project.id)?.close();
         },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => deleteProject(project.id),
-        },
-      ]
-    );
+      },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => deleteProject(project.id),
+      },
+    ]);
   };
 
   // Render delete action
@@ -216,16 +220,8 @@ const ProjectsListScreen = () => {
     });
 
     return (
-      <Animated.View 
-        style={[
-          styles.deleteAction,
-          { transform: [{ translateX: trans }] }
-        ]}
-      >
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={() => confirmDelete(project)}
-        >
+      <Animated.View style={[styles.deleteAction, { transform: [{ translateX: trans }] }]}>
+        <TouchableOpacity style={styles.deleteButton} onPress={() => confirmDelete(project)}>
           <Ionicons name="trash-outline" size={24} color="white" />
           <Text style={styles.deleteText}>Delete</Text>
         </TouchableOpacity>
@@ -242,9 +238,7 @@ const ProjectsListScreen = () => {
     const newValue = !projectType[type];
     setProjectType((prev) => ({ ...prev, [type]: newValue }));
 
-    const allSelected = projectTypeOptions.every((t) =>
-      t === type ? newValue : projectType[t]
-    );
+    const allSelected = projectTypeOptions.every((t) => (t === type ? newValue : projectType[t]));
     setSelectAll(allSelected);
   };
 
@@ -265,8 +259,8 @@ const ProjectsListScreen = () => {
       Contractor: false,
     });
     setProjectType({
-      'Villas': false,
-      'Interior': false,
+      Villas: false,
+      Interior: false,
       'Commercial Building': false,
       'Residential Complex': false,
     });
@@ -327,13 +321,12 @@ const ProjectsListScreen = () => {
             ref?.close();
           }
         });
-      }}
-    >
+      }}>
       <View style={styles.card}>
         {/* Image + Title + Edit */}
         <View style={styles.cardHeader}>
           <View style={styles.imageContainer}>
-            {project.raw.projectImages && project.raw.projectImages !== "" ? (
+            {project.raw.projectImages && project.raw.projectImages !== '' ? (
               <Image
                 source={{ uri: project.raw.projectImages }}
                 style={styles.projectImage}
@@ -355,10 +348,7 @@ const ProjectsListScreen = () => {
             </Text>
           </View>
 
-          <TouchableOpacity 
-            onPress={() => handleEditProject(project)} 
-            style={styles.editButton}
-          >
+          <TouchableOpacity onPress={() => handleEditProject(project)} style={styles.editButton}>
             <Ionicons name="create-outline" size={20} color="#0066FF" />
           </TouchableOpacity>
         </View>
@@ -369,7 +359,7 @@ const ProjectsListScreen = () => {
             <Ionicons name="calendar-outline" size={16} color="#9CA3AF" />
             <Text style={styles.dueDateText}>Due date {project.dueDate}</Text>
           </View>
-          
+
           <View style={[styles.statusBadge, { backgroundColor: project.statusColor }]}>
             <Text style={styles.statusText}>{project.status}</Text>
           </View>
@@ -378,20 +368,12 @@ const ProjectsListScreen = () => {
         {/* Progress Bar */}
         <View style={styles.progressContainer}>
           <View style={styles.progressBar}>
-            <View 
-              style={[
-                styles.progressFill, 
-                { width: `${project.progress}%` }
-              ]} 
-            />
+            <View style={[styles.progressFill, { width: `${project.progress}%` }]} />
           </View>
         </View>
 
         {/* View Details */}
-        <TouchableOpacity
-          style={styles.detailsButton}
-          onPress={() => handleViewDetails(project)}
-        >
+        <TouchableOpacity style={styles.detailsButton} onPress={() => handleViewDetails(project)}>
           <Text style={styles.detailsButtonText}>View Details</Text>
           <Text style={styles.detailsArrow}>›</Text>
         </TouchableOpacity>
@@ -406,24 +388,18 @@ const ProjectsListScreen = () => {
       animationType="none"
       transparent={true}
       statusBarTranslucent={true}
-      onRequestClose={closeFilter}
-    >
+      onRequestClose={closeFilter}>
       <View style={styles.modalContainer}>
-        <TouchableOpacity 
-          style={styles.backdrop} 
-          activeOpacity={1} 
-          onPress={closeFilter}
-        />
-        
-        <Animated.View 
+        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={closeFilter} />
+
+        <Animated.View
           style={[
             styles.bottomSheet,
-            { 
+            {
               height: BOTTOM_SHEET_HEIGHT,
-              transform: [{ translateY }]
-            }
-          ]}
-        >
+              transform: [{ translateY }],
+            },
+          ]}>
           <SafeAreaView style={{ flex: 1 }}>
             {/* Drag Handle */}
             <View style={styles.dragHandleContainer}>
@@ -442,8 +418,7 @@ const ProjectsListScreen = () => {
             <ScrollView
               style={styles.sheetContent}
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.sheetContentContainer}
-            >
+              contentContainerStyle={styles.sheetContentContainer}>
               {/* Sort By */}
               <View style={styles.filterSection}>
                 <Text style={styles.filterSectionTitle}>Sort by</Text>
@@ -452,15 +427,12 @@ const ProjectsListScreen = () => {
                     <TouchableOpacity
                       key={option}
                       onPress={() => setSelectedSort(option)}
-                      style={[
-                        styles.chip,
-                        selectedSort === option && styles.chipSelected
-                      ]}
-                    >
-                      <Text style={[
-                        styles.chipText,
-                        selectedSort === option && styles.chipTextSelected
-                      ]}>
+                      style={[styles.chip, selectedSort === option && styles.chipSelected]}>
+                      <Text
+                        style={[
+                          styles.chipText,
+                          selectedSort === option && styles.chipTextSelected,
+                        ]}>
                         {option}
                       </Text>
                     </TouchableOpacity>
@@ -494,9 +466,9 @@ const ProjectsListScreen = () => {
                         min: Math.round(newMin / 25) * 25,
                       }));
                     }}
-                    minimumTrackTintColor="#3B82F6"
+                    minimumTrackTintColor="#0066FF"
                     maximumTrackTintColor="#E5E7EB"
-                    thumbTintColor="#3B82F6"
+                    thumbTintColor="#0066FF"
                     step={25}
                   />
                 </View>
@@ -509,16 +481,10 @@ const ProjectsListScreen = () => {
                   <TouchableOpacity
                     key={team}
                     onPress={() => toggleTeam(team)}
-                    style={styles.checkboxRow}
-                  >
+                    style={styles.checkboxRow}>
                     <Text style={styles.checkboxLabel}>{team}</Text>
-                    <View style={[
-                      styles.checkbox,
-                      assignedTeam[team] && styles.checkboxChecked
-                    ]}>
-                      {assignedTeam[team] && (
-                        <Ionicons name="checkmark" size={16} color="white" />
-                      )}
+                    <View style={[styles.checkbox, assignedTeam[team] && styles.checkboxChecked]}>
+                      {assignedTeam[team] && <Ionicons name="checkmark" size={16} color="white" />}
                     </View>
                   </TouchableOpacity>
                 ))}
@@ -527,19 +493,13 @@ const ProjectsListScreen = () => {
               {/* Project Type */}
               <View style={styles.filterSection}>
                 <Text style={styles.filterSectionTitle}>Project Type</Text>
-                
+
                 <TouchableOpacity
                   onPress={handleSelectAll}
-                  style={[styles.checkboxRow, styles.selectAllRow]}
-                >
+                  style={[styles.checkboxRow, styles.selectAllRow]}>
                   <Text style={styles.selectAllLabel}>Select All</Text>
-                  <View style={[
-                    styles.checkbox,
-                    selectAll && styles.checkboxChecked
-                  ]}>
-                    {selectAll && (
-                      <Ionicons name="checkmark" size={16} color="white" />
-                    )}
+                  <View style={[styles.checkbox, selectAll && styles.checkboxChecked]}>
+                    {selectAll && <Ionicons name="checkmark" size={16} color="white" />}
                   </View>
                 </TouchableOpacity>
 
@@ -547,16 +507,10 @@ const ProjectsListScreen = () => {
                   <TouchableOpacity
                     key={type}
                     onPress={() => toggleProjectType(type)}
-                    style={styles.checkboxRow}
-                  >
+                    style={styles.checkboxRow}>
                     <Text style={styles.checkboxLabel}>{type}</Text>
-                    <View style={[
-                      styles.checkbox,
-                      projectType[type] && styles.checkboxChecked
-                    ]}>
-                      {projectType[type] && (
-                        <Ionicons name="checkmark" size={16} color="white" />
-                      )}
+                    <View style={[styles.checkbox, projectType[type] && styles.checkboxChecked]}>
+                      {projectType[type] && <Ionicons name="checkmark" size={16} color="white" />}
                     </View>
                   </TouchableOpacity>
                 ))}
@@ -565,16 +519,10 @@ const ProjectsListScreen = () => {
 
             {/* Action Buttons */}
             <View style={styles.actionButtons}>
-              <TouchableOpacity
-                onPress={handleResetFilters}
-                style={styles.resetButton}
-              >
+              <TouchableOpacity onPress={handleResetFilters} style={styles.resetButton}>
                 <Text style={styles.resetButtonText}>Reset</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleApplyFilters}
-                style={styles.applyButton}
-              >
+              <TouchableOpacity onPress={handleApplyFilters} style={styles.applyButton}>
                 <Text style={styles.applyButtonText}>Apply Filters</Text>
               </TouchableOpacity>
             </View>
@@ -588,7 +536,7 @@ const ProjectsListScreen = () => {
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#3B82F6" />
+          <ActivityIndicator size="large" color="#0066FF" />
           <Text style={styles.loadingText}>Loading projects...</Text>
         </View>
       </GestureHandlerRootView>
@@ -602,7 +550,7 @@ const ProjectsListScreen = () => {
           title="My Projects"
           rightIcon="filter-outline"
           onRightIconPress={openFilter}
-          backgroundColor="#3B82F6"
+          backgroundImage={require('../../assets/header.png')}
           titleColor="white"
           iconColor="white"
         />
@@ -611,13 +559,8 @@ const ProjectsListScreen = () => {
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl 
-              refreshing={refreshing} 
-              onRefresh={onRefresh} 
-              tintColor="#3B82F6" 
-            />
-          }
-        >
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#0066FF" />
+          }>
           {/* Search Bar */}
           <View style={styles.searchContainer}>
             <View style={styles.searchBar}>
@@ -636,10 +579,7 @@ const ProjectsListScreen = () => {
               )}
             </View>
 
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={handleAddProject}
-            >
+            <TouchableOpacity style={styles.addButton} onPress={handleAddProject}>
               <Ionicons name="add" size={24} color="white" />
             </TouchableOpacity>
           </View>
@@ -661,24 +601,20 @@ const ProjectsListScreen = () => {
                 <Ionicons name="folder-open-outline" size={64} color="#D1D5DB" />
                 <Text style={styles.emptyStateText}>No projects found</Text>
                 <Text style={styles.emptyStateSubtext}>
-                  {searchQuery ? 'Try adjusting your search' : 'Create your first project to get started'}
+                  {searchQuery
+                    ? 'Try adjusting your search'
+                    : 'Create your first project to get started'}
                 </Text>
               </View>
             ) : (
-              filteredProjects.map((project) => (
-                <ProjectCard 
-                  key={project.id} 
-                  project={project} 
-                />
-              ))
+              filteredProjects.map((project) => <ProjectCard key={project.id} project={project} />)
             )}
           </View>
 
           {/* Customer Dashboard Button */}
           <TouchableOpacity
             style={styles.dashboardButton}
-            onPress={() => navigation.navigate('CustomerChooseTemplate')}
-          >
+            onPress={() => navigation.navigate('CustomerChooseTemplate')}>
             <Ionicons name="grid-outline" size={20} color="white" style={{ marginRight: 8 }} />
             <Text style={styles.dashboardButtonText}>Go to Customer Dashboard</Text>
           </TouchableOpacity>
@@ -745,10 +681,10 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 12,
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#0066FF',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#3B82F6',
+    shadowColor: '#0066FF',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -782,7 +718,7 @@ const styles = StyleSheet.create({
   projectsList: {
     paddingHorizontal: 16,
   },
-  
+
   // UPDATED CARD STYLES - Using your preferred design
   card: {
     backgroundColor: 'white',
@@ -884,7 +820,7 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#0066FF',
     borderRadius: 4,
   },
   detailsButton: {
@@ -952,12 +888,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#0066FF',
     marginHorizontal: 16,
     marginTop: 8,
     paddingVertical: 16,
     borderRadius: 12,
-    shadowColor: '#3B82F6',
+    shadowColor: '#0066FF',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -1052,8 +988,8 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
   },
   chipSelected: {
-    backgroundColor: '#3B82F6',
-    borderColor: '#3B82F6',
+    backgroundColor: '#0066FF',
+    borderColor: '#0066FF',
   },
   chipText: {
     fontSize: 14,
@@ -1129,8 +1065,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   checkboxChecked: {
-    backgroundColor: '#3B82F6',
-    borderColor: '#3B82F6',
+    backgroundColor: '#0066FF',
+    borderColor: '#0066FF',
   },
   actionButtons: {
     position: 'absolute',
@@ -1163,10 +1099,10 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 16,
     borderRadius: 12,
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#0066FF',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#3B82F6',
+    shadowColor: '#0066FF',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

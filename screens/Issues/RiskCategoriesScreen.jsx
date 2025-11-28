@@ -347,7 +347,7 @@ const IssueDetailModal = ({ visible, onClose, issue, onEscalate }) => {
                   <View className="flex-row gap-4">
                     <View className="items-center">
                       <View className="h-16 w-16 items-center justify-center rounded-xl border border-gray-300 bg-white">
-                        <Feather name="file-text" size={24} color="#3B82F6" />
+                        <Feather name="file-text" size={24} color="#0066FF" />
                       </View>
                       <Text className="mt-2 text-xs text-slate-600">Website templates.psd</Text>
                     </View>

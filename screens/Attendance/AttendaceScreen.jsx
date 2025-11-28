@@ -81,7 +81,7 @@ const AttendanceScreen = () => {
           <Feather
             name={isActiveFilter ? "check-square" : "square"}
             size={18}
-            color={isActiveFilter ? "#3b82f6" : "#9ca3af"}
+            color={isActiveFilter ? "#0066FF" : "#9ca3af"}
           />
         </TouchableOpacity>
       </View>

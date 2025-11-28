@@ -98,7 +98,6 @@ import GenerateReportScreen from 'screens/Reports/GenerateReportScreen';
 import AddDocumentScreen from 'screens/Document-Management/AddDocumentScreen';
 import TasksTab from 'components/Project/TasksTab';
 import AuditDashboard from 'screens/Audit/AuditDashboard';
-import FeedsScreen from 'screens/Feeds/FeedsScreen';
 import FeedDetailsScreen from 'screens/Feeds/FeedDetailsScreen';
 import ChatScreen from 'screens/Feeds/ChatScreen';
 
@@ -106,6 +105,7 @@ import AddSnagItem from 'screens/Audit/AddSnagItem';
 import AssignedSnag from 'screens/Audit/AssignedSnag';
 import SnagDetailScreen from 'screens/Audit/SangDetailScreen';
 import RequestReworkScreen from 'screens/Audit/RequestReworkScreen';
+import FeedsScreen from 'screens/Feeds/FeedsScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -274,9 +274,10 @@ useEffect(() => {
         <Tab.Screen name="Projects" component={ProjectStack} options={{ title: 'Projects' }} />
         <Tab.Screen name="Templates" component={ProposalStack} options={{ title: 'Templates' }} />
         <Tab.Screen name="Users" component={UsersStack} options={{ title: 'Users' }} />
-        <Tab.Screen name="Materials" component={MaterialsStack} options={{ title: 'Materials' }} />
-        <Tab.Screen name="Account" component={ProfileStack} options={{ title: 'Account' }} />
         <Tab.Screen name="Audit" component={AuditStack} options={{ title: 'Audit' }} />
+        {/* <Tab.Screen name="Materials" component={MaterialsStack} options={{ title: 'Materials' }} /> */}
+        <Tab.Screen name="Account" component={ProfileStack} options={{ title: 'Account' }} />
+        
       </Tab.Navigator>
     </SafeAreaView>
   );
@@ -333,7 +334,7 @@ export default function App() {
           alignItems: 'center',
           backgroundColor: '#fff',
         }}>
-        <ActivityIndicator size="large" color="#0066FF" />
+        <ActivityIndicator size="large" color="#04285fff" />
       </View>
     );
   }
@@ -357,7 +358,7 @@ export default function App() {
           <Stack.Screen name="Overview" component={Overview} />
           <Stack.Screen name="ProjectTimeline" component={ProjectTimeline} />
           <Stack.Screen name="BudgetTracker" component={BudgetTracker} />
-          <Stack.Screen name="FeedsScreen" component={FeedsScreen} />
+          
           <Stack.Screen name="FeedDetails" component={FeedDetailsScreen} />
           <Stack.Screen name="ChatScreen" component={ChatScreen} />
 
@@ -369,6 +370,8 @@ export default function App() {
           <Stack.Screen name="SurveyApprovalScreen" component={SurveyApprovalScreen} />
           <Stack.Screen name="NewSurveyScreen" component={NewSurveyScreen} />
           <Stack.Screen name="TasksTab" component={TasksTab}/>
+          <Stack.Screen name='SurveyDetailScreen' component={SurveyDetailScreen}/>
+          <Stack.Screen name='FeedsScreen' component={FeedsScreen}/>
 
 
           {/* Modal Example */}

@@ -282,7 +282,6 @@ import AttendanceScreen from 'screens/Attendance/AttendaceScreen';
 import RiskCategoriesScreen from 'screens/Issues/RiskCategoriesScreen';
 import ReportssListScreen from 'screens/Reports/ReportsListScreen'
 import FilesScreen from 'screens/Document-Management/FileScreen';
-import FeedsScreen from 'screens/Feeds/FeedsScreen';
 
 
 const ViewDetailsScreen = () => {

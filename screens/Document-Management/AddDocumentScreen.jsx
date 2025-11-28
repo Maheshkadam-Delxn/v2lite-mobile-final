@@ -53,7 +53,7 @@ const DocumentItem = ({ item, onPress }) => {
         onPress={() => onPress(item)}
       >
         <View className="mr-4">
-          <MaterialIcons name="insert-drive-file" size={32} color="#3B82F6" />
+          <MaterialIcons name="insert-drive-file" size={32} color="#0066FF" />
         </View>
         <View className="flex-1">
           <Text className="text-base font-medium text-gray-900 mb-1" numberOfLines={1}>
@@ -278,7 +278,7 @@ const AddDocumentScreen = ({ navigation }) => {
         // onRightIconPress={handleFilterPress}
         onBackPress={handleBackPress}
         showBackButton={true}
-        backgroundColor="#3B82F6"
+        backgroundColor="#0066FF"
         titleColor="white"
         iconColor="white"
       />
