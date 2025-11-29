@@ -11,7 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 
 import './global.css';
-
+import { BottomTabBar } from "@react-navigation/bottom-tabs";
 // Auth Screens
 import Splash1 from './screens/Auth/SplashScreen';
 import Onboarding from './screens/Auth/OnboardingScreen';
@@ -106,7 +106,9 @@ import AssignedSnag from 'screens/Audit/AssignedSnag';
 import SnagDetailScreen from 'screens/Audit/SangDetailScreen';
 import RequestReworkScreen from 'screens/Audit/RequestReworkScreen';
 import FeedsScreen from 'screens/Feeds/FeedsScreen';
-
+import NewClientPassword from 'screens/Auth/NewClientPassword';
+import ClientMainPage from 'screens/HomeOwner/clientpages/ClientMainPage';
+import clientProfilePage from 'screens/HomeOwner/clientpages/clientProfilePage';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const TOKEN_KEY = 'userToken';
@@ -292,8 +294,63 @@ const AuthStack = () => (
     <Stack.Screen name="SignIn" component={SignIn} />
     <Stack.Screen name="SignUp" component={SignUpScreen} />
     <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+    <Stack.Screen name="NewClientPassword" component={NewClientPassword} />
     <Stack.Screen name="OTPVerification" component={OTPVerificationScreen} />
     <Stack.Screen name="CreatePassword" component={CreatePasswordScreen} />
+  </Stack.Navigator>
+);
+
+
+const ClientTabs = () => (
+  <Tab.Navigator
+    screenOptions={({ route }) => ({
+      headerShown: false,
+      tabBarIcon: ({ focused, color, size }) => {
+        let icon;
+
+        if (route.name === "ClientHome")
+          icon = focused ? "home" : "home-outline";
+        else if (route.name === "ClientProfile")
+          icon = focused ? "person" : "person-outline";
+
+        return <Ionicons name={icon} size={size} color={color} />;
+      },
+      tabBarActiveTintColor: "#0066FF",
+      tabBarInactiveTintColor: "#7F8C8D",
+      tabBarStyle: {
+        height: 65,
+        paddingBottom: 5,
+        paddingTop: 5,
+        backgroundColor: "#fff",
+        borderTopWidth: 0,
+        elevation: 0,
+      },
+    })}
+    tabBar={(props) => (
+      <SafeAreaView edges={["bottom"]} style={{ backgroundColor: "#fff" }}>
+        <View style={{ height: 65 }}>
+          <BottomTabBar {...props} />
+        </View>
+      </SafeAreaView>
+    )}
+  >
+    <Tab.Screen
+      name="ClientHome"
+      component={ClientMainPage}
+      options={{ title: "Home" }}
+    />
+
+    <Tab.Screen
+      name="ClientProfile"
+      component={clientProfilePage}
+      options={{ title: "Account" }}
+    />
+  </Tab.Navigator>
+);
+
+const ClientStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="ClientTabs" component={ClientTabs} />
   </Stack.Navigator>
 );
 
@@ -349,6 +406,7 @@ export default function App() {
 
           {/* Main App with Bottom Tabs */}
           <Stack.Screen name="MainApp" component={MainTabs} />
+          <Stack.Screen name="ClientApp" component={ClientStack}/>
 
           {/* All Screens Now Reachable Directly */}
           <Stack.Screen name="AddDocumentScreen" component={AddDocumentScreen} />

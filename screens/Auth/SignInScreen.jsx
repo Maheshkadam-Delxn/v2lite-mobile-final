@@ -41,7 +41,14 @@ const ModernSignInScreen = () => {
           password,
         }),
       })
+ if (response.status === 403) {
+   
+    
+   
+ navigation.navigate("NewClientPassword", { email });
  
+    return; // stop further execution
+  }
       if (response.ok) {
         const data = await response.json()
         console.log('Login successful:', data)
@@ -64,10 +71,11 @@ const ModernSignInScreen = () => {
           if (data.data.user.role === "admin") {
             navigation.navigate('MainApp');
           } else {
-            navigation.navigate('HomeOwner');
+        navigation.navigate('ClientApp');
           }
         }, 2000)
       } else {
+        
         const errorData = await response.json().catch(() => ({}))
         Alert.alert('Login Failed', errorData.message || 'Invalid email or password.')
       }
@@ -88,6 +96,8 @@ useEffect(() => {
      const userData = JSON.parse(user);
     if(userData.role=="admin"){
        navigation.navigate('MainApp');
+    }else{
+      navigation.navigate('ClientApp');
     }
   };
  

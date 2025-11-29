@@ -20,7 +20,9 @@ useEffect(() => {
      const userData = JSON.parse(user);
     if(userData.role=="admin"){
        navigation.navigate('MainApp');
-    }
+    }else {
+        navigation.navigate('ClientApp');
+          }
   };
  
   checkStorage();

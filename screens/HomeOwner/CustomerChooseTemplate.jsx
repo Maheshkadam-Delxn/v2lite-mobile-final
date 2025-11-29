@@ -224,7 +224,7 @@ const CustomerChooseTemplate = ({ navigation }) => {
             borderTopWidth: 1,
             borderTopColor: '#E0E0E0'
           }}>
-            <CustomerBottomNavBar />
+            
           </View>
         </View>
       </KeyboardAvoidingView>
