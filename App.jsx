@@ -43,7 +43,7 @@ import ViewProposal from 'screens/Proposals/ViewProposal';
 import ChooseTemplate from 'screens/Proposals/ChooseTemplate';
 import PreviewProposalScreen from 'screens/Proposals/PreviewProposalScreen';
 import EditProposalScreen from 'screens/Proposals/EditProposalScreen';
-
+import VendorsScreen from 'screens/Vendors/Vendors';
 // Accounting & Payment Screens
 import Transaction from 'screens/AccountingPayement/Transaction';
 import TransactionAdd from 'screens/AccountingPayement/TransactionAdd';
@@ -248,7 +248,7 @@ useEffect(() => {
               iconName = focused ? 'document-text' : 'document-text-outline';
             else if (route.name === 'Users') iconName = focused ? 'people' : 'people-outline';
             else if (route.name === 'Materials') iconName = focused ? 'cube' : 'cube-outline';
-            else if (route.name === 'Account') iconName = focused ? 'person' : 'person-outline';
+            else if (route.name === 'Account') iconName = focused ? 'settings' : 'settings-outline';
             else if (route.name === 'Audit') iconName = focused ? 'person' : 'person-outline';
 
             return <Ionicons name={iconName} size={size} color={color} />;
@@ -276,7 +276,7 @@ useEffect(() => {
         <Tab.Screen name="Users" component={UsersStack} options={{ title: 'Users' }} />
         <Tab.Screen name="Audit" component={AuditStack} options={{ title: 'Audit' }} />
         {/* <Tab.Screen name="Materials" component={MaterialsStack} options={{ title: 'Materials' }} /> */}
-        <Tab.Screen name="Account" component={ProfileStack} options={{ title: 'Account' }} />
+        <Tab.Screen name="Account" component={ProfileStack} options={{ title: 'Settings' }} />
         
       </Tab.Navigator>
     </SafeAreaView>
@@ -372,7 +372,8 @@ export default function App() {
           <Stack.Screen name="TasksTab" component={TasksTab}/>
           <Stack.Screen name='SurveyDetailScreen' component={SurveyDetailScreen}/>
           <Stack.Screen name='FeedsScreen' component={FeedsScreen}/>
-
+ <Stack.Screen name="UsersList" component={UsersScreen} />
+          <Stack.Screen name="Vendors" component={VendorsScreen} />
 
           {/* Modal Example */}
           <Stack.Screen

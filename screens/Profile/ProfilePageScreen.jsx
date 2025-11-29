@@ -1,669 +1,3 @@
-// import { View, Text, Image, TouchableOpacity, ScrollView, Switch } from 'react-native'
-// import React, { useState } from 'react'
-// import { SafeAreaView } from 'react-native-safe-area-context'
-// import { Feather } from '@expo/vector-icons'
-// import { useNavigation } from '@react-navigation/native'
-// import Header from '../../components/Header'
- 
-// const ProfilePageScreen = () => {
-//   const navigation = useNavigation()
-//   const [isDarkMode, setIsDarkMode] = useState(false)
- 
-//   const toggleDarkMode = () => setIsDarkMode(previousState => !previousState)
- 
-//   const MenuItem = ({ icon, title, onPress, showArrow = true, rightText = null, isSwitch = false, switchValue = false, onSwitchToggle = null, isLogout = false }) => (
-//     <TouchableOpacity
-//       onPress={onPress}
-//       className="flex-row items-center justify-between py-4 px-4 bg-white"
-//       activeOpacity={0.7}
-//     >
-//       <View className="flex-row items-center flex-1">
-//         <Feather
-//           name={icon}
-//           size={20}
-//           color={isLogout ? "#FF3B30" : "#000000"}
-//         />
-//         <Text
-//           style={{ fontFamily: 'Urbanist-Bold' }} // Changed to Bold
-//           className={`ml-3 text-base ${isLogout ? 'text-[#FF3B30]' : 'text-[#000000]'}`}
-//         >
-//           {title}
-//         </Text>
-//       </View>
-     
-//       {isSwitch ? (
-//         <Switch
-//           trackColor={{ false: '#E5E5EA', true: '#4A7CFF' }}
-//           thumbColor="#FFFFFF"
-//           ios_backgroundColor="#E5E5EA"
-//           onValueChange={onSwitchToggle}
-//           value={switchValue}
-//         />
-//       ) : (
-//         <View className="flex-row items-center">
-//           {rightText && (
-//             <Text
-//               style={{ fontFamily: 'Urbanist-Bold' }} // Changed to Bold
-//               className="text-sm text-[#8E8E93] mr-2"
-//             >
-//               {rightText}
-//             </Text>
-//           )}
-//           {showArrow && (
-//             <Feather
-//               name="chevron-right"
-//               size={20}
-//               color="#8E8E93"
-//             />
-//           )}
-//         </View>
-//       )}
-//     </TouchableOpacity>
-//   )
- 
-//   const SectionHeader = ({ title }) => (
-//     <View className="px-4 py-2 bg-[#F5F5F5]">
-//       <Text
-//         style={{ fontFamily: 'Urbanist-Bold' }} // Changed to Bold
-//         className="text-xs text-[#8E8E93]"
-//       >
-//         {title}
-//       </Text>
-//     </View>
-//   )
- 
-//   return (
-//     <SafeAreaView className="flex-1 bg-[#F5F5F5]" edges={['bottom']}>
-//       {/* Header */}
-//       <Header title="Account" />
- 
-//       <ScrollView
-//         className="flex-1"
-//         showsVerticalScrollIndicator={false}
-//       >
-//         {/* Profile Section */}
-//         <View className="bg-white px-4 py-5 mb-2">
-//           <View className="flex-row items-center justify-between">
-//             <View className="flex-row items-center flex-1">
-//               <Image
-//                 source={{ uri: 'https://randomuser.me/api/portraits/men/32.jpg' }}
-//                 className="w-16 h-16 rounded-full"
-//               />
-//               <View className="ml-3 flex-1">
-//                 <Text
-//                   style={{ fontFamily: 'Urbanist-Bold' }} // Changed to Bold
-//                   className="text-lg text-[#000000]"
-//                 >
-//                   Arun Mishra
-//                 </Text>
-//                 <Text
-//                   style={{ fontFamily: 'Urbanist-Bold' }} // Changed to Bold
-//                   className="text-sm text-[#8E8E93] mt-0.5"
-//                 >
-//                   arun.mishra@gmail.com
-//                 </Text>
-//               </View>
-//             </View>
-           
-//             <TouchableOpacity
-//               className="w-10 h-10 bg-[#0066FF] items-center justify-center"
-//               style={{ borderRadius: 8 }}
-//               activeOpacity={0.7}
-//             >
-//               <View className="flex-row gap-1">
-//                 <View className="w-1.5 h-1.5 bg-white" style={{ borderRadius: 1 }} />
-//                 <View className="w-1.5 h-1.5 bg-white" style={{ borderRadius: 1 }} />
-//               </View>
-//               <View className="flex-row gap-1 mt-1">
-//                 <View className="w-1.5 h-1.5 bg-white" style={{ borderRadius: 1 }} />
-//                 <View className="w-1.5 h-1.5 bg-white" style={{ borderRadius: 1 }} />
-//               </View>
-//             </TouchableOpacity>
-//           </View>
-//         </View>
- 
-//         {/* General Section */}
-//         <SectionHeader title="General" />
-       
-//         <View className="bg-white mb-2">
-//           <MenuItem
-//             icon="user"
-//             title="Personal Info"
-//             onPress={() => navigation.navigate('PersonalInfo')}
-//           />
-//           <View className="h-[1px] bg-[#E5E5EA] ml-12" />
-         
-//           <MenuItem
-//             icon="folder"
-//             title="Projects List"
-//             onPress={() => navigation.navigate('ProjectsList')}
-//           />
-//           <View className="h-[1px] bg-[#E5E5EA] ml-12" />
-         
-//           <MenuItem
-//             icon="credit-card"
-//             title="Payment Methods"
-//             onPress={() => navigation.navigate('PaymentMethods')}
-//           />
-//           <View className="h-[1px] bg-[#E5E5EA] ml-12" />
-         
-//           <MenuItem
-//             icon="bell"
-//             title="Notification"
-//             onPress={() => navigation.navigate('Notification')}
-//           />
-//           <View className="h-[1px] bg-[#E5E5EA] ml-12" />
-         
-//           <MenuItem
-//             icon="shield"
-//             title="Security"
-//             onPress={() => navigation.navigate('Security')}
-//           />
-//           <View className="h-[1px] bg-[#E5E5EA] ml-12" />
-         
-//           <MenuItem
-//             icon="globe"
-//             title="Language"
-//             rightText="English (US)"
-//             onPress={() => navigation.navigate('Language')}
-//           />
-//           <View className="h-[1px] bg-[#E5E5EA] ml-12" />
-         
-//           <MenuItem
-//             icon="eye"
-//             title="Dark Mode"
-//             showArrow={false}
-//             isSwitch={true}
-//             switchValue={isDarkMode}
-//             onSwitchToggle={toggleDarkMode}
-//           />
-//         </View>
- 
-//         {/* About Section */}
-//         <SectionHeader title="About" />
-       
-//         <View className="bg-white mb-2">
-//           <MenuItem
-//             icon="help-circle"
-//             title="Help Center"
-//             onPress={() => navigation.navigate('HelpCenter')}
-//           />
-//           <View className="h-[1px] bg-[#E5E5EA] ml-12" />
-         
-//           <MenuItem
-//             icon="lock"
-//             title="Privacy Policy"
-//             onPress={() => navigation.navigate('PrivacyPolicy')}
-//           />
-//           <View className="h-[1px] bg-[#E5E5EA] ml-12" />
-         
-//           <MenuItem
-//             icon="info"
-//             title="About Skystruct"
-//             onPress={() => navigation.navigate('AboutSkystruct')}
-//           />
-//         </View>
- 
-//         {/* Logout */}
-//         <View className="bg-white mb-6">
-//           <MenuItem
-//             icon="log-out"
-//             title="Logout"
-//             showArrow={false}
-//             isLogout={true}
-//             onPress={() => {
-//               // Handle logout
-//               console.log('Logout pressed')
-//             }}
-//           />
-//         </View>
-//       </ScrollView>
-//     </SafeAreaView>
-//   )
-// }
- 
-
-
-// import { View, Text, Image, TouchableOpacity, ScrollView, Switch, Alert } from 'react-native'
-// import React, { useState } from 'react'
-// import { SafeAreaView } from 'react-native-safe-area-context'
-// import { Feather } from '@expo/vector-icons'
-// import { useNavigation } from '@react-navigation/native'
-// import AsyncStorage from '@react-native-async-storage/async-storage'
-// import Header from '../../components/Header'
-
-// const ProfilePageScreen = () => {
-//   const navigation = useNavigation()
-//   const [isDarkMode, setIsDarkMode] = useState(false)
-
-//   const toggleDarkMode = () => setIsDarkMode(previousState => !previousState)
-
-//   // ✅ Logout Logic
-//   const handleLogout = async () => {
-//     Alert.alert(
-//       'Confirm Logout',
-//       'Are you sure you want to logout?',
-//       [
-//         {
-//           text: 'Cancel',
-//           style: 'cancel',
-//         },
-//         {
-//           text: 'Logout',
-//           style: 'destructive',
-//           onPress: async () => {
-//             try {
-//               // Remove stored data
-//               await AsyncStorage.removeItem('userToken')
-//               await AsyncStorage.removeItem('userData')
-//               // Optional: comment out next line if you want to remember email
-//               // await AsyncStorage.removeItem('rememberedEmail')
-
-//               console.log('✅ User logged out successfully.')
-
-//               // Navigate to SignIn screen
-//               navigation.navigate('Auth')
-//             //   navigation.reset({
-//             //     index: 0,
-//             //     routes: [{ name: 'SignIn' }],
-//             //   })
-//             } catch (error) {
-//               console.error('Error during logout:', error)
-//               Alert.alert('Error', 'Something went wrong while logging out.')
-//             }
-//           },
-//         },
-//       ],
-//       { cancelable: true }
-//     )
-//   }
-
-//   const MenuItem = ({ icon, title, onPress, showArrow = true, rightText = null, isSwitch = false, switchValue = false, onSwitchToggle = null, isLogout = false }) => (
-//     <TouchableOpacity
-//       onPress={onPress}
-//       className="flex-row items-center justify-between py-4 px-4 bg-white"
-//       activeOpacity={0.7}
-//     >
-//       <View className="flex-row items-center flex-1">
-//         <Feather
-//           name={icon}
-//           size={20}
-//           color={isLogout ? "#FF3B30" : "#000000"}
-//         />
-//         <Text
-//           style={{ fontFamily: 'Urbanist-Bold' }}
-//           className={`ml-3 text-base ${isLogout ? 'text-[#FF3B30]' : 'text-[#000000]'}`}
-//         >
-//           {title}
-//         </Text>
-//       </View>
-
-//       {isSwitch ? (
-//         <Switch
-//           trackColor={{ false: '#E5E5EA', true: '#4A7CFF' }}
-//           thumbColor="#FFFFFF"
-//           ios_backgroundColor="#E5E5EA"
-//           onValueChange={onSwitchToggle}
-//           value={switchValue}
-//         />
-//       ) : (
-//         <View className="flex-row items-center">
-//           {rightText && (
-//             <Text
-//               style={{ fontFamily: 'Urbanist-Bold' }}
-//               className="text-sm text-[#8E8E93] mr-2"
-//             >
-//               {rightText}
-//             </Text>
-//           )}
-//           {showArrow && (
-//             <Feather
-//               name="chevron-right"
-//               size={20}
-//               color="#8E8E93"
-//             />
-//           )}
-//         </View>
-//       )}
-//     </TouchableOpacity>
-//   )
-
-//   const SectionHeader = ({ title }) => (
-//     <View className="px-4 py-2 bg-[#F5F5F5]">
-//       <Text
-//         style={{ fontFamily: 'Urbanist-Bold' }}
-//         className="text-xs text-[#8E8E93]"
-//       >
-//         {title}
-//       </Text>
-//     </View>
-//   )
-
-//   return (
-//     <SafeAreaView className="flex-1 bg-[#F5F5F5]" edges={['bottom']}>
-//       <Header title="Account" />
-
-//       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-//         {/* Profile Section - Made clickable */}
-//         <TouchableOpacity 
-//           onPress={() => navigation.navigate('EditProfileScreen')}
-//           activeOpacity={0.7}
-//           className="bg-white px-4 py-5 mb-2"
-//         >
-//           <View className="flex-row items-center justify-between">
-//             <View className="flex-row items-center flex-1">
-//               <Image
-//                 source={{ uri: 'https://randomuser.me/api/portraits/men/32.jpg' }}
-//                 className="w-16 h-16 rounded-full"
-//               />
-//               <View className="ml-3 flex-1">
-//                 <Text style={{ fontFamily: 'Urbanist-Bold' }} className="text-lg text-[#000000]">
-//                   Arun Mishra
-//                 </Text>
-//                 <Text style={{ fontFamily: 'Urbanist-Bold' }} className="text-sm text-[#8E8E93] mt-0.5">
-//                   arun.mishra@gmail.com
-//                 </Text>
-//               </View>
-//             </View>
-//             {/* Chevron icon to indicate it's clickable */}
-//             <Feather name="chevron-right" size={20} color="#8E8E93" />
-//           </View>
-//         </TouchableOpacity>
-
-//         {/* General Section */}
-//         <SectionHeader title="General" />
-//         <View className="bg-white mb-2">
-//           <MenuItem icon="user" title="Personal Info" onPress={() => navigation.navigate('PersonalInfo')} />
-//           <View className="h-[1px] bg-[#E5E5EA] ml-12" />
-
-//           <MenuItem icon="folder" title="Projects List" onPress={() => navigation.navigate('ProjectsList')} />
-//           <View className="h-[1px] bg-[#E5E5EA] ml-12" />
-
-//           <MenuItem icon="credit-card" title="Payment Methods" onPress={() => navigation.navigate('PaymentMethods')} />
-//           <View className="h-[1px] bg-[#E5E5EA] ml-12" />
-
-//           <MenuItem icon="bell" title="Notification" onPress={() => navigation.navigate('Notification')} />
-//           <View className="h-[1px] bg-[#E5E5EA] ml-12" />
-
-//           <MenuItem icon="shield" title="Security" onPress={() => navigation.navigate('Security')} />
-//           <View className="h-[1px] bg-[#E5E5EA] ml-12" />
-
-//           <MenuItem icon="globe" title="Language" rightText="English (US)" onPress={() => navigation.navigate('Language')} />
-//           <View className="h-[1px] bg-[#E5E5EA] ml-12" />
-
-//           <MenuItem
-//             icon="eye"
-//             title="Dark Mode"
-//             showArrow={false}
-//             isSwitch={true}
-//             switchValue={isDarkMode}
-//             onSwitchToggle={toggleDarkMode}
-//           />
-//         </View>
-
-//         {/* About Section */}
-//         <SectionHeader title="About" />
-//         <View className="bg-white mb-2">
-//           <MenuItem icon="help-circle" title="Help Center" onPress={() => navigation.navigate('HelpCenter')} />
-//           <View className="h-[1px] bg-[#E5E5EA] ml-12" />
-
-//           <MenuItem icon="lock" title="Privacy Policy" onPress={() => navigation.navigate('PrivacyPolicyScreen')} />
-//           <View className="h-[1px] bg-[#E5E5EA] ml-12" />
-
-//           <MenuItem icon="info" title="About Skystruct" onPress={() => navigation.navigate('AboutSkystruct')} />
-//         </View>
-
-//         {/* ✅ Logout Button */}
-//         <View className="bg-white mb-6">
-//           <MenuItem
-//             icon="log-out"
-//             title="Logout"
-//             showArrow={false}
-//             isLogout={true}
-//             onPress={handleLogout}
-//           />
-//         </View>
-//       </ScrollView>
-//     </SafeAreaView>
-//   )
-// }
-
-// export default ProfilePageScreen
-
-// import { View, Text, Image, TouchableOpacity, ScrollView, Switch, Alert } from 'react-native';
-// import React, { useState, useEffect } from 'react';
-// import { SafeAreaView } from 'react-native-safe-area-context';
-// import { Feather } from '@expo/vector-icons';
-// import { useNavigation } from '@react-navigation/native';
-// import AsyncStorage from '@react-native-async-storage/async-storage';
-// import Header from '../../components/Header';
-
-// const API_URL = 'https://skystruct-lite-backend.vercel.app/api/users';
-
-// const ProfilePageScreen = () => {
-//   const navigation = useNavigation();
-//   const [isDarkMode, setIsDarkMode] = useState(false);
-//   const [userData, setUserData] = useState(null);
-
-//   const toggleDarkMode = () => setIsDarkMode(previousState => !previousState);
-
-//   // ✅ Fetch profile data
-//   const fetchUserProfile = async () => {
-//     try {
-//       console.log('[Profile] 🔄 Fetching user data...');
-//       const token = await AsyncStorage.getItem('userToken');
-//       const userInfo = await AsyncStorage.getItem('userData');
-
-//       if (!token || !userInfo) {
-//         console.log('[Profile] ⚠️ No token or user data found');
-//         return;
-//       }
-
-//       const parsedUser = JSON.parse(userInfo);
-//       const userId = parsedUser?._id || parsedUser?.id;
-
-//       console.log('[Profile] 📦 Token found:', token);
-//       console.log('[Profile] 👤 User ID:', userId);
-
-//       const response = await fetch(`${API_URL}/${userId}`, {
-//         method: 'GET',
-//         headers: {
-//           'Content-Type': 'application/json',
-//           'Authorization': `Bearer ${token}`,
-//         },
-//       });
-
-//       console.log('[Profile] 🌐 Status:', response.status);
-
-//       if (!response.ok) {
-//         throw new Error(`Failed to fetch profile (status: ${response.status})`);
-//       }
-
-//       const json = await response.json();
-//       console.log('[Profile] ✅ User Data Response:', json);
-
-//       setUserData(json?.data);
-//     } catch (error) {
-//       console.error('[Profile] ❌ Fetch Error:', error);
-//     }
-//   };
-
-//   useEffect(() => {
-//     fetchUserProfile();
-//   }, []);
-
-//   // ✅ Logout Logic
-//   const handleLogout = async () => {
-//     Alert.alert(
-//       'Confirm Logout',
-//       'Are you sure you want to logout?',
-//       [
-//         { text: 'Cancel', style: 'cancel' },
-//         {
-//           text: 'Logout',
-//           style: 'destructive',
-//           onPress: async () => {
-//             try {
-//               await AsyncStorage.removeItem('userToken');
-//               await AsyncStorage.removeItem('userData');
-//               console.log('✅ User logged out successfully.');
-//               navigation.navigate('Auth');
-//             } catch (error) {
-//               console.error('Error during logout:', error);
-//               Alert.alert('Error', 'Something went wrong while logging out.');
-//             }
-//           },
-//         },
-//       ],
-//       { cancelable: true }
-//     );
-//   };
-
-//   const MenuItem = ({
-//     icon,
-//     title,
-//     onPress,
-//     showArrow = true,
-//     rightText = null,
-//     isSwitch = false,
-//     switchValue = false,
-//     onSwitchToggle = null,
-//     isLogout = false,
-//   }) => (
-//     <TouchableOpacity
-//       onPress={onPress}
-//       className="flex-row items-center justify-between py-4 px-4 bg-white"
-//       activeOpacity={0.7}
-//     >
-//       <View className="flex-row items-center flex-1">
-//         <Feather
-//           name={icon}
-//           size={20}
-//           color={isLogout ? '#FF3B30' : '#000000'}
-//         />
-//         <Text
-//           style={{ fontFamily: 'Urbanist-Bold' }}
-//           className={`ml-3 text-base ${isLogout ? 'text-[#FF3B30]' : 'text-[#000000]'}`}
-//         >
-//           {title}
-//         </Text>
-//       </View>
-
-//       {isSwitch ? (
-//         <Switch
-//           trackColor={{ false: '#E5E5EA', true: '#4A7CFF' }}
-//           thumbColor="#FFFFFF"
-//           ios_backgroundColor="#E5E5EA"
-//           onValueChange={onSwitchToggle}
-//           value={switchValue}
-//         />
-//       ) : (
-//         <View className="flex-row items-center">
-//           {rightText && (
-//             <Text
-//               style={{ fontFamily: 'Urbanist-Bold' }}
-//               className="text-sm text-[#8E8E93] mr-2"
-//             >
-//               {rightText}
-//             </Text>
-//           )}
-//           {showArrow && (
-//             <Feather name="chevron-right" size={20} color="#8E8E93" />
-//           )}
-//         </View>
-//       )}
-//     </TouchableOpacity>
-//   );
-
-//   const SectionHeader = ({ title }) => (
-//     <View className="px-4 py-2 bg-[#F5F5F5]">
-//       <Text
-//         style={{ fontFamily: 'Urbanist-Bold' }}
-//         className="text-xs text-[#8E8E93]"
-//       >
-//         {title}
-//       </Text>
-//     </View>
-//   );
-
-//   return (
-//     <SafeAreaView className="flex-1 bg-[#F5F5F5]" edges={['bottom']}>
-//       <Header title="Account" />
-
-//       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-//         {/* ✅ Profile Section - Dynamic Data */}
-//         <TouchableOpacity
-//           onPress={() => navigation.navigate('EditProfileScreen')}
-//           activeOpacity={0.7}
-//           className="bg-white px-4 py-5 mb-2"
-//         >
-//           <View className="flex-row items-center justify-between">
-//             <View className="flex-row items-center flex-1">
-//               <Image
-//                 source={{
-//                   uri:
-//                     userData?.profileImage ||
-//                     'https://ui-avatars.com/api/?name=' + encodeURIComponent(userData?.name || 'User'),
-//                 }}
-//                 className="w-16 h-16 rounded-full"
-//               />
-//               <View className="ml-3 flex-1">
-//                 <Text
-//                   style={{ fontFamily: 'Urbanist-Bold' }}
-//                   className="text-lg text-[#000000]"
-//                 >
-//                   {userData?.name || 'Loading...'}
-//                 </Text>
-//                 <Text
-//                   style={{ fontFamily: 'Urbanist-Bold' }}
-//                   className="text-sm text-[#8E8E93] mt-0.5"
-//                 >
-//                   {userData?.email || ''}
-//                 </Text>
-//               </View>
-//             </View>
-//             <Feather name="chevron-right" size={20} color="#8E8E93" />
-//           </View>
-//         </TouchableOpacity>
-
-//         {/* 🔹 Other Menu Sections (unchanged) */}
-//         <SectionHeader title="General" />
-//         <View className="bg-white mb-2">
-//           <MenuItem icon="user" title="Personal Info" onPress={() => navigation.navigate('PersonalInfo')} />
-//           <View className="h-[1px] bg-[#E5E5EA] ml-12" />
-//           <MenuItem icon="folder" title="Projects List" onPress={() => navigation.navigate('ProjectsList')} />
-//           <View className="h-[1px] bg-[#E5E5EA] ml-12" />
-//           <MenuItem icon="credit-card" title="Payment Methods" onPress={() => navigation.navigate('PaymentMethods')} />
-//           <View className="h-[1px] bg-[#E5E5EA] ml-12" />
-//           <MenuItem icon="bell" title="Notification" onPress={() => navigation.navigate('Notification')} />
-//           <View className="h-[1px] bg-[#E5E5EA] ml-12" />
-//           <MenuItem icon="shield" title="Security" onPress={() => navigation.navigate('Security')} />
-//           <View className="h-[1px] bg-[#E5E5EA] ml-12" />
-//           <MenuItem icon="globe" title="Language" rightText="English (US)" onPress={() => navigation.navigate('Language')} />
-//           <View className="h-[1px] bg-[#E5E5EA] ml-12" />
-//           <MenuItem icon="eye" title="Dark Mode" showArrow={false} isSwitch={true} switchValue={isDarkMode} onSwitchToggle={toggleDarkMode} />
-//         </View>
-
-//         <SectionHeader title="About" />
-//         <View className="bg-white mb-2">
-//           <MenuItem icon="help-circle" title="Help Center" onPress={() => navigation.navigate('HelpCenter')} />
-//           <View className="h-[1px] bg-[#E5E5EA] ml-12" />
-//           <MenuItem icon="lock" title="Privacy Policy" onPress={() => navigation.navigate('PrivacyPolicyScreen')} />
-//           <View className="h-[1px] bg-[#E5E5EA] ml-12" />
-//           <MenuItem icon="info" title="About Skystruct" onPress={() => navigation.navigate('AboutSkystruct')} />
-//         </View>
-
-//         <View className="bg-white mb-6">
-//           <MenuItem icon="log-out" title="Logout" showArrow={false} isLogout={true} onPress={handleLogout} />
-//         </View>
-//       </ScrollView>
-//     </SafeAreaView>
-//   );
-// };
-
-// export default ProfilePageScreen;
-
-
 import {
   View,
   Text,
@@ -679,8 +13,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
 import Header from '../../components/Header';
-import CustomerSupport from './CustomerSupport';
 
 const API_URL = 'https://skystruct-lite-backend.vercel.app/api/users';
 
@@ -690,9 +24,6 @@ const ProfilePageScreen = () => {
   const [userData, setUserData] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  const toggleDarkMode = () => setIsDarkMode((previousState) => !previousState);
-
-  // ✅ Fetch user profile (with updated image & signature)
   const fetchUserProfile = async () => {
     try {
       console.log('[Profile] 🔄 Fetching user data...');
@@ -728,19 +59,16 @@ const ProfilePageScreen = () => {
     }
   };
 
-  // ✅ Load profile on screen mount
   useEffect(() => {
     fetchUserProfile();
   }, []);
 
-  // ✅ Pull to refresh
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchUserProfile();
     setRefreshing(false);
   }, []);
 
-  // ✅ Logout user
   const handleLogout = async () => {
     Alert.alert('Confirm Logout', 'Are you sure you want to logout?', [
       { text: 'Cancel', style: 'cancel' },
@@ -762,7 +90,6 @@ const ProfilePageScreen = () => {
     ]);
   };
 
-  // ✅ Menu Item component
   const MenuItem = ({
     icon,
     title,
@@ -773,22 +100,38 @@ const ProfilePageScreen = () => {
     switchValue = false,
     onSwitchToggle = null,
     isLogout = false,
+    iconBg = '#F0F4FF',
+    iconColor = '#4A7CFF',
   }) => (
     <TouchableOpacity
       onPress={onPress}
-      className="flex-row items-center justify-between py-4 px-4 bg-white"
+      className="flex-row items-center justify-between py-4 px-5 bg-white"
       activeOpacity={0.7}
+      style={{
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+        elevation: 1,
+      }}
     >
       <View className="flex-row items-center flex-1">
-        <Feather
-          name={icon}
-          size={20}
-          color={isLogout ? '#FF3B30' : '#000000'}
-        />
+        <View
+          className="w-10 h-10 rounded-xl items-center justify-center"
+          style={{
+            backgroundColor: isLogout ? '#FFF0F0' : iconBg,
+          }}
+        >
+          <Feather
+            name={icon}
+            size={20}
+            color={isLogout ? '#FF3B30' : iconColor}
+          />
+        </View>
         <Text
-          style={{ fontFamily: 'Urbanist-Bold' }}
-          className={`ml-3 text-base ${
-            isLogout ? 'text-[#FF3B30]' : 'text-[#000000]'
+          style={{ fontFamily: 'Urbanist-SemiBold' }}
+          className={`ml-4 text-base ${
+            isLogout ? 'text-[#FF3B30]' : 'text-[#1C1C1E]'
           }`}
         >
           {title}
@@ -807,14 +150,14 @@ const ProfilePageScreen = () => {
         <View className="flex-row items-center">
           {rightText && (
             <Text
-              style={{ fontFamily: 'Urbanist-Bold' }}
+              style={{ fontFamily: 'Urbanist-Medium' }}
               className="text-sm text-[#8E8E93] mr-2"
             >
               {rightText}
             </Text>
           )}
           {showArrow && (
-            <Feather name="chevron-right" size={20} color="#8E8E93" />
+            <Feather name="chevron-right" size={20} color="#C7C7CC" />
           )}
         </View>
       )}
@@ -822,10 +165,10 @@ const ProfilePageScreen = () => {
   );
 
   const SectionHeader = ({ title }) => (
-    <View className="px-4 py-2 bg-[#F5F5F5]">
+    <View className="px-5 py-3">
       <Text
         style={{ fontFamily: 'Urbanist-Bold' }}
-        className="text-xs text-[#8E8E93]"
+        className="text-xs text-[#8E8E93] uppercase tracking-wider"
       >
         {title}
       </Text>
@@ -833,8 +176,8 @@ const ProfilePageScreen = () => {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-[#F5F5F5]" edges={['bottom']}>
-      <Header title="Account" />
+    <SafeAreaView className="flex-1 bg-[#F8F9FD]" edges={['bottom']}>
+      <Header title="Profile" />
 
       <ScrollView
         className="flex-1"
@@ -848,131 +191,237 @@ const ProfilePageScreen = () => {
           />
         }
       >
-        {/* ✅ Profile Header */}
-        <TouchableOpacity
-          onPress={() => navigation.navigate('EditProfileScreen')}
-          activeOpacity={0.7}
-          className="bg-white px-4 py-5 mb-2"
-        >
-          <View className="flex-row items-center justify-between">
-            <View className="flex-row items-center flex-1">
-              <Image
-                source={{
-                  uri:
-                    userData?.profilePhoto ||
-                    'https://ui-avatars.com/api/?name=' +
-                      encodeURIComponent(userData?.name || 'User'),
-                }}
-                className="w-16 h-16 rounded-full"
-              />
-              <View className="ml-3 flex-1">
+        {/* Modern Profile Card */}
+        <View className="mx-4 mt-4 mb-6">
+          <View
+            className="bg-white rounded-3xl overflow-hidden"
+            style={{
+              shadowColor: '#4A7CFF',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.1,
+              shadowRadius: 12,
+              elevation: 5,
+            }}
+          >
+            {/* Gradient Background */}
+            <LinearGradient
+              colors={['#4A7CFF', '#6B93FF']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              className="h-24"
+            />
+            
+            {/* Profile Content */}
+            <View className="px-5 pb-6" style={{ marginTop: -40 }}>
+              <View className="flex-row items-end">
+                <View
+                  className="w-20 h-20 rounded-full bg-white p-1"
+                  style={{
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.15,
+                    shadowRadius: 8,
+                    elevation: 5,
+                  }}
+                >
+                  <Image
+                    source={{
+                      uri:
+                        userData?.profilePhoto ||
+                        'https://ui-avatars.com/api/?name=' +
+                          encodeURIComponent(userData?.name || 'User') +
+                          '&background=4A7CFF&color=fff&size=200',
+                    }}
+                    className="w-full h-full rounded-full"
+                  />
+                </View>
+                
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('EditProfileScreen')}
+                  className="ml-auto mb-1 bg-[#4A7CFF] rounded-full px-5 py-2.5 flex-row items-center"
+                  activeOpacity={0.8}
+                >
+                  <Feather name="edit-2" size={14} color="#FFFFFF" />
+                  <Text
+                    style={{ fontFamily: 'Urbanist-Bold' }}
+                    className="text-white text-sm ml-2"
+                  >
+                    Edit Profile
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              
+              <View className="mt-3">
                 <Text
                   style={{ fontFamily: 'Urbanist-Bold' }}
-                  className="text-lg text-[#000000]"
+                  className="text-xl text-[#1C1C1E]"
                 >
                   {userData?.name || 'Loading...'}
                 </Text>
                 <Text
-                  style={{ fontFamily: 'Urbanist-Regular' }}
-                  className="text-sm text-[#8E8E93] mt-0.5"
+                  style={{ fontFamily: 'Urbanist-Medium' }}
+                  className="text-sm text-[#8E8E93] mt-1"
                 >
                   {userData?.email || ''}
                 </Text>
               </View>
             </View>
-            <Feather name="chevron-right" size={20} color="#8E8E93" />
           </View>
-        </TouchableOpacity>
+        </View>
 
-        {/* ✅ Signature Preview (Optional) */}
+        {/* Signature Card */}
         {userData?.signatureUrl && (
-          <View className="bg-white p-4 mb-3">
-            <Text
-              style={{ fontFamily: 'Urbanist-Bold' }}
-              className="text-base text-black mb-2"
+          <View className="mx-4 mb-6">
+            <View
+              className="bg-white rounded-2xl p-5"
+              style={{
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.05,
+                shadowRadius: 8,
+                elevation: 2,
+              }}
             >
-              Signature
-            </Text>
-            <Image
-              source={{ uri: userData.signatureUrl }}
-              className="w-full h-32 rounded-lg border border-gray-200"
-              resizeMode="contain"
-            />
+              <Text
+                style={{ fontFamily: 'Urbanist-Bold' }}
+                className="text-base text-[#1C1C1E] mb-3"
+              >
+                Digital Signature
+              </Text>
+              <View className="bg-[#F8F9FD] rounded-xl p-4 border border-[#E5E5EA]">
+                <Image
+                  source={{ uri: userData.signatureUrl }}
+                  className="w-full h-24"
+                  resizeMode="contain"
+                />
+              </View>
+            </View>
           </View>
         )}
 
-        {/* ✅ Other Settings Sections */}
-        <SectionHeader title="" />
-        <View className="bg-white mb-2">
+        {/* Account Section */}
+        <SectionHeader title="Account" />
+        <View
+          className="mx-4 mb-4 bg-white rounded-2xl overflow-hidden"
+          style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.05,
+            shadowRadius: 8,
+            elevation: 2,
+          }}
+        >
           <MenuItem
             icon="user"
             title="Personal Info"
             onPress={() => navigation.navigate('EditProfileScreen')}
+            iconBg="#F0F4FF"
+            iconColor="#4A7CFF"
           />
-          <View className="h-[1px] bg-[#E5E5EA] ml-12" />
+          <View className="h-[0.5px] bg-[#E5E5EA] ml-[70px]" />
           <MenuItem
-            icon="folder"
-            title="Projects List"
-            onPress={() => navigation.navigate('ProjectsList')}
+            icon="users"
+            title="User Management"
+            onPress={() => navigation.navigate('UsersList')}
+            iconBg="#FFF0F5"
+            iconColor="#FF3B8F"
           />
-          <View className="h-[1px] bg-[#E5E5EA] ml-12" />
+          <View className="h-[0.5px] bg-[#E5E5EA] ml-[70px]" />
           <MenuItem
-            icon="credit-card"
-            title="Payment Methods"
-            onPress={() => navigation.navigate('PaymentMethods')}
+            icon="briefcase"
+            title="Vendor Management"
+            onPress={() => navigation.navigate('Vendors')}
+            iconBg="#F0FFF4"
+            iconColor="#22C55E"
           />
-          <View className="h-[1px] bg-[#E5E5EA] ml-12" />
+        </View>
+
+        {/* Preferences Section */}
+        <SectionHeader title="Preferences" />
+        <View
+          className="mx-4 mb-4 bg-white rounded-2xl overflow-hidden"
+          style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.05,
+            shadowRadius: 8,
+            elevation: 2,
+          }}
+        >
           <MenuItem
             icon="bell"
             title="Notifications"
             onPress={() => navigation.navigate('Notification')}
+            iconBg="#FFF9E6"
+            iconColor="#F59E0B"
           />
-          <View className="h-[1px] bg-[#E5E5EA] ml-12" />
+          <View className="h-[0.5px] bg-[#E5E5EA] ml-[70px]" />
           <MenuItem
             icon="shield"
             title="Security"
             onPress={() => navigation.navigate('Security')}
+            iconBg="#F0F0FF"
+            iconColor="#8B5CF6"
           />
-          <View className="h-[1px] bg-[#E5E5EA] ml-12" />
+          <View className="h-[0.5px] bg-[#E5E5EA] ml-[70px]" />
           <MenuItem
             icon="globe"
             title="Language"
             rightText="English (US)"
             onPress={() => navigation.navigate('Language')}
-          />
-          <View className="h-[1px] bg-[#E5E5EA] ml-12" />
-          <MenuItem
-            icon="eye"
-            title="Dark Mode"
-            showArrow={false}
-            isSwitch={true}
-            switchValue={isDarkMode}
-            onSwitchToggle={toggleDarkMode}
+            iconBg="#E6F7FF"
+            iconColor="#06B6D4"
           />
         </View>
 
-        <SectionHeader title="" />
-        <View className="bg-white mb-2">
+        {/* Support Section */}
+        <SectionHeader title="Support" />
+        <View
+          className="mx-4 mb-4 bg-white rounded-2xl overflow-hidden"
+          style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.05,
+            shadowRadius: 8,
+            elevation: 2,
+          }}
+        >
           <MenuItem
             icon="help-circle"
             title="Help Center"
-            onPress={() => navigation.navigate('Customer Support')}
+            onPress={() => navigation.navigate('CustomerSupport')}
+            iconBg="#F0F9FF"
+            iconColor="#3B82F6"
           />
-          <View className="h-[1px] bg-[#E5E5EA] ml-12" />
+          <View className="h-[0.5px] bg-[#E5E5EA] ml-[70px]" />
           <MenuItem
             icon="lock"
             title="Privacy Policy"
             onPress={() => navigation.navigate('PrivacyPolicyScreen')}
+            iconBg="#FFF5F5"
+            iconColor="#EF4444"
           />
-          <View className="h-[1px] bg-[#E5E5EA] ml-12" />
+          <View className="h-[0.5px] bg-[#E5E5EA] ml-[70px]" />
           <MenuItem
             icon="info"
             title="About Skystruct"
             onPress={() => navigation.navigate('AboutSkystruct')}
+            iconBg="#F5F3FF"
+            iconColor="#A855F7"
           />
         </View>
 
-        <View className="bg-white mb-6">
+        {/* Logout Button */}
+        <View
+          className="mx-4 mb-8 bg-white rounded-2xl overflow-hidden"
+          style={{
+            shadowColor: '#FF3B30',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 8,
+            elevation: 2,
+          }}
+        >
           <MenuItem
             icon="log-out"
             title="Logout"
@@ -981,6 +430,8 @@ const ProfilePageScreen = () => {
             onPress={handleLogout}
           />
         </View>
+
+        <View className="h-4" />
       </ScrollView>
     </SafeAreaView>
   );
