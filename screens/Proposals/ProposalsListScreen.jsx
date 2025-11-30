@@ -739,7 +739,7 @@ const ProposalsListScreen = () => {
               style={{ backgroundColor: '#0066FF', borderRadius: 12, paddingVertical: 16, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}
               onPress={() => {
                 setShowActionsModal(false);
-                navigation.navigate('ViewProposal');
+                navigation.navigate('ClientProposalScreen');
               }}
             >
               <Text style={{ fontFamily: 'Urbanist-SemiBold', fontSize: 15, color: 'white' }}>View Proposal</Text>

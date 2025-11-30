@@ -27,6 +27,7 @@ import ProjectListScreen from './screens/Projects/ProjectsListScreen';
 import ProposalsListScreen from './screens/Proposals/ProposalsListScreen';
 import UsersScreen from 'screens/Users/UsersScreen';
 import ProfilePageScreen from 'screens/Profile/ProfilePageScreen';
+import ClientProposalScreen from 'screens/Proposals/ClientProposalScreen';
 
 // Project Screens
 import ViewDetailsScreen from './screens/Projects/ViewDetailsScreen';
@@ -137,6 +138,9 @@ const ProjectStack = () => (
 const ProposalStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="ProposalsList" component={ProposalsListScreen} />
+    <Stack.Screen name="ClientProposalScreen" component={ClientProposalScreen} />
+
+
     <Stack.Screen name="CreateProposalScreen" component={CreateProposalScreen} />
     <Stack.Screen name="SubmitProposal" component={SubmitProposal} />
     <Stack.Screen name="ViewProposal" component={ViewProposal} />
