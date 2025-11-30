@@ -2,29 +2,30 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView } fro
 import React, { useState } from 'react';
 import { Feather } from '@expo/vector-icons';
 import CustomerBottomNavBar from 'components/CustomerBottomNavBar';
+import Header from 'components/Header';
 
 const CustomerCreateProposal = ({ navigation }) => {
-  const [title, setTitle] = useState('Project Name 1');
-  const [clientName, setClientName] = useState('Arun Mishra');
+  const [title, setTitle] = useState('');
+  const [clientName, setClientName] = useState('');
   const [address, setAddress] = useState(
-    'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna...'
+    ''
   );
-  const [date, setDate] = useState('31/03/2025');
-  const [budget, setBudget] = useState('$2,500,000');
-  const [startDate, setStartDate] = useState('2025-03-28');
-  const [endDate, setEndDate] = useState('2026-03-22');
+  const [date, setDate] = useState('');
+  const [budget, setBudget] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [notes, setNotes] = useState(
-    'The budget includes material costs, labor, and subcontractor fees.Client approvals are required at key project milestones.Additional customization may impact the final budget.'
+    ''
   );
 
   const [proposalItems, setProposalItems] = useState([
-    { id: 1, name: 'Site Preparation & Excavation', checked: true },
-    { id: 2, name: 'Foundation & Structural Work', checked: true },
-    { id: 3, name: 'Masonry & Wall Construction', checked: true },
-    { id: 4, name: 'Roofing & Waterproofing', checked: true },
-    { id: 5, name: 'Electrical & Plumbing', checked: true },
-    { id: 6, name: 'Interior Finishing', checked: true },
-    { id: 7, name: 'Safety & Compliance Measures', checked: true },
+    { id: 1, name: 'Site Preparation & Excavation', checked: false },
+    { id: 2, name: 'Foundation & Structural Work', checked: false },
+    { id: 3, name: 'Masonry & Wall Construction', checked: false },
+    { id: 4, name: 'Roofing & Waterproofing', checked: false },
+    { id: 5, name: 'Electrical & Plumbing', checked: false },
+    { id: 6, name: 'Interior Finishing', checked: false },
+    { id: 7, name: 'Safety & Compliance Measures', checked: false },
   ]);
 
   const [attachments, setAttachments] = useState([
@@ -46,52 +47,7 @@ const CustomerCreateProposal = ({ navigation }) => {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F5F5F5' }}>
       <View style={{ flex: 1 }}>
-        {/* Header */}
-        <View
-          style={{
-            backgroundColor: '#0066FF',
-            paddingBottom: 20,
-            borderBottomLeftRadius: 20,
-            borderBottomRightRadius: 20,
-          }}>
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              paddingHorizontal: 16,
-              paddingTop: 16,
-              paddingBottom: 16,
-            }}>
-            <TouchableOpacity
-              onPress={() => navigation?.goBack()}
-              style={{
-                width: 32,
-                height: 32,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-              <Feather name="arrow-left" size={24} color="white" />
-            </TouchableOpacity>
-
-            {/* Centered Title */}
-            <View
-              style={{
-                flex: 1,
-                alignItems: 'center',
-                marginLeft: -32, // This compensates for the back button width
-              }}>
-              <Text
-                style={{
-                  fontFamily: 'Urbanist-Bold',
-                  fontSize: 18,
-                  color: 'white',
-                  textAlign: 'center',
-                }}>
-                Create Proposal
-              </Text>
-            </View>
-          </View>
-        </View>
+        <Header title={"Create a Proposal"}/>
 
         {/* Content */}
         <ScrollView
@@ -576,7 +532,7 @@ const CustomerCreateProposal = ({ navigation }) => {
             </TouchableOpacity>
           </View>
         </ScrollView>
-        <CustomerBottomNavBar/>
+        
       </View>
     </SafeAreaView>
   );
