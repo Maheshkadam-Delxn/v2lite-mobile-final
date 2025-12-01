@@ -300,6 +300,8 @@ console.log("asdfasdfasdf",project);
     navigation.navigate('CreateProjectScreen');
   };
 
+  console.log(project)
+
   const handleTabSelect = (tab) => {
     setActiveTab(tab);
     // Only navigate to other screens for Attendance (if needed)
@@ -353,7 +355,7 @@ console.log("asdfasdfasdf",project);
             <SectionContainer title="Basic Project Details">
               <View style={styles.detailList}>
                 <DetailRow label="Project Name" value={project?.name} />
-                <DetailRow label="Project Type" value={project.projectType.name} />
+                <DetailRow label="Project Type" value={project.projectType?.name} />
                 <DetailRow label="Project ID"  value={project.projectCode} />
                 <DetailRow label="Location" value={project.location} />
                 <DetailRow label="Start Date" value={project.startDate} />

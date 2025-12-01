@@ -139,7 +139,10 @@ const ProjectsListScreen = () => {
       if (!Array.isArray(items) || items.length === 0) {
         setProjects([]);
       } else {
-        const mapped = items.map(mapItemToProject);
+        const filtered = items.filter(
+  (item) => item.status !== "Proposal Under Approval"
+);
+        const mapped = filtered.map(mapItemToProject);
         setProjects(mapped);
       }
     } catch (err) {
