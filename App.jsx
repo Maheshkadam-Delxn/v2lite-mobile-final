@@ -110,6 +110,7 @@ import FeedsScreen from 'screens/Feeds/FeedsScreen';
 import NewClientPassword from 'screens/Auth/NewClientPassword';
 import ClientMainPage from 'screens/HomeOwner/clientpages/ClientMainPage';
 import clientProfilePage from 'screens/HomeOwner/clientpages/clientProfilePage';
+import CreateTemplate from 'screens/Proposals/CreateTemplate';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const TOKEN_KEY = 'userToken';
@@ -142,6 +143,7 @@ const ProposalStack = () => (
 
 
     <Stack.Screen name="CreateProposalScreen" component={CreateProposalScreen} />
+    <Stack.Screen name="CreateTemplate" component={CreateTemplate}/>
     <Stack.Screen name="SubmitProposal" component={SubmitProposal} />
     <Stack.Screen name="ViewProposal" component={ViewProposal} />
     <Stack.Screen name="ChooseTemplate" component={ChooseTemplate} />
