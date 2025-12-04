@@ -1,399 +1,648 @@
-import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
-import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  SafeAreaView,
+  ActivityIndicator,
+  Alert,
+  StyleSheet,
+} from 'react-native';
+import React, { useState, useEffect } from 'react';
 import { Feather } from '@expo/vector-icons';
-import CustomerBottomNavBar from 'components/CustomerBottomNavBar';
+import Header from 'components/Header';
+import * as DocumentPicker from 'expo-document-picker';
+import * as Crypto from 'expo-crypto';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const SubmitProposalCustomer = ({ navigation }) => {
-  const [clientName] = useState('Arun Mishra');
-  const [clientEmail] = useState('arun.mishra@gmail.com');
-  const [clientPhone] = useState('9326261416');
-  const [designerNotes, setDesignerNotes] = useState('The budget includes material costs, labor, and subcontractor fees.Client approvals are required at key project milestones.Additional customization may impact the final budget.');
+const CLOUDINARY = {
+  cloudName: "dmlsgazvr",
+  apiKey: "353369352647425",
+  apiSecret: "8qcz7uAdftDVFNd6IqaDOytg_HI",
+};
+const API_URL = 'https://skystruct-lite-backend.vercel.app/api/projects';
+const generateSignature = async (timestamp) => {
+  const stringToSign = `timestamp=${timestamp}${CLOUDINARY.apiSecret}`;
+  return await Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA1,
+    stringToSign
+  );
+};
+
+const uploadToCloudinary = async (fileUri, fileType) => {
+  try {
+    const timestamp = Math.round(Date.now() / 1000);
+    const signature = await generateSignature(timestamp);
+    const fileName = `doc_${Date.now()}.pdf`;
+
+    const formData = new FormData();
+    formData.append("file", {
+      uri: fileUri,
+      type: fileType,
+      name: fileName,
+    });
+    formData.append("timestamp", timestamp);
+    formData.append("signature", signature);
+    formData.append("api_key", CLOUDINARY.apiKey);
+
+    const uploadURL = `https://api.cloudinary.com/v1_1/${CLOUDINARY.cloudName}/raw/upload`;
+    const response = await fetch(uploadURL, {
+      method: "POST",
+      body: formData,
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.secure_url) {
+      return { success: true, url: data.secure_url };
+    } else {
+      return { success: false, error: data.error?.message || "Upload failed" };
+    }
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+};
+
+const SubmitProposalCustomer = ({ navigation, route }) => {
+  const { templateData } = route.params || {};
+  const [proposalData, setProposalData] = useState();
+  
+  useEffect(() => {
+    if (templateData) {
+      setProposalData(templateData);
+    }
+  }, [templateData]);
+
+  const [projectName, setProjectName] = useState("");
+  const [clientName, setClientName] = useState("");
+  const [clientEmail, setClientEmail] = useState("");
+  const [clientPhone, setClientPhone] = useState("");
+  const [location, setLocation] = useState("");
+  const [documents, setDocuments] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [note, setNote] = useState("");
+
+
+  const handleDocumentPick = async () => {
+    const result = await DocumentPicker.getDocumentAsync({
+      type: "*/*",
+    });
+
+    if (result.canceled) return;
+
+    const picked = result.assets[0];
+    const newDoc = {
+      id: Date.now(),
+      name: picked.name,
+      localUri: picked.uri,
+      cloudinaryUrl: null,
+      uploading: true,
+      error: null,
+    };
+
+    setDocuments((prev) => [...prev, newDoc]);
+    setUploading(true);
+
+    const uploadRes = await uploadToCloudinary(picked.uri, picked.mimeType);
+    setUploading(false);
+
+    if (uploadRes.success) {
+      setDocuments((prev) =>
+        prev.map((d) =>
+          d.id === newDoc.id
+            ? { ...d, cloudinaryUrl: uploadRes.url, uploading: false }
+            : d
+        )
+      );
+    } else {
+      setDocuments((prev) =>
+        prev.map((d) =>
+          d.id === newDoc.id
+            ? { ...d, uploading: false, error: uploadRes.error }
+            : d
+        )
+      );
+      Alert.alert("Upload Failed", uploadRes.error);
+    }
+  };
+
+  const removeDocument = (id) => {
+    setDocuments((prev) => prev.filter((d) => d.id !== id));
+  };
+
+// const handleSubmit = () => {
+//   if (!projectName || !clientName || !clientEmail) {
+//     Alert.alert("Required Fields", "Please fill in all required fields.");
+//     return;
+//   }
+
+//   const payload = {
+//     projectType: proposalData?.id,
+//     templateName: proposalData?.title,
+//     templateCategory: proposalData?.category,
+//     templateItems: proposalData?.items,
+//     name:projectName,
+//     clientName,
+//     clientEmail,
+//     clientPhone,
+//     location,
+//     projectDocuments:documents,
+//      description:note,
+//     status:"Proposal Under Approval"
+//   };
+
+//   console.log("====== FINAL SUBMISSION DATA ======");
+//   console.log(payload);
+
+
+ 
+// };
+
+const handleSubmit = async () => {
+  if (!projectName || !clientName || !clientEmail) {
+    Alert.alert("Required Fields", "Please fill in all required fields.");
+    return;
+  }
+
+  const payload = {
+    projectType: proposalData?.id,
+    templateName: proposalData?.title,
+    templateCategory: proposalData?.category,
+    templateItems: proposalData?.items,
+    name: projectName,
+    clientName,
+    clientEmail,
+    clientPhone,
+    location,
+    projectDocuments: documents,
+    description: note,
+    status: "Proposal Under Approval",
+  };
+
+  console.log("====== FINAL SUBMISSION DATA ======");
+  console.log(payload);
+
+  try {
+  const token = await AsyncStorage.getItem('userToken');
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` 
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+    console.log("==== API RESPONSE ====");
+    console.log(data);
+
+    if (response.ok) {
+      Alert.alert("Success", "Proposal submitted successfully!");
+      navigation.navigate("ViewCustomerProposal", { payload: data });
+    } else {
+      Alert.alert("Error", data.message || "Something went wrong.");
+    }
+
+  } catch (error) {
+    console.log("API ERROR:", error);
+    Alert.alert("Network Error", "Unable to submit proposal.");
+  }
+};
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#F5F5F5' }}>
-      <View style={{ flex: 1 }}>
-        {/* Header */}
-<View style={{
-  backgroundColor: '#0066FF',
-  paddingBottom: 20,
-  borderBottomLeftRadius: 20,
-  borderBottomRightRadius: 20
-}}>
-  <View style={{
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center', // Add this to center content
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 16,
-    position: 'relative' // Add this for absolute positioning
-  }}>
-    <TouchableOpacity
-      onPress={() => navigation?.goBack()}
-      style={{
-        width: 32,
-        height: 32,
-        alignItems: 'center',
-        justifyContent: 'center',
-        position: 'absolute', // Position absolutely
-        left: 16 // Position from left
-      }}
-    >
-      <Feather name="arrow-left" size={24} color="white" />
-    </TouchableOpacity>
+    <SafeAreaView style={styles.container}>
+      <Header title="Submit Proposal" />
 
-    <Text style={{
-      fontFamily: 'Urbanist-Bold',
-      fontSize: 18,
-      color: 'white',
-      textAlign: 'center'
-    }}>
-      Submit Proposal
-    </Text>
-  </View>
-</View>
-
-        {/* Content */}
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{ paddingBottom: 100 }}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Proposal Overview */}
-          <View style={{ padding: 16 }}>
-            <View style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 12
-            }}>
-              <Text style={{
-                fontFamily: 'Urbanist-Bold',
-                fontSize: 16,
-                color: '#000000'
-              }}>
-                Proposal Overview
-              </Text>
-              <TouchableOpacity>
-                <Text style={{
-                  fontFamily: 'Urbanist-SemiBold',
-                  fontSize: 13,
-                  color: '#0066FF'
-                }}>
-                  Preview
-                </Text>
-              </TouchableOpacity>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Template Info Card */}
+        {proposalData && (
+          <View style={styles.templateCard}>
+            <View style={styles.templateIconContainer}>
+              <Feather name="file-text" size={24} color="#0066FF" />
             </View>
-
-            {/* Preview Box */}
-            <View style={{
-              backgroundColor: 'white',
-              borderRadius: 16,
-              borderLeftWidth: 4,
-              borderLeftColor: '#0066FF',
-              padding: 16,
-              minHeight: 280
-            }}>
-              {/* Document Preview Grid */}
-              <View style={{
-                backgroundColor: '#FAFAFA',
-                borderRadius: 8,
-                padding: 12,
-                minHeight: 240
-              }}>
-                {/* Grid of document pages */}
-                <View style={{
-                  flexDirection: 'row',
-                  flexWrap: 'wrap',
-                  justifyContent: 'space-between'
-                }}>
-                  {/* Page 1 - Top Left */}
-                  <View style={{
-                    width: '48%',
-                    height: 110,
-                    backgroundColor: 'white',
-                    borderRadius: 6,
-                    marginBottom: 8,
-                    padding: 6,
-                    borderWidth: 1,
-                    borderColor: '#E0E0E0'
-                  }}>
-                    <View style={{ width: '60%', height: 4, backgroundColor: '#E0E0E0', borderRadius: 2, marginBottom: 3 }} />
-                    <View style={{ width: '80%', height: 3, backgroundColor: '#F0F0F0', borderRadius: 2, marginBottom: 3 }} />
-                    <View style={{ width: '50%', height: 3, backgroundColor: '#F0F0F0', borderRadius: 2, marginBottom: 6 }} />
-                    <View style={{ width: '100%', height: 30, backgroundColor: '#F5F5F5', borderRadius: 3, marginBottom: 4 }} />
-                    <View style={{ width: '90%', height: 3, backgroundColor: '#F0F0F0', borderRadius: 2, marginBottom: 2 }} />
-                    <View style={{ width: '70%', height: 3, backgroundColor: '#F0F0F0', borderRadius: 2 }} />
-                  </View>
-
-                  {/* Page 2 - Top Right */}
-                  <View style={{
-                    width: '48%',
-                    height: 110,
-                    backgroundColor: 'white',
-                    borderRadius: 6,
-                    marginBottom: 8,
-                    padding: 6,
-                    borderWidth: 1,
-                    borderColor: '#E0E0E0'
-                  }}>
-                    <View style={{ width: '70%', height: 4, backgroundColor: '#E0E0E0', borderRadius: 2, marginBottom: 3 }} />
-                    <View style={{ width: '100%', height: 3, backgroundColor: '#F0F0F0', borderRadius: 2, marginBottom: 3 }} />
-                    <View style={{ width: '85%', height: 3, backgroundColor: '#F0F0F0', borderRadius: 2, marginBottom: 6 }} />
-                    <View style={{ width: '90%', height: 3, backgroundColor: '#F0F0F0', borderRadius: 2, marginBottom: 2 }} />
-                    <View style={{ width: '95%', height: 3, backgroundColor: '#F0F0F0', borderRadius: 2, marginBottom: 2 }} />
-                    <View style={{ width: '80%', height: 3, backgroundColor: '#F0F0F0', borderRadius: 2 }} />
-                  </View>
-
-                  {/* Page 3 - Bottom Left */}
-                  <View style={{
-                    width: '48%',
-                    height: 110,
-                    backgroundColor: 'white',
-                    borderRadius: 6,
-                    padding: 6,
-                    borderWidth: 1,
-                    borderColor: '#E0E0E0'
-                  }}>
-                    <View style={{ width: '55%', height: 4, backgroundColor: '#E0E0E0', borderRadius: 2, marginBottom: 4 }} />
-                    <View style={{ 
-                      width: '100%', 
-                      height: 40, 
-                      backgroundColor: '#FFE8D0', 
-                      borderRadius: 3, 
-                      marginBottom: 4,
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
-                      <View style={{ width: '70%', height: 20, backgroundColor: '#FFD9A8', borderRadius: 2 }} />
-                    </View>
-                    <View style={{ width: '90%', height: 3, backgroundColor: '#F0F0F0', borderRadius: 2, marginBottom: 2 }} />
-                    <View style={{ width: '80%', height: 3, backgroundColor: '#F0F0F0', borderRadius: 2 }} />
-                  </View>
-
-                  {/* Page 4 - Bottom Right */}
-                  <View style={{
-                    width: '48%',
-                    height: 110,
-                    backgroundColor: 'white',
-                    borderRadius: 6,
-                    padding: 6,
-                    borderWidth: 1,
-                    borderColor: '#E0E0E0'
-                  }}>
-                    <View style={{ width: '65%', height: 4, backgroundColor: '#E0E0E0', borderRadius: 2, marginBottom: 3 }} />
-                    <View style={{ width: '100%', height: 3, backgroundColor: '#F0F0F0', borderRadius: 2, marginBottom: 2 }} />
-                    <View style={{ width: '90%', height: 3, backgroundColor: '#F0F0F0', borderRadius: 2, marginBottom: 2 }} />
-                    <View style={{ width: '85%', height: 3, backgroundColor: '#F0F0F0', borderRadius: 2, marginBottom: 2 }} />
-                    <View style={{ width: '95%', height: 3, backgroundColor: '#F0F0F0', borderRadius: 2, marginBottom: 2 }} />
-                    <View style={{ width: '75%', height: 3, backgroundColor: '#F0F0F0', borderRadius: 2 }} />
-                  </View>
-                </View>
-              </View>
+            <View style={styles.templateInfo}>
+              <Text style={styles.templateLabel}>Selected Template</Text>
+              <Text style={styles.templateTitle}>{proposalData.title}</Text>
             </View>
           </View>
+        )}
 
-          {/* Proposal Details */}
-          <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
-            <Text style={{
-              fontFamily: 'Urbanist-Bold',
-              fontSize: 16,
-              color: '#000000',
-              marginBottom: 12
-            }}>
-              Proposal Details
+        {/* Form Section */}
+        <View style={styles.formSection}>
+          <Text style={styles.sectionTitle}>Project Details</Text>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>
+              Project Name <Text style={styles.required}>*</Text>
             </Text>
-
-            <View style={{
-              backgroundColor: 'white',
-              borderRadius: 16,
-              padding: 16,
-              borderLeftWidth: 4,
-              borderLeftColor: '#0066FF'
-            }}>
-              {/* Client Name */}
-              <Text style={{
-                fontFamily: 'Urbanist-SemiBold',
-                fontSize: 13,
-                color: '#000000',
-                marginBottom: 8
-              }}>
-                Client Name
-              </Text>
-              <View style={{
-                paddingVertical: 8,
-                borderBottomWidth: 1,
-                borderBottomColor: '#E0E0E0',
-                marginBottom: 16
-              }}>
-                <Text style={{
-                  fontFamily: 'Urbanist-Regular',
-                  fontSize: 14,
-                  color: '#000000'
-                }}>
-                  {clientName}
-                </Text>
-              </View>
-
-              {/* Client Email */}
-              <Text style={{
-                fontFamily: 'Urbanist-SemiBold',
-                fontSize: 13,
-                color: '#000000',
-                marginBottom: 8
-              }}>
-                Client Email
-              </Text>
-              <View style={{
-                paddingVertical: 8,
-                borderBottomWidth: 1,
-                borderBottomColor: '#E0E0E0',
-                marginBottom: 16
-              }}>
-                <Text style={{
-                  fontFamily: 'Urbanist-Regular',
-                  fontSize: 14,
-                  color: '#000000'
-                }}>
-                  {clientEmail}
-                </Text>
-              </View>
-
-              {/* Client Phone */}
-              <Text style={{
-                fontFamily: 'Urbanist-SemiBold',
-                fontSize: 13,
-                color: '#000000',
-                marginBottom: 8
-              }}>
-                Client Phone
-              </Text>
-              <View style={{
-                paddingVertical: 8,
-                borderBottomWidth: 1,
-                borderBottomColor: '#E0E0E0',
-                marginBottom: 16
-              }}>
-                <Text style={{
-                  fontFamily: 'Urbanist-Regular',
-                  fontSize: 14,
-                  color: '#000000'
-                }}>
-                  {clientPhone}
-                </Text>
-              </View>
-
-              {/* Designer's Notes */}
-              <Text style={{
-                fontFamily: 'Urbanist-SemiBold',
-                fontSize: 13,
-                color: '#000000',
-                marginBottom: 8
-              }}>
-                Designer's Notes
-              </Text>
+            <View style={styles.inputContainer}>
+              <Feather name="briefcase" size={18} color="#666" style={styles.inputIcon} />
               <TextInput
-                style={{
-                  fontFamily: 'Urbanist-Regular',
-                  fontSize: 13,
-                  color: '#000000',
-                  paddingVertical: 8,
-                  borderBottomWidth: 1,
-                  borderBottomColor: '#E0E0E0',
-                  minHeight: 80,
-                  textAlignVertical: 'top'
-                }}
-                value={designerNotes}
-                onChangeText={setDesignerNotes}
-                multiline
+                style={styles.input}
+                placeholder="Enter project name"
+                placeholderTextColor="#999"
+                value={projectName}
+                onChangeText={setProjectName}
               />
             </View>
           </View>
 
-          {/* Approval Notice */}
-          <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
-            <Text style={{
-              fontFamily: 'Urbanist-Bold',
-              fontSize: 16,
-              color: '#000000',
-              marginBottom: 12
-            }}>
-              Approval Notice
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>
+              Location 
             </Text>
+            <View style={styles.inputContainer}>
+              <Feather name="map-pin" size={18} color="#666" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Enter project location"
+                placeholderTextColor="#999"
+                value={location}
+                onChangeText={setLocation}
+              />
+            </View>
+          </View>
+        </View>
 
-            <View style={{
-              backgroundColor: 'white',
-              borderRadius: 16,
-              padding: 16,
-              borderLeftWidth: 4,
-              borderLeftColor: '#0066FF'
-            }}>
-              <Text style={{
-                fontFamily: 'Urbanist-Regular',
-                fontSize: 13,
-                color: '#000000',
-                lineHeight: 20
-              }}>
-                Please review the attached proposal and design specifications for [Project Name]. Your approval is required to proceed with execution. Any modifications should be communicated before finalizing the contract.
-              </Text>
+        {/* Client Section */}
+        <View style={styles.formSection}>
+          <Text style={styles.sectionTitle}>Client Information</Text>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>
+              Client Name <Text style={styles.required}>*</Text>
+            </Text>
+            <View style={styles.inputContainer}>
+              <Feather name="user" size={18} color="#666" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Enter client's name"
+                placeholderTextColor="#999"
+                value={clientName}
+                onChangeText={setClientName}
+              />
             </View>
           </View>
 
-          {/* Action Buttons */}
-          <View style={{
-            flexDirection: 'row',
-            paddingHorizontal: 16,
-            marginBottom: 16
-          }}>
-            <TouchableOpacity
-              onPress={() => navigation?.goBack()}
-              style={{
-                flex: 1,
-                backgroundColor: '#E9EFFF',
-                borderRadius: 12,
-                paddingVertical: 14,
-                alignItems: 'center',
-                marginRight: 8
-              }}
-            >
-              <Text style={{
-                fontFamily: 'Urbanist-SemiBold',
-                fontSize: 15,
-                color: '#0066FF'
-              }}>
-                Cancel
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => {
-               navigation?.navigate('ViewCustomerProposal');
-              }}
-              style={{
-                flex: 1,
-                backgroundColor: '#0066FF',
-                borderRadius: 12,
-                paddingVertical: 14,
-                alignItems: 'center',
-                marginLeft: 8
-              }}
-            >
-              <Text style={{
-                fontFamily: 'Urbanist-SemiBold',
-                fontSize: 15,
-                color: 'white'
-              }}>
-                Submit
-              </Text>
-            </TouchableOpacity>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>
+              Email Address <Text style={styles.required}>*</Text>
+            </Text>
+            <View style={styles.inputContainer}>
+              <Feather name="mail" size={18} color="#666" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="client@example.com"
+                placeholderTextColor="#999"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={clientEmail}
+                onChangeText={setClientEmail}
+              />
+            </View>
           </View>
-        </ScrollView>
-      </View>
 
-      {/* Bottom Navigation */}
-      <CustomerBottomNavBar />
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>
+              Phone Number
+            </Text>
+            <View style={styles.inputContainer}>
+              <Feather name="phone" size={18} color="#666" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Enter phone number"
+                placeholderTextColor="#999"
+                keyboardType="phone-pad"
+                value={clientPhone}
+                onChangeText={setClientPhone}
+              />
+            </View>
+          </View>
+          <View style={styles.inputGroup}>
+  <Text style={styles.label}>
+    Note 
+  </Text>
+  <View style={[styles.inputContainer, { height: 120, alignItems: 'flex-start', paddingTop: 12 }]}>
+    <Feather name="edit-2" size={18} color="#666" style={styles.inputIcon} />
+    <TextInput
+      style={[styles.input, { height: '100%', textAlignVertical: 'top' }]}
+      placeholder="Write additional notes..."
+      placeholderTextColor="#999"
+      value={note}
+      onChangeText={setNote}
+      multiline
+    />
+  </View>
+</View>
+
+        </View>
+
+        {/* Documents Section */}
+        <View style={styles.formSection}>
+          <Text style={styles.sectionTitle}>Supporting Documents</Text>
+          <Text style={styles.sectionSubtitle}>
+            Upload any relevant files or documents
+          </Text>
+
+          <TouchableOpacity
+            onPress={handleDocumentPick}
+            style={styles.uploadButton}
+            disabled={uploading}
+            activeOpacity={0.7}
+          >
+            {uploading ? (
+              <ActivityIndicator color="#0066FF" />
+            ) : (
+              <>
+                <View style={styles.uploadIconContainer}>
+                  <Feather name="upload-cloud" size={24} color="#0066FF" />
+                </View>
+                <Text style={styles.uploadButtonText}>Choose Document</Text>
+                <Text style={styles.uploadButtonSubtext}>PDF, DOC, XLS, or any file type</Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          {documents.length > 0 && (
+            <View style={styles.documentsContainer}>
+              {documents.map((doc) => (
+                <View key={doc.id} style={styles.docCard}>
+                  <View style={styles.docIconContainer}>
+                    <Feather 
+                      name={doc.uploading ? "loader" : doc.cloudinaryUrl ? "check-circle" : "file"} 
+                      size={20} 
+                      color={doc.uploading ? "#666" : doc.cloudinaryUrl ? "#10B981" : "#0066FF"} 
+                    />
+                  </View>
+                  
+                  <View style={styles.docInfo}>
+                    <Text style={styles.docName} numberOfLines={1}>
+                      {doc.name}
+                    </Text>
+                    
+                    {doc.uploading && (
+                      <Text style={styles.docStatus}>Uploading...</Text>
+                    )}
+                    
+                    {doc.cloudinaryUrl && (
+                      <Text style={styles.docStatusSuccess}>Upload complete</Text>
+                    )}
+                    
+                    {doc.error && (
+                      <Text style={styles.docStatusError}>{doc.error}</Text>
+                    )}
+                  </View>
+
+                  <TouchableOpacity 
+                    onPress={() => removeDocument(doc.id)}
+                    style={styles.removeButton}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    <Feather name="x" size={20} color="#EF4444" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+      </ScrollView>
+
+      {/* Fixed Bottom Button */}
+      <View style={styles.bottomContainer}>
+        <TouchableOpacity
+          onPress={handleSubmit}
+          style={styles.submitButton}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.submitButtonText}>Submit Proposal</Text>
+          <Feather name="arrow-right" size={20} color="#FFF" />
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#F8FAFC",
+  },
+  scrollContent: {
+    paddingBottom: 100,
+  },
+  templateCard: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    backgroundColor: "#FFF",
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    borderLeftWidth: 4,
+    borderLeftColor: "#0066FF",
+  },
+  templateIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: "#E9EFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  templateInfo: {
+    flex: 1,
+  },
+  templateLabel: {
+    fontFamily: "Urbanist-Medium",
+    fontSize: 12,
+    color: "#64748B",
+    marginBottom: 4,
+  },
+  templateTitle: {
+    fontFamily: "Urbanist-Bold",
+    fontSize: 16,
+    color: "#0F172A",
+  },
+  formSection: {
+    marginHorizontal: 16,
+    marginTop: 24,
+  },
+  sectionTitle: {
+    fontFamily: "Urbanist-Bold",
+    fontSize: 18,
+    color: "#0F172A",
+    marginBottom: 4,
+  },
+  sectionSubtitle: {
+    fontFamily: "Urbanist-Regular",
+    fontSize: 14,
+    color: "#64748B",
+    marginBottom: 16,
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  label: {
+    fontFamily: "Urbanist-SemiBold",
+    fontSize: 14,
+    color: "#334155",
+    marginBottom: 8,
+  },
+  required: {
+    color: "#EF4444",
+  },
+  optional: {
+    fontFamily: "Urbanist-Regular",
+    fontSize: 12,
+    color: "#94A3B8",
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFF",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    paddingHorizontal: 16,
+    height: 52,
+  },
+  inputIcon: {
+    marginRight: 12,
+  },
+  input: {
+    flex: 1,
+    fontFamily: "Urbanist-Regular",
+    fontSize: 15,
+    color: "#0F172A",
+  },
+  uploadButton: {
+    backgroundColor: "#FFF",
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: "#E2E8F0",
+    borderStyle: "dashed",
+    padding: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  uploadIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "#E9EFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
+  uploadButtonText: {
+    fontFamily: "Urbanist-SemiBold",
+    fontSize: 16,
+    color: "#0066FF",
+    marginTop: 8,
+  },
+  uploadButtonSubtext: {
+    fontFamily: "Urbanist-Regular",
+    fontSize: 13,
+    color: "#94A3B8",
+    marginTop: 4,
+  },
+  documentsContainer: {
+    marginTop: 16,
+  },
+  docCard: {
+    backgroundColor: "#FFF",
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  docIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: "#F8FAFC",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  docInfo: {
+    flex: 1,
+  },
+  docName: {
+    fontFamily: "Urbanist-SemiBold",
+    fontSize: 14,
+    color: "#0F172A",
+    marginBottom: 4,
+  },
+  docStatus: {
+    fontFamily: "Urbanist-Regular",
+    fontSize: 12,
+    color: "#64748B",
+  },
+  docStatusSuccess: {
+    fontFamily: "Urbanist-Medium",
+    fontSize: 12,
+    color: "#10B981",
+  },
+  docStatusError: {
+    fontFamily: "Urbanist-Regular",
+    fontSize: 12,
+    color: "#EF4444",
+  },
+  removeButton: {
+    padding: 8,
+  },
+  bottomContainer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "#FFF",
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    paddingBottom: 24,
+    borderTopWidth: 1,
+    borderTopColor: "#E2E8F0",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  submitButton: {
+    backgroundColor: "#0066FF",
+    borderRadius: 14,
+    paddingVertical: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#0066FF",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  submitButtonText: {
+    fontFamily: "Urbanist-Bold",
+    fontSize: 16,
+    color: "#FFF",
+    marginRight: 8,
+  },
+});
 
 export default SubmitProposalCustomer;

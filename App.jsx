@@ -111,6 +111,7 @@ import NewClientPassword from 'screens/Auth/NewClientPassword';
 import ClientMainPage from 'screens/HomeOwner/clientpages/ClientMainPage';
 import clientProfilePage from 'screens/HomeOwner/clientpages/clientProfilePage';
 import CreateTemplate from 'screens/Proposals/CreateTemplate';
+import TemplatePreview from 'screens/HomeOwner/TemplatePreview';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const TOKEN_KEY = 'userToken';
@@ -357,6 +358,9 @@ const ClientTabs = () => (
 const ClientStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="ClientTabs" component={ClientTabs} />
+     <Stack.Screen name="CustomerChooseTemplate" component={CustomerChooseTemplate} />
+     <Stack.Screen name="TemplatePreview" component={TemplatePreview} />
+      <Stack.Screen name="SubmitProposalCustomer" component={SubmitProposalCustomer} />
   </Stack.Navigator>
 );
 
@@ -416,9 +420,9 @@ export default function App() {
 
           {/* All Screens Now Reachable Directly */}
           <Stack.Screen name="AddDocumentScreen" component={AddDocumentScreen} />
-          <Stack.Screen name="CustomerChooseTemplate" component={CustomerChooseTemplate} />
+         
           <Stack.Screen name="CustomerCreateProposal" component={CustomerCreateProposal} />
-          <Stack.Screen name="SubmitProposalCustomer" component={SubmitProposalCustomer} />
+         
           <Stack.Screen name="Overview" component={Overview} />
           <Stack.Screen name="ProjectTimeline" component={ProjectTimeline} />
           <Stack.Screen name="BudgetTracker" component={BudgetTracker} />
