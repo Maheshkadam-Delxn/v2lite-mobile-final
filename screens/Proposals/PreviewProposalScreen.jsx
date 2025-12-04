@@ -3,7 +3,6 @@ import {
   Text, 
   TouchableOpacity, 
   ScrollView, 
-  SafeAreaView, 
   Modal, 
   ActivityIndicator 
 } from 'react-native';
@@ -329,7 +328,7 @@ const PreviewProposalScreen = ({ navigation, route }) => {
 
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={{ paddingBottom: 20 }}
+          contentContainerStyle={{ paddingBottom: 100 }} // Increased padding to account for potential bottom overlap; adjust as needed
           showsVerticalScrollIndicator={false}
         >
           {/* Proposal Header */}
@@ -643,7 +642,11 @@ const PreviewProposalScreen = ({ navigation, route }) => {
         </ScrollView>
       </View>
 
-      {/* Action Button */}
+      {/* Removed empty absolute bottom View to eliminate unwanted region.
+           If you need action buttons here, uncomment and add content below.
+           Ensure ScrollView paddingBottom matches the height of this View (~80-100). */}
+
+      {/* 
       <View
         style={{
           position: 'absolute',
@@ -657,29 +660,12 @@ const PreviewProposalScreen = ({ navigation, route }) => {
           borderTopColor: '#E0E0E0',
         }}
       >
-        <TouchableOpacity
-          onPress={() => navigation.navigate('SubmitProposal', { proposalData, templateId: id })}
-          style={{
-            backgroundColor: '#0066FF',
-            borderRadius: 12,
-            paddingVertical: 16,
-            alignItems: 'center',
-            flexDirection: 'row',
-            justifyContent: 'center',
-          }}
-        >
-          <Feather name="send" size={20} color="white" style={{ marginRight: 8 }} />
-          <Text
-            style={{
-              fontFamily: 'Urbanist-SemiBold',
-              fontSize: 16,
-              color: 'white',
-            }}
-          >
-            Use This Template
-          </Text>
-        </TouchableOpacity>
+        // Add your action buttons here, e.g.:
+        // <TouchableOpacity style={{ backgroundColor: '#0066FF', padding: 16, borderRadius: 12, alignItems: 'center' }}>
+        //   <Text style={{ color: 'white', fontFamily: 'Urbanist-SemiBold' }}>Share Proposal</Text>
+        // </TouchableOpacity>
       </View>
+      */}
 
       <ShareModal />
       <ActionsModal />
