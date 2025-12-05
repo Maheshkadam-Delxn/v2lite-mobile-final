@@ -186,6 +186,7 @@ const handleSubmit = async () => {
 
   try {
   const token = await AsyncStorage.getItem('userToken');
+  console.log("token",token);
     const response = await fetch(API_URL, {
       method: "POST",
       headers: {
@@ -201,7 +202,7 @@ const handleSubmit = async () => {
 
     if (response.ok) {
       Alert.alert("Success", "Proposal submitted successfully!");
-      navigation.navigate("ViewCustomerProposal", { payload: data });
+      //navigation.navigate("ViewCustomerProposal", { payload: data });
     } else {
       Alert.alert("Error", data.message || "Something went wrong.");
     }
