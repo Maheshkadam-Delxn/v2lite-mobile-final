@@ -386,7 +386,18 @@ const ProposalsListScreen = () => {
                 navigation.navigate('ChooseTemplate');
               }}
             >
-              <Text style={{ fontFamily: 'Urbanist-SemiBold', fontSize: 15, color: 'white' }}>Choose Template</Text>
+              <Text style={{ fontFamily: 'Urbanist-SemiBold', fontSize: 15, color: 'white' }}>Approve Proposals</Text>
+              <Feather name="arrow-right" size={20} color="white" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={{ backgroundColor: '#0066FF', borderRadius: 12, paddingVertical: 16, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}
+              onPress={() => {
+                setShowActionsModal(false);
+                navigation.navigate('ChooseTemplate');
+              }}
+            >
+              <Text style={{ fontFamily: 'Urbanist-SemiBold', fontSize: 15, color: 'white' }}>Rejected Proposals</Text>
               <Feather name="arrow-right" size={20} color="white" />
             </TouchableOpacity>
           </View>
