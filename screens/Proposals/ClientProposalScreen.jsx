@@ -492,6 +492,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Header from '../../components/Header';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+const API_URL = `${process.env.BASE_API_URL}`;
+
 const ClientProposalScreen = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [proposals, setProposals] = useState([]);
@@ -506,7 +508,7 @@ const ClientProposalScreen = ({ navigation }) => {
         const token = await AsyncStorage.getItem("userToken");
 
         const response = await fetch(
-          "https://skystruct-lite-backend.vercel.app/api/projects",
+          `${API_URL}/api/projects`,
           {
             method: "GET",
             headers: {

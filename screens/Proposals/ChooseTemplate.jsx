@@ -611,6 +611,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Header from '../../components/Header';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+const API_URL = `${process.env.BASE_API_URL}`;
+
 const getCategoryColor = (category) => {
   switch (category.toLowerCase()) {
     case "residential": return { primary: "#0066FF", light: "#E6F0FF" };
@@ -634,7 +636,7 @@ const CustomerChooseTemplate = ({ navigation }) => {
         const token = await AsyncStorage.getItem("userToken");
 
         const response = await fetch(
-          "https://skystruct-lite-backend.vercel.app/api/project-types",
+          `${API_URL}/api/project-types`,
           {
             method: "GET",
             headers: {

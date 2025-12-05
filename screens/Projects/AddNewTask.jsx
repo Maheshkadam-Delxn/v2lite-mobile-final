@@ -1164,7 +1164,8 @@ import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Crypto from 'expo-crypto';
 
-const API_BASE = 'https://skystruct-lite-backend.vercel.app'; // your base URL
+//const API_BASE = 'https://skystruct-lite-backend.vercel.app'; // your base URL
+const API_BASE = `${process.env.BASE_API_URL}`;
 const TASKS_POST_URL = `${API_BASE}/api/tasks`;
 const USERS_URL = `${API_BASE}/api/admin/users`; // <-- endpoint you asked for
 const TOKEN_KEY = 'userToken';

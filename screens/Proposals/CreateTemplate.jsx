@@ -41,6 +41,8 @@ const getCategoryColor = (category) => {
   return colorMap[key] || '#0066FF';
 };
 
+const API_URL = `${process.env.BASE_API_URL}`;
+
 const CreateTemplate = () => {
   const navigation = useNavigation();
   const route = useRoute();
@@ -284,7 +286,7 @@ const CreateTemplate = () => {
       let resp;
       if (isEditMode) {
         // update flow
-        resp = await fetch(`https://skystruct-lite-backend.vercel.app/api/project-types/${initialData.id}`, {
+        resp = await fetch(`${API_URL}/api/project-types/${initialData.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -294,7 +296,7 @@ const CreateTemplate = () => {
         });
       } else {
         // create flow
-        resp = await fetch('https://skystruct-lite-backend.vercel.app/api/project-types', {
+        resp = await fetch(`${API_URL}/api/project-types`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

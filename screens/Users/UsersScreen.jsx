@@ -95,7 +95,7 @@ const RolesMembersScreen = () => {
   };
 
   // API base URL
-  const API_BASE = 'https://skystruct-lite-backend.vercel.app';
+  const API_BASE = `${process.env.BASE_API_URL}`;
 
   // Get auth token
   const getAuthToken = async () => {

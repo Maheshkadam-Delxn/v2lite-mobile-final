@@ -16,6 +16,8 @@ const SurveyRequestScreen = () => {
   const navigation = useNavigation();
   const [searchQuery, setSearchQuery] = useState('');
 
+  const API_URL = `${process.env.BASE_API_URL}`;
+
   const handleBack = () => navigation.goBack();
   const handleAdd = () => {
     // Handle add button press

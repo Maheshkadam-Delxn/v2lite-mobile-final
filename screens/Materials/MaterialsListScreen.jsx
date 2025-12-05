@@ -1009,7 +1009,8 @@ import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler'
 import { useState, useEffect, useMemo } from 'react';
 
 
-const BASE_URL = 'https://skystruct-lite-backend.vercel.app';
+//const BASE_URL = 'https://skystruct-lite-backend.vercel.app';
+const BASE_URL = `${process.env.BASE_API_URL}`;
 const MATERIALS_API = `${BASE_URL}/api/materials`;
 const TOKEN_KEY = 'userToken';
 

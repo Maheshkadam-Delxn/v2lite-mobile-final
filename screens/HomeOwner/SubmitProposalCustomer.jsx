@@ -21,7 +21,9 @@ const CLOUDINARY = {
   apiKey: "353369352647425",
   apiSecret: "8qcz7uAdftDVFNd6IqaDOytg_HI",
 };
-const API_URL = 'https://skystruct-lite-backend.vercel.app/api/projects';
+//const API_URL = 'https://skystruct-lite-backend.vercel.app/api/projects';
+
+const API_URL = `${process.env.BASE_API_URL}/api/projects`;
 const generateSignature = async (timestamp) => {
   const stringToSign = `timestamp=${timestamp}${CLOUDINARY.apiSecret}`;
   return await Crypto.digestStringAsync(

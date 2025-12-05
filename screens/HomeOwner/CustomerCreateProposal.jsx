@@ -28,6 +28,8 @@ const CLOUDINARY_CONFIG = {
   apiSecret: "8qcz7uAdftDVFNd6IqaDOytg_HI",
 };
 
+const API_URL = `${process.env.BASE_API_URL}`;
+
 // Generate Cloudinary Signature
 const generateSignature = async (timestamp) => {
   const stringToSign = `timestamp=${timestamp}${CLOUDINARY_CONFIG.apiSecret}`;
@@ -256,7 +258,7 @@ const CreateProposalScreen = ({ navigation }) => {
         return;
       }
 
-      const response = await fetch("https://skystruct-lite-backend.vercel.app/api/projects", {
+      const response = await fetch(`${API_URL}/api/projects`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

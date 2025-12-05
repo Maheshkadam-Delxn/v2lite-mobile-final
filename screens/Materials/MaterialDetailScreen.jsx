@@ -175,7 +175,8 @@ import { Ionicons } from '@expo/vector-icons';
 import Header from '../../components/Header';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE_URL = 'https://skystruct-lite-backend.vercel.app';
+//const BASE_URL = 'https://skystruct-lite-backend.vercel.app';
+const BASE_URL = `${process.env.BASE_API_URL}`;
 const TOKEN_KEY = 'userToken';
 
 const MaterialDetailScreen = ({ route, navigation }) => {

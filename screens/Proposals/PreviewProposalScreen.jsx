@@ -63,6 +63,8 @@ const PreviewProposalScreen = ({ navigation, route }) => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showActionsModal, setShowActionsModal] = useState(false);
 
+  const API_URL = `${process.env.BASE_API_URL}`;
+
   // Get category color (consistent with other screens)
   const getCategoryColor = (category) => {
     const key = (category || '').toString().toLowerCase();
@@ -93,7 +95,7 @@ const PreviewProposalScreen = ({ navigation, route }) => {
         const token = await AsyncStorage.getItem('userToken');
 
         const res = await fetch(
-          `https://skystruct-lite-backend.vercel.app/api/project-types/${id}`,
+          `${API_URL}/project-types/${id}`,
           {
             method: 'GET',
             headers: {
