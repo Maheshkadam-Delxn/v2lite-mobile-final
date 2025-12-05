@@ -20,7 +20,7 @@ import Header from "components/Header";
 
 //const CLIENT_API_URL ="https://skystruct-lite-backend.vercel.app/api/client/projects";
 
-const CLIENT_API_URL = `${process.env.BASE_API_URL}/api/client/projects`;
+const CLIENT_API_URL = `${process.env.BASE_API_URL}/api/projects`;
 
 export default function ClientMainPage({ navigation }) {
   const [dataList, setDataList] = useState([]);
@@ -43,9 +43,58 @@ export default function ClientMainPage({ navigation }) {
       });
 
       const json = await response.json();
+      const dd = await AsyncStorage.getItem("userData");
+      console.log("adsf", dd);
       const list = Array.isArray(json.data) ? json.data : [];
 
-      setDataList(list);
+
+      const aa = dd ? JSON.parse(dd) : null;
+
+      if (!aa?.id) {
+        console.log("No user ID found");
+      }
+
+
+      // 1️⃣ Get user data once
+const stored = await AsyncStorage.getItem("userData");
+const user = stored ? JSON.parse(stored) : null;
+
+if (!user) {
+  console.log("⚠ No user found in storage");
+  return;
+}
+
+const loggedInId = String(user.id);
+const loggedInEmail = user.email;
+
+console.log("Logged in ID:", loggedInId);
+console.log("Logged in Email:", loggedInEmail);
+
+// 2️⃣ Filter list with BOTH conditions
+const filteredList = list.filter((item) => {
+  const createdBy = item?.createdBy ? String(item.createdBy) : null;
+  const clientEmail = item?.clientEmail;
+
+  const matchByCreator = createdBy === loggedInId;
+  const matchByEmail = clientEmail === loggedInEmail;
+
+  console.log("--------- CHECKING PROJECT ---------");
+  console.log("DB createdBy:", createdBy);
+  console.log("DB clientEmail:", clientEmail);
+  console.log("MATCH createdBy? ->", matchByCreator);
+  console.log("MATCH email? ->", matchByEmail);
+
+  // Keep item if ANY condition matches
+  return matchByCreator || matchByEmail;
+});
+
+console.log("🎉 Final Filtered List:", filteredList);
+
+
+
+
+
+      setDataList(filteredList);
     } catch (err) {
       console.log("Fetch Error:", err);
     } finally {
@@ -101,7 +150,7 @@ export default function ClientMainPage({ navigation }) {
   // Navigation
   // ===============================
   const handleAddProject = () => {
-     navigation.navigate('CustomerChooseTemplate')
+    navigation.navigate('CustomerChooseTemplate')
   };
 
   // ===============================
@@ -143,7 +192,7 @@ export default function ClientMainPage({ navigation }) {
             <Text style={styles.subText}>{item.email}</Text>
           </View>
 
-         
+
         </View>
 
         <View style={styles.detailsRow}>
@@ -154,9 +203,6 @@ export default function ClientMainPage({ navigation }) {
     </Swipeable>
   );
 
-  // ===============================
-  // UI
-  // ===============================
   if (isLoading) {
     return (
       <View style={styles.loading}>
