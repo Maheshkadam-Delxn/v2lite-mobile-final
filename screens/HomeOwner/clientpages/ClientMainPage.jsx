@@ -18,8 +18,9 @@ import Swipeable from "react-native-gesture-handler/Swipeable";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Header from "components/Header";
 
-const CLIENT_API_URL =
-  "https://skystruct-lite-backend.vercel.app/api/client/projects";
+//const CLIENT_API_URL ="https://skystruct-lite-backend.vercel.app/api/client/projects";
+
+const CLIENT_API_URL = `${process.env.BASE_API_URL}/api/client/projects`;
 
 export default function ClientMainPage({ navigation }) {
   const [dataList, setDataList] = useState([]);

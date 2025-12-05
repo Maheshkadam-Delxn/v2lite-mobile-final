@@ -1097,8 +1097,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Crypto from 'expo-crypto';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
-const API_URL = 'https://skystruct-lite-backend.vercel.app/api/projects';
-const PROJECT_TYPES_API = 'https://skystruct-lite-backend.vercel.app/api/project-types';
+const API_URL = `${process.env.BASE_API_URL}/api/projects`;
+const PROJECT_TYPES_API = `${process.env.BASE_API_URL}/api/project-types`;
 const TOKEN_KEY = 'userToken';
 
 // Cloudinary Configuration

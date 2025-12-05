@@ -513,7 +513,8 @@ import * as Crypto from 'expo-crypto';
 import Header from '../../components/Header';
 import InputField from '../../components/Inputfield';
 
-const API_URL = 'https://skystruct-lite-backend.vercel.app/api/users';
+//const API_URL = 'https://skystruct-lite-backend.vercel.app/api/users';
+const API_URL = `${process.env.BASE_API_URL}/api/users`;
 const TOKEN_KEY = 'userToken';
 
 // ✅ Cloudinary Configuration

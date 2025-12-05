@@ -79,6 +79,8 @@ const uploadToCloudinary = async (fileUri, fileType = "image") => {
   }
 };
 
+const API_URL = `${process.env.BASE_API_URL}`;
+
 const CreateProposalScreen = ({ navigation }) => {
   // FORM STATES
  const [name, setName] = useState("");
@@ -256,7 +258,7 @@ const handleSubmit = async () => {
       return;
     }
 
-    const response = await fetch("https://skystruct-lite-backend.vercel.app/api/projects", {
+    const response = await fetch(`${API_URL}/api/projects`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -17,6 +17,8 @@ import Header from '../../components/Header'
 const ViewProposal = ({ navigation, route }) => {
   const { proposal } = route.params || {};
   console.log("Proposal data:", proposal);
+
+  const API_URL = `${process.env.BASE_API_URL}`;
   
   // Use the actual proposal data
   const proposalData = proposal || {};

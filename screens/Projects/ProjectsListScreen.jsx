@@ -23,7 +23,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import Slider from '@react-native-community/slider';
 
-const API_URL = 'https://skystruct-lite-backend.vercel.app/api/projects';
+const API_URL = `${process.env.BASE_API_URL}/api/projects`;
 const TOKEN_KEY = 'userToken';
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 

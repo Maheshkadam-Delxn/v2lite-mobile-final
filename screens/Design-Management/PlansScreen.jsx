@@ -19,7 +19,9 @@ import * as Crypto from 'expo-crypto';
 import { useRoute } from '@react-navigation/native';
 import { useNavigation } from '@react-navigation/native';
 
-const API_BASE = 'https://skystruct-lite-backend.vercel.app';
+//const API_BASE = 'https://skystruct-lite-backend.vercel.app';
+
+const API_BASE = `${process.env.BASE_API_URL}`;
 const CLOUDINARY_CONFIG = {
   cloudName: 'dmlsgazvr',
   apiKey: '353369352647425',

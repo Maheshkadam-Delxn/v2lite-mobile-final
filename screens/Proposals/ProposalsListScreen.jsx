@@ -42,13 +42,15 @@ const ProposalsListScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeletingId, setIsDeletingId] = useState(null);
 
+  const API_URL = `${process.env.BASE_API_URL}`;
+
   useEffect(() => {
     let mounted = true;
     const fetchProposals = async () => {
       setIsLoading(true);
       try {
         const token = await AsyncStorage.getItem('userToken');
-        const response = await fetch('https://skystruct-lite-backend.vercel.app/api/project-types', {
+        const response = await fetch(`${API_URL}/api/project-types`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -150,7 +152,7 @@ const ProposalsListScreen = () => {
     setIsDeletingId(id);
     try {
       const token = await AsyncStorage.getItem('userToken');
-      const response = await fetch(`https://skystruct-lite-backend.vercel.app/api/project-types/${id}`, {
+      const response = await fetch(`${API_URL}/api/project-types/${id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

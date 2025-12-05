@@ -3822,7 +3822,8 @@ import MaterialPurchaseModal from '../../components/MaterialPurchaseModal';
 import SalesInvoiceModal from '../../components/SalesInvoiceModal';
 import GenericFormModal from '../../components/GenericFormModal';
 
-const API_URL = 'https://skystruct-lite-backend.vercel.app/api/transactions';
+//const API_URL = 'https://skystruct-lite-backend.vercel.app/api/transactions';
+const API_URL = `${process.env.BASE_API_URL}/api/transactions`;
 const TOKEN_KEY = 'userToken';
 
 const Transaction = () => {

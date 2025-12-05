@@ -13,7 +13,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE_URL = 'https://skystruct-lite-backend.vercel.app/api';
+const BASE_URL = `${process.env.BASE_API_URL}/api`;
 const TASKS_BY_PROJECT = (projectId) => `${BASE_URL}/tasks/by-project?projectId=${projectId}`;
 const TOKEN_KEY = 'userToken';
 

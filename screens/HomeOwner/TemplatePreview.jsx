@@ -742,6 +742,8 @@ const TemplatePreview = ({ navigation, route }) => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showActionsModal, setShowActionsModal] = useState(false);
 
+  const API_URL = `${process.env.BASE_API_URL}`;
+
   // Get category color
   const getCategoryColor = (category) => {
     const key = (category || '').toString().toLowerCase();
@@ -770,7 +772,7 @@ const TemplatePreview = ({ navigation, route }) => {
         const token = await AsyncStorage.getItem('userToken');
 
         const response = await fetch(
-          `https://skystruct-lite-backend.vercel.app/api/project-types/${templateId}`,
+          `${API_URL}/api/project-types/${templateId}`,
           {
             method: 'GET',
             headers: {

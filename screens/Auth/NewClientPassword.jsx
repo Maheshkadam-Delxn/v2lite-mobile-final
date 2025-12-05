@@ -13,8 +13,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'https://skystruct-lite-backend.vercel.app/api/auth/verify-client';
-
+//const API_URL = 'https://skystruct-lite-backend.vercel.app/api/auth/verify-client';
+const API_URL = `${process.env.BASE_API_URL}/api/auth/verify-client`;
 const NewClientPassword = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
