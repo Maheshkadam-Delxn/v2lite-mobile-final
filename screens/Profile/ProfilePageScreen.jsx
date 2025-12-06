@@ -24,20 +24,31 @@ const API_URL = `${process.env.BASE_API_URL}/api/users`;
 const ProfilePageScreen = () => {
   const { permissions , setPermissions  } = usePermissions();
 console.log(permissions?.role);
+
+const [admin,setAdmin]=useState();
+useEffect(() => {
+  const loadUserRole = async () => {
+    try {
+      const data = await AsyncStorage.getItem("userData");
+      if (data) {
+        const parsed = JSON.parse(data);
+        setAdmin(parsed || null);
+      }
+    } catch (e) {
+      console.log("Error loading role:", e);
+    }
+  };
+
+  loadUserRole();
+}, [])
   const canAccessUserManagement =
-  permissions?.role === "admin" ||
-  (permissions?.permissions?.user &&
-    (permissions?.permissions?.user.create ||
-     permissions?.permissions?.user.update ));
-
-
-
+  admin?.role === "admin" ||
+  (admin?.permissions?.user &&
+    (admin?.permissions?.user.create ||
+     admin?.permissions?.user.update ||admin?.permissions?.user.delete || admin?.permissions?.user.view ));
 
      const canAccessVendorManagement =
-  permissions?.role === "admin" ||
-  (permissions?.permissions?.vendor &&
-    (permissions?.permissions?.vendor.create ||
-     permissions?.permissions?.vendor.update ));
+     admin?.role=="admin" || admin?.permissions?.vendor ;
   console.log(canAccessUserManagement);
   const[userM,setUserman]=useState();
   const navigation = useNavigation();

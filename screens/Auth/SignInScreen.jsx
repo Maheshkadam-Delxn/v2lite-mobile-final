@@ -65,6 +65,7 @@ const ModernSignInScreen = () => {
        if (data.data?.user) {
   await AsyncStorage.setItem('userData', JSON.stringify(data.data.user));
   setPermissions(data.data.user);
+   await AsyncStorage.setItem("userPermissions", JSON.stringify(data.data.user));
   // ⭐ If role is NOT admin or client → store permissions in context
   if (data.data.user.role !== "admin" && data.data.user.role !== "client") {
     setPermissions(data.data.user);
