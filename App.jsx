@@ -101,7 +101,7 @@ import TasksTab from 'components/Project/TasksTab';
 import AuditDashboard from 'screens/Audit/AuditDashboard';
 import FeedDetailsScreen from 'screens/Feeds/FeedDetailsScreen';
 import ChatScreen from 'screens/Feeds/ChatScreen';
-
+import { PermissionProvider } from 'context/PermissionContext';
 import AddSnagItem from 'screens/Audit/AddSnagItem';
 import AssignedSnag from 'screens/Audit/AssignedSnag';
 import SnagDetailScreen from 'screens/Audit/SangDetailScreen';
@@ -407,6 +407,7 @@ export default function App() {
   }
 
   return (
+     <PermissionProvider>
     <View style={{ flex: 1 }}>
       <StatusBar style="light" backgroundColor="#ffffff" />
       <NavigationContainer ref={navigationRef}>
@@ -452,5 +453,6 @@ export default function App() {
         </Stack.Navigator>
       </NavigationContainer>
     </View>
+     </PermissionProvider>
   );
 }

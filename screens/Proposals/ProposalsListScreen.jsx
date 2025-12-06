@@ -372,7 +372,7 @@ const ProposalsListScreen = () => {
               style={{ backgroundColor: '#0066FF', borderRadius: 12, paddingVertical: 16, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}
               onPress={() => {
                 setShowActionsModal(false);
-                navigation.navigate('ClientProposalScreen');
+                navigation.navigate('ClientProposalScreen',{status:"Proposal Under Approval" , title:"All Proposals"});
               }}
             >
               <Text style={{ fontFamily: 'Urbanist-SemiBold', fontSize: 15, color: 'white' }}>View Proposals</Text>
@@ -383,7 +383,7 @@ const ProposalsListScreen = () => {
               style={{ backgroundColor: '#0066FF', borderRadius: 12, paddingVertical: 16, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}
               onPress={() => {
                 setShowActionsModal(false);
-                navigation.navigate('ChooseTemplate');
+                navigation.navigate('ClientProposalScreen',{status:"Initialize", title:"Approved Proposals"});
               }}
             >
               <Text style={{ fontFamily: 'Urbanist-SemiBold', fontSize: 15, color: 'white' }}>Approve Proposals</Text>
@@ -394,7 +394,7 @@ const ProposalsListScreen = () => {
               style={{ backgroundColor: '#0066FF', borderRadius: 12, paddingVertical: 16, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}
               onPress={() => {
                 setShowActionsModal(false);
-                navigation.navigate('ChooseTemplate');
+                navigation.navigate('ClientProposalScreen',{status:"Rejected", title:"Rejected Proposals"});
               }}
             >
               <Text style={{ fontFamily: 'Urbanist-SemiBold', fontSize: 15, color: 'white' }}>Rejected Proposals</Text>

@@ -139,8 +139,10 @@ const ProjectsListScreen = () => {
       if (!Array.isArray(items) || items.length === 0) {
         setProjects([]);
       } else {
-        const filtered = items.filter(
-  (item) => item.status !== "Proposal Under Approval"
+       const filtered = items.filter(
+  (item) =>
+    item.status !== "Proposal Under Approval" &&
+    item.status !== "Initialize" &&  item.status !== "Rejected"
 );
         const mapped = filtered.map(mapItemToProject);
         setProjects(mapped);

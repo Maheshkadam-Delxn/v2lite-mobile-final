@@ -4,12 +4,15 @@ import { useNavigation } from '@react-navigation/native'
 import { MaterialIcons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import Header from '../../components/Header'
+import { usePermissions } from 'context/PermissionContext'
  
 //const API_URL = 'https://skystruct-lite-backend.vercel.app/api/auth/login'
 console.log("adsf",process.env.BASE_API_URL);
  const API_URL = `${process.env.BASE_API_URL}/api/auth/login`;
  console.log(process.env.BASE_API_URL);
 const ModernSignInScreen = () => {
+  const { setPermissions } = usePermissions();
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -59,9 +62,18 @@ const ModernSignInScreen = () => {
           await AsyncStorage.setItem('userToken', data.data.token)
         }
  
-        if (data.data?.user) {
-          await AsyncStorage.setItem('userData', JSON.stringify(data.data.user))
-        }
+       if (data.data?.user) {
+  await AsyncStorage.setItem('userData', JSON.stringify(data.data.user));
+  setPermissions(data.data.user);
+  // ⭐ If role is NOT admin or client → store permissions in context
+  if (data.data.user.role !== "admin" && data.data.user.role !== "client") {
+    setPermissions(data.data.user);
+
+    // Optional: also save permissions locally
+    await AsyncStorage.setItem("userPermissions", JSON.stringify(data.data.user.permissions));
+  }
+}
+
  
         if (rememberMe) {
           await AsyncStorage.setItem('rememberedEmail', email)
@@ -70,10 +82,11 @@ const ModernSignInScreen = () => {
         setModalVisible(true)
         setTimeout(() => {
           setModalVisible(false)
-          if (data.data.user.role === "admin") {
-            navigation.navigate('MainApp');
+          if (data.data.user.role === "client") {
+          
+                navigation.navigate('ClientApp');
           } else {
-        navigation.navigate('ClientApp');
+      navigation.navigate('MainApp');
           }
         }, 2000)
       } else {

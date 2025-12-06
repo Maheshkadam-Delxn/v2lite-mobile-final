@@ -1223,7 +1223,7 @@ const ViewProposal = ({ navigation, route }) => {
   const selectedItems = rawData.selectedItems || [];
   const projectType = rawData.projectType || {};
   const description = rawData.description || 'No description provided.';
-  const budget = rawData.budget || 'Not specified';
+  const budget = rawData.budget || 'NA';
   const location = rawData.location || 'Not specified';
   const projectName = rawData.name || 'Unnamed Project';
   const status = rawData.status || 'Pending';
@@ -1547,38 +1547,64 @@ const ViewProposal = ({ navigation, route }) => {
         )}
 
         {/* View Only State */}
-        {status !== 'Proposal Under Approval' && (
-          <View style={{
-            paddingHorizontal: 20,
-            paddingBottom: 24,
-          }}>
-            <View style={{
-              backgroundColor: '#E6F0FF',
-              borderRadius: 16,
-              padding: 16,
-              alignItems: 'center',
-            }}>
-              <Feather name="eye" size={24} color="#0066FF" />
-              <Text style={{
-                fontFamily: 'Urbanist-SemiBold',
-                fontSize: 16,
-                color: '#0066FF',
-                marginTop: 8,
-              }}>
-                View Only - {status}
-              </Text>
-              <Text style={{
-                fontFamily: 'Urbanist-Regular',
-                fontSize: 14,
-                color: '#666666',
-                textAlign: 'center',
-                marginTop: 4,
-              }}>
-                This proposal has already been {status.toLowerCase()}
-              </Text>
-            </View>
-          </View>
-        )}
+       {status !== "Proposal Under Approval" && (
+  <View style={{ paddingHorizontal: 20, paddingBottom: 24 }}>
+    <View
+      style={{
+        backgroundColor: status === "Rejected" ? "#FFE7E7" : "#E6F0FF",
+        borderRadius: 16,
+        padding: 16,
+        alignItems: "center",
+      }}
+    >
+      <Feather
+        name="eye"
+        size={24}
+        color={status === "Rejected" ? "#D32F2F" : "#0066FF"}
+      />
+
+      <Text
+        style={{
+          fontFamily: "Urbanist-SemiBold",
+          fontSize: 16,
+          color: status === "Rejected" ? "#D32F2F" : "#0066FF",
+          marginTop: 8,
+        }}
+      >
+        View Only – {status}
+      </Text>
+
+      {/* Message */}
+      {status === "Rejected" ? (
+        <Text
+          style={{
+            fontFamily: "Urbanist-Regular",
+            fontSize: 14,
+            color: "#B3261E",
+            textAlign: "center",
+            marginTop: 4,
+          }}
+        >
+          This proposal was rejected.
+          {"\n"}Reason: {proposal?.raw?.rejectionReason || "Not provided"}
+        </Text>
+      ) : (
+        <Text
+          style={{
+            fontFamily: "Urbanist-Regular",
+            fontSize: 14,
+            color: "#666666",
+            textAlign: "center",
+            marginTop: 4,
+          }}
+        >
+          This proposal has already been {status.toLowerCase()}.
+        </Text>
+      )}
+    </View>
+  </View>
+)}
+
       </ScrollView>
 
       {/* Rejection Modal */}

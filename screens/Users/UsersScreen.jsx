@@ -38,7 +38,8 @@ const RolesMembersScreen = () => {
       indent: { create: false, update: false, delete: false },
       boq: { create: false, update: false, delete: false },
       vendor: { create: false, update: false, delete: false },
-      user: { create: false, update: false }
+      user: { create: false, update: false },
+       proposal: { update: false, delete: false } 
     },
     isSystem: false
   });
@@ -72,6 +73,12 @@ const RolesMembersScreen = () => {
       label: 'BOQ Management',
       description: 'Handle Bill of Quantities and estimates',
       actions: ['create', 'update', 'delete']
+    },
+     {
+      key: 'proposal',
+      label: 'Proposal Management',
+      description: 'Handle Proposal of Projects',
+      actions: ['update', 'delete']
     },
     {
       key: 'vendor',
@@ -243,7 +250,9 @@ const RolesMembersScreen = () => {
           indent: { create: false, update: false, delete: false },
           boq: { create: false, update: false, delete: false },
           vendor: { create: false, update: false, delete: false },
-          user: { create: false, update: false }
+          user: { create: false, update: false },
+          proposal: { update: false, delete: false }
+
         },
         isSystem: false
       });
@@ -272,7 +281,9 @@ const RolesMembersScreen = () => {
           indent: { create: false, update: false, delete: false },
           boq: { create: false, update: false, delete: false },
           vendor: { create: false, update: false, delete: false },
-          user: { create: false, update: false }
+          user: { create: false, update: false },
+          proposal: { update: false, delete: false }
+
         },
         isSystem: false
       });
