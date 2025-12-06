@@ -1535,9 +1535,6 @@ const RolesMembersScreen = () => {
     </Animated.View>
   </View>
 </Modal>
-
-
-
     </View>
   );
 };
