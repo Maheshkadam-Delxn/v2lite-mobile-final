@@ -4,59 +4,184 @@ import {
   TextInput,
   ScrollView,
   TouchableOpacity,
-  Image,
   SafeAreaView,
 } from 'react-native';
 import React, { useState } from 'react';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import Header from 'components/Header';
 import BottomNavBar from 'components/BottomNavbar';
 import { ChevronDown, Calendar } from 'lucide-react-native';
 
 const NewSurveyScreen = () => {
   const navigation = useNavigation();
+  const route = useRoute();
+
+  // You can pass projectId / proposalId via route params
+  const { projectId, proposalId } = route.params || {};
 
   const [formData, setFormData] = useState({
-    surveyName: '',
-    surveyType: '',
+    // maps to summary.shortNote
+    surveyShortNote: '',
+
+    // maps to surveyType
+    surveyType: '', // "villa" | "apartment" | etc.
+
+    // maps to finalReport.summary or just internal description
     description: '',
-    contractor: '',
-    startDate: '',
+
+    // maps to assignedTo (for now as a name; later you’ll map to userId)
+    assignedToName: '',
+
+    // maps to scheduledDate
+    scheduledDate: '',
+
+    // maps to location.address
+    locationAddress: '',
   });
 
-  const [uploadedFiles, setUploadedFiles] = useState([
-    { id: 1, name: 'Website-templates.psd', icon: 'File', color: 'bg-blue-500', progress: 60 },
-    { id: 2, name: 'Logo-vector.ai', icon: 'File', color: 'bg-red-500', progress: 40 },
-  ]);
-
-  const handleCreateProject = () => {
-    console.log('Submit:', formData);
-    navigation.navigate('SurveyDetailScreen');
-  };
-
-  const handleSaveDraft = () => {
-    console.log('Save Draft:', formData);
-  };
-
-  const handleBrowseFiles = () => console.log('Browse files');
-
-  const handleRemoveFile = (fileId) => {
-    setUploadedFiles((prev) => prev.filter((file) => file.id !== fileId));
-  };
+  // These can later become attachments or initial documents for the survey
+  const [uploadedFiles, setUploadedFiles] = useState([]);
 
   const handleInputChange = (field, value) => {
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       [field]: value,
     }));
   };
 
   const handleOpenSurveyType = () => {
+    // TODO: open bottom sheet / modal to pick from ["villa", "apartment", "commercial", ...]
     console.log('Open Survey Type dropdown');
   };
 
   const handleOpenCalendar = () => {
+    // TODO: open date picker
     console.log('Open Calendar');
+  };
+
+  const handleBrowseFiles = () => {
+    // TODO: hook into document / image picker and push items into uploadedFiles
+    console.log('Browse files');
+  };
+
+  const handleRemoveFile = (fileId) => {
+    setUploadedFiles(prev => prev.filter(file => file.id !== fileId));
+  };
+
+  const handleSaveDraft = () => {
+    // Build survey payload as per schema (draft)
+    const surveyPayload = {
+      projectId: projectId || null,
+      proposalId: proposalId || null,
+      surveyType: formData.surveyType || null,
+      status: 'pending',
+      assignedTo: null, // you will map assignedToName to actual userId later
+      assignedToName: formData.assignedToName,
+      scheduledDate: formData.scheduledDate || null,
+      location: {
+        address: formData.locationAddress || '',
+        latitude: null,
+        longitude: null,
+      },
+      summary: {
+        shortNote: formData.surveyShortNote || '',
+        keyFindings: [],
+        siteConstraints: [],
+        requiresProposalChange: false,
+      },
+      description: formData.description || '',
+      photos: [], // will be filled from SurveyDetailScreen
+      observations: [],
+      review: {
+        status: 'not-reviewed',
+        reviewerId: null,
+        reviewedAt: null,
+        remarks: '',
+        requiredChanges: [],
+      },
+      finalReport: {
+        generated: false,
+        generatedAt: null,
+        summary: '',
+        keyFindings: [],
+        recommendedChanges: [],
+        attachments: uploadedFiles.map(f => f.url || ''), // if you store urls
+      },
+      history: [
+        {
+          action: 'save-draft',
+          fromStatus: null,
+          toStatus: 'pending',
+          userId: null,
+          note: 'Draft created from mobile',
+          at: new Date(),
+        },
+      ],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    console.log('Save Draft Payload:', surveyPayload);
+    // TODO: call API: POST /api/surveys (draft)
+  };
+
+  const handleSubmitSurvey = () => {
+    const surveyPayload = {
+      projectId: projectId || null,
+      proposalId: proposalId || null,
+      surveyType: formData.surveyType || null,
+      status: 'pending',
+      assignedTo: null,
+      assignedToName: formData.assignedToName,
+      scheduledDate: formData.scheduledDate || null,
+      location: {
+        address: formData.locationAddress || '',
+        latitude: null,
+        longitude: null,
+      },
+      summary: {
+        shortNote: formData.surveyShortNote || '',
+        keyFindings: [],
+        siteConstraints: [],
+        requiresProposalChange: false,
+      },
+      description: formData.description || '',
+      photos: [],
+      observations: [],
+      review: {
+        status: 'not-reviewed',
+        reviewerId: null,
+        reviewedAt: null,
+        remarks: '',
+        requiredChanges: [],
+      },
+      finalReport: {
+        generated: false,
+        generatedAt: null,
+        summary: '',
+        keyFindings: [],
+        recommendedChanges: [],
+        attachments: uploadedFiles.map(f => f.url || ''),
+      },
+      history: [
+        {
+          action: 'created',
+          fromStatus: null,
+          toStatus: 'pending',
+          userId: null,
+          note: 'Survey created from NewSurveyScreen',
+          at: new Date(),
+        },
+      ],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    console.log('Submit Survey Payload:', surveyPayload);
+    // TODO: POST /api/surveys
+    navigation.navigate('SurveyDetailScreen', {
+      surveyId: 'NEW_CREATED_ID', // replace with API response
+    });
   };
 
   const handleFilter = () => {
@@ -66,9 +191,8 @@ const NewSurveyScreen = () => {
   return (
     <SafeAreaView className="flex-1 bg-white">
       <View className="flex-1">
-        {/* Header */}
         <Header
-          title="New Survey Request"
+          title="New Site Survey"
           showBackButton={true}
           onRightIconPress={handleFilter}
           backgroundColor="#0066FF"
@@ -76,52 +200,83 @@ const NewSurveyScreen = () => {
           iconColor="white"
         />
 
-        {/* Scrollable Content with Bottom Padding */}
         <ScrollView
           className="flex-1 px-6 pt-8"
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 100 }}>
-          {/* Survey Name */}
+          contentContainerStyle={{ paddingBottom: 100 }}
+        >
+          {/* Survey Short Note (maps to summary.shortNote) */}
           <View className="mb-6">
-            <Text style={{ fontFamily: 'Urbanist-Bold' }} className="mb-3 text-sm text-black">
-              Survey Name
+            <Text
+              style={{ fontFamily: 'Urbanist-Bold' }}
+              className="mb-3 text-sm text-black"
+            >
+              Survey Title / Short Note
             </Text>
             <TextInput
               style={{ fontFamily: 'Urbanist-Regular' }}
               className="border-b border-[#235DFF] pb-3 text-base text-black"
-              placeholder="Project Name 1"
+              placeholder="Ex: Site survey for 7 BHK Villa"
               placeholderTextColor="#9CA3AF"
-              value={formData.surveyName}
-              onChangeText={(text) => handleInputChange('surveyName', text)}
+              value={formData.surveyShortNote}
+              onChangeText={(text) => handleInputChange('surveyShortNote', text)}
             />
           </View>
 
-          {/* Survey Type - Dropdown */}
+          {/* Survey Type */}
           <View className="mb-6">
-            <Text style={{ fontFamily: 'Urbanist-Bold' }} className="mb-3 text-sm text-black">
+            <Text
+              style={{ fontFamily: 'Urbanist-Bold' }}
+              className="mb-3 text-sm text-black"
+            >
               Survey Type
             </Text>
             <TouchableOpacity
               onPress={handleOpenSurveyType}
-              className="flex-row items-center justify-between border-b border-[#235DFF] pb-3">
+              className="flex-row items-center justify-between border-b border-[#235DFF] pb-3"
+            >
               <Text
                 style={{ fontFamily: 'Urbanist-Regular' }}
-                className={`text-base ${formData.surveyType ? 'text-black' : 'text-gray-400'}`}>
-                {formData.surveyType || 'Select'}
+                className={`text-base ${
+                  formData.surveyType ? 'text-black' : 'text-gray-400'
+                }`}
+              >
+                {formData.surveyType || 'Select (Villa, Apartment, etc.)'}
               </Text>
               <ChevronDown size={20} color="#235DFF" />
             </TouchableOpacity>
           </View>
 
-          {/* Description */}
+          {/* Site Address (maps to location.address) */}
           <View className="mb-6">
-            <Text style={{ fontFamily: 'Urbanist-Bold' }} className="mb-3 text-sm text-black">
-              Description
+            <Text
+              style={{ fontFamily: 'Urbanist-Bold' }}
+              className="mb-3 text-sm text-black"
+            >
+              Site Address
+            </Text>
+            <TextInput
+              style={{ fontFamily: 'Urbanist-Regular' }}
+              className="border-b border-[#235DFF] pb-3 text-base text-black"
+              placeholder="Enter site address"
+              placeholderTextColor="#9CA3AF"
+              value={formData.locationAddress}
+              onChangeText={(text) => handleInputChange('locationAddress', text)}
+            />
+          </View>
+
+          {/* Description (notes / internal description) */}
+          <View className="mb-6">
+            <Text
+              style={{ fontFamily: 'Urbanist-Bold' }}
+              className="mb-3 text-sm text-black"
+            >
+              Description / Notes
             </Text>
             <TextInput
               style={{ fontFamily: 'Urbanist-Regular' }}
               className="min-h-[80px] border-b border-[#235DFF] pb-3 text-base leading-6 text-gray-600"
-              placeholder="The budget includes material cost, labor, and subcontractor fees. Client approval is required of any project milestones. Additional customization may impact the final budget."
+              placeholder="Any additional context for the survey, client expectations, access info, etc."
               placeholderTextColor="#9CA3AF"
               multiline
               textAlignVertical="top"
@@ -130,122 +285,156 @@ const NewSurveyScreen = () => {
             />
           </View>
 
-          {/* Contractor */}
+          {/* Assign To (Surveyor / PM) */}
           <View className="mb-6">
-            <Text style={{ fontFamily: 'Urbanist-Bold' }} className="mb-3 text-sm text-black">
-              Contractor
+            <Text
+              style={{ fontFamily: 'Urbanist-Bold' }}
+              className="mb-3 text-sm text-black"
+            >
+              Assign To (Surveyor / PM)
             </Text>
             <TextInput
               style={{ fontFamily: 'Urbanist-Regular' }}
               className="border-b border-[#235DFF] pb-3 text-base text-black"
-              placeholder="Select"
+              placeholder="Select or enter responsible person"
               placeholderTextColor="#9CA3AF"
-              value={formData.contractor}
-              onChangeText={(text) => handleInputChange('contractor', text)}
+              value={formData.assignedToName}
+              onChangeText={(text) => handleInputChange('assignedToName', text)}
             />
           </View>
 
-          {/* Start Date - Calendar Trigger */}
+          {/* Scheduled Date */}
           <View className="mb-6">
-            <Text style={{ fontFamily: 'Urbanist-Bold' }} className="mb-3 text-sm text-black">
-              Start Date
+            <Text
+              style={{ fontFamily: 'Urbanist-Bold' }}
+              className="mb-3 text-sm text-black"
+            >
+              Scheduled Date
             </Text>
             <TouchableOpacity
               onPress={handleOpenCalendar}
-              className="flex-row items-center justify-between border-b border-[#235DFF] pb-3">
+              className="flex-row items-center justify-between border-b border-[#235DFF] pb-3"
+            >
               <Text
                 style={{ fontFamily: 'Urbanist-Regular' }}
-                className={`text-base ${formData.startDate ? 'text-black' : 'text-gray-400'}`}>
-                {formData.startDate || 'Select Date'}
+                className={`text-base ${
+                  formData.scheduledDate ? 'text-black' : 'text-gray-400'
+                }`}
+              >
+                {formData.scheduledDate || 'Select Date'}
               </Text>
               <Calendar size={20} color="#235DFF" />
             </TouchableOpacity>
           </View>
 
-          {/* Upload Files */}
+          {/* Upload Reference Files (optional) */}
           <View className="mb-8">
-            <Text style={{ fontFamily: 'Urbanist-Bold' }} className="mb-5 text-base text-black">
-              Upload Files
+            <Text
+              style={{ fontFamily: 'Urbanist-Bold' }}
+              className="mb-5 text-base text-black"
+            >
+              Upload Reference Files (Optional)
             </Text>
 
             <TouchableOpacity
               className="mb-6 items-center justify-center rounded-2xl border-2 border-dashed border-[#235DFF] py-12"
-              onPress={handleBrowseFiles}>
+              onPress={handleBrowseFiles}
+            >
               <View className="mb-4 h-16 w-16 items-center justify-center rounded-full bg-white">
                 <Text className="text-sm">Folder</Text>
               </View>
-              <Text style={{ fontFamily: 'Urbanist-Regular' }} className="text-base text-gray-500">
+              <Text
+                style={{ fontFamily: 'Urbanist-Regular' }}
+                className="text-base text-gray-500"
+              >
                 Browse files to upload
               </Text>
             </TouchableOpacity>
 
             {uploadedFiles.length > 0 && (
               <>
-                <Text style={{ fontFamily: 'Urbanist-Bold' }} className="mb-4 text-sm text-black">
+                <Text
+                  style={{ fontFamily: 'Urbanist-Bold' }}
+                  className="mb-4 text-sm text-black"
+                >
                   Uploaded
                 </Text>
 
-                {uploadedFiles.map((file) => (
+                {uploadedFiles.map(file => (
                   <View key={file.id} className="mb-4">
                     <View className="mb-2 flex-row items-center justify-between">
                       <View className="flex-1 flex-row items-center">
-                        <View
-                          className={`h-12 w-12 rounded-xl ${file.color} mr-4 items-center justify-center`}>
-                          <Text className="text-lg text-white">{file.icon}</Text>
+                        <View className="mr-4 h-12 w-12 items-center justify-center rounded-xl bg-blue-500">
+                          <Text className="text-lg text-white">File</Text>
                         </View>
                         <Text
                           style={{ fontFamily: 'Urbanist-Medium' }}
-                          className="flex-1 text-sm text-black">
+                          className="flex-1 text-sm text-black"
+                        >
                           {file.name}
                         </Text>
                       </View>
                       <TouchableOpacity
                         className="h-7 w-7 items-center justify-center rounded-full bg-red-50"
-                        onPress={() => handleRemoveFile(file.id)}>
+                        onPress={() => handleRemoveFile(file.id)}
+                      >
                         <Text className="text-sm text-red-500">X</Text>
                       </TouchableOpacity>
                     </View>
-                    <View className="ml-16 h-2 overflow-hidden rounded-full bg-gray-200">
-                      <View
-                        className="h-full rounded-full bg-[#235DFF]"
-                        style={{ width: `${file.progress}%` }}
-                      />
-                    </View>
+                    {file.progress != null && (
+                      <View className="ml-16 h-2 overflow-hidden rounded-full bg-gray-200">
+                        <View
+                          className="h-full rounded-full bg-[#235DFF]"
+                          style={{ width: `${file.progress}%` }}
+                        />
+                      </View>
+                    )}
                   </View>
                 ))}
               </>
             )}
           </View>
 
-          {/* Action Buttons: Cancel, Save Draft, Submit */}
+          {/* Buttons */}
           <View className="mb-6 flex-row justify-between gap-2">
             <TouchableOpacity
               className="flex-1 items-center rounded-xl bg-red-200 py-4"
-              onPress={() => console.log('Cancel')}>
-              <Text style={{ fontFamily: 'Urbanist-Bold' }} className="text-base text-red-700">
+              onPress={() => navigation.goBack()}
+            >
+              <Text
+                style={{ fontFamily: 'Urbanist-Bold' }}
+                className="text-base text-red-700"
+              >
                 Cancel
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               className="flex-1 items-center rounded-xl bg-blue-200 py-4"
-              onPress={handleSaveDraft}>
-              <Text style={{ fontFamily: 'Urbanist-Bold' }} className="text-base text-blue-600">
+              onPress={handleSaveDraft}
+            >
+              <Text
+                style={{ fontFamily: 'Urbanist-Bold' }}
+                className="text-base text-blue-600"
+              >
                 Save Draft
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               className="flex-1 items-center rounded-xl bg-green-500 py-4"
-              onPress={handleCreateProject}>
-              <Text style={{ fontFamily: 'Urbanist-Bold' }} className="text-base text-white">
+              onPress={handleSubmitSurvey}
+            >
+              <Text
+                style={{ fontFamily: 'Urbanist-Bold' }}
+                className="text-base text-white"
+              >
                 Submit
               </Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
 
-        {/* Fixed Bottom Navigation Bar */}
         <View className="absolute bottom-0 left-0 right-0">
           <BottomNavBar />
         </View>
