@@ -70,7 +70,7 @@ const ModernSignInScreen = () => {
     setPermissions(data.data.user);
 
     // Optional: also save permissions locally
-    await AsyncStorage.setItem("userPermissions", JSON.stringify(data.data.user.permissions));
+    await AsyncStorage.setItem("userPermissions", JSON.stringify(data.data.user));
   }
 }
 
