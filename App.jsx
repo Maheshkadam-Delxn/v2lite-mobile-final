@@ -112,6 +112,7 @@ import ClientMainPage from 'screens/HomeOwner/clientpages/ClientMainPage';
 import clientProfilePage from 'screens/HomeOwner/clientpages/clientProfilePage';
 import CreateTemplate from 'screens/Proposals/CreateTemplate';
 import TemplatePreview from 'screens/HomeOwner/TemplatePreview';
+import PaymentScreen from 'screens/payments/Payment';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const TOKEN_KEY = 'userToken';
@@ -255,7 +256,7 @@ useEffect(() => {
             if (route.name === 'Projects') iconName = focused ? 'apps-sharp' : 'apps-outline';
             else if (route.name === 'Templates')
               iconName = focused ? 'document-text' : 'document-text-outline';
-            else if (route.name === 'Users') iconName = focused ? 'people' : 'people-outline';
+            else if (route.name === 'Payments') iconName = focused ? 'wallet' : 'wallet-outline';
             else if (route.name === 'Materials') iconName = focused ? 'cube' : 'cube-outline';
             else if (route.name === 'Account') iconName = focused ? 'settings' : 'settings-outline';
             else if (route.name === 'Audit') iconName = focused ? 'person' : 'person-outline';
@@ -282,7 +283,7 @@ useEffect(() => {
         })}>
         <Tab.Screen name="Projects" component={ProjectStack} options={{ title: 'Projects' }} />
         <Tab.Screen name="Templates" component={ProposalStack} options={{ title: 'Templates' }} />
-        <Tab.Screen name="Users" component={UsersStack} options={{ title: 'Users' }} />
+        <Tab.Screen name="Payments" component={PaymentStack} options={{ title: 'Payments' }} />
         <Tab.Screen name="Audit" component={AuditStack} options={{ title: 'Audit' }} />
         {/* <Tab.Screen name="Materials" component={MaterialsStack} options={{ title: 'Materials' }} /> */}
         <Tab.Screen name="Account" component={ProfileStack} options={{ title: 'Settings' }} />
@@ -292,6 +293,13 @@ useEffect(() => {
   );
 }
 
+
+const PaymentStack=()=>(
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+ <Stack.Screen name="PaymentScreen" component={PaymentScreen} />
+  </Stack.Navigator>
+
+)
 // Auth Stack
 const AuthStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>

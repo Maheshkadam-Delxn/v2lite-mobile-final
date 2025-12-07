@@ -617,12 +617,12 @@ const ProjectsListScreen = () => {
           </View>
 
           {/* Customer Dashboard Button */}
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={styles.dashboardButton}
             onPress={() => navigation.navigate('CustomerChooseTemplate')}>
             <Ionicons name="grid-outline" size={20} color="white" style={{ marginRight: 8 }} />
             <Text style={styles.dashboardButtonText}>Go to Customer Dashboard</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           <View style={{ height: 20 }} />
         </ScrollView>

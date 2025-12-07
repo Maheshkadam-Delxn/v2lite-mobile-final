@@ -1026,7 +1026,7 @@ const handleConfirmAssign = async () => {
           borderLeftColor: statusColors.text,
         }}
       >
-        {/* Top – title, status, date */}
+     
         <View
           style={{
             flexDirection: 'row',
@@ -1147,11 +1147,15 @@ const handleConfirmAssign = async () => {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#FAFBFC' }}>
-      <StatusBar barStyle="light-content" backgroundColor="#0066FF" />
+    <View style={{ flex: 1, backgroundColor: '#F5F5F5' }}>
+     
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <LinearGradient
+        colors={['#0066FF', '#0052CC']}
+       
       >
         <Header
           title={titleHeader}
@@ -1162,6 +1166,7 @@ const handleConfirmAssign = async () => {
           titleColor="white"
           iconColor="white"
         />
+      </LinearGradient>
 
         {/* Search */}
         <View style={{ paddingHorizontal: 20, paddingTop: 20 }}>

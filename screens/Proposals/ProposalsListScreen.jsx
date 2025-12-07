@@ -294,7 +294,7 @@ const ProposalsListScreen = () => {
         />
 
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 12, backgroundColor: '#F5F5F5' }}>
-          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: 'white', borderRadius: 12, paddingHorizontal: 12, height: 48, marginRight: 12 }}>
+          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: 'white', borderRadius: 12, paddingHorizontal: 12, height: 48, marginRight: 12 , marginTop: 14 }}>
             <Feather name="search" size={20} color="#999999" />
             <TextInput
               style={{ flex: 1, marginLeft: 8, fontFamily: 'Urbanist-Regular', fontSize: 14, color: '#000000' }}
@@ -307,7 +307,7 @@ const ProposalsListScreen = () => {
           </View>
 
           <TouchableOpacity 
-            style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#0066FF', alignItems: 'center', justifyContent: 'center' }} 
+            style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#0066FF', alignItems: 'center', justifyContent: 'center', marginTop: 14 }} 
             onPress={handleCreate}
           >
             <Feather name="plus" size={24} color="white" />

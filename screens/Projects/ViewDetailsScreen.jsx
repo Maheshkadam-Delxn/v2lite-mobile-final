@@ -282,6 +282,7 @@ import AttendanceScreen from 'screens/Attendance/AttendaceScreen';
 import RiskCategoriesScreen from 'screens/Issues/RiskCategoriesScreen';
 import ReportssListScreen from 'screens/Reports/ReportsListScreen'
 import FilesScreen from 'screens/Document-Management/FileScreen';
+import PlansTab from 'screens/plans/planscreen';
 
 
 const ViewDetailsScreen = () => {
@@ -304,21 +305,18 @@ console.log("asdfasdfasdf",project);
 
   const handleTabSelect = (tab) => {
     setActiveTab(tab);
-    // Only navigate to other screens for Attendance (if needed)
-    // For Details, Task, and Transaction, handle it within this component
-    // if (tab === 'Attendance') {
-    //   navigation.navigate('Attendance');
-    // }
-    // For 'Details', 'Task', and 'Transaction', just set the active tab (no navigation)
+   
   };
 
   const tabs = [
     { id: 'Details', label: 'Details' },
+     { id: 'Sites', label: 'Sites' },
+      { id: 'Plans', label: 'Plans' },
     { id: 'Task', label: 'Task' },
     { id: 'Transaction', label: 'Transaction' },
     { id: 'Files', label: 'Files' },
-    { id: 'Sites', label: 'Sites' },
-    { id: 'Plans', label: 'Plans' },
+   
+   
     { id: 'Material', label: 'Material' },
     { id: 'Attendance', label: 'Attendance' },
     { id: 'Issues', label: 'Issues'},
@@ -394,7 +392,8 @@ console.log("asdfasdfasdf",project);
 
           case 'Plans':
         // Render the PaymentsTransaction component inline
-        return <PlansScreen project={project} />;
+        // return <PlansScreen project={project} />;
+        return <PlansTab/>
           case 'Material':
         // Render the PaymentsTransaction component inline
         return <MaterialsListScreen project={project} />;
