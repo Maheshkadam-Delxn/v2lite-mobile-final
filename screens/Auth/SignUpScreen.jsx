@@ -323,6 +323,8 @@
 //     </View>
 //   );
 // }
+
+
 import { View, Text, TouchableOpacity, StatusBar, TextInput, Modal, Animated, ScrollView, Alert, Image } from 'react-native';
 import React, { useState, useRef } from 'react';
 import { useNavigation } from '@react-navigation/native';

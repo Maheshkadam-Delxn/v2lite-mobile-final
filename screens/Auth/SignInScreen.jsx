@@ -5,11 +5,11 @@ import { MaterialIcons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import Header from '../../components/Header'
 import { usePermissions } from 'context/PermissionContext'
- 
+
 //const API_URL = 'https://skystruct-lite-backend.vercel.app/api/auth/login'
-console.log("adsf",process.env.BASE_API_URL);
- const API_URL = `${process.env.BASE_API_URL}/api/auth/login`;
- console.log(process.env.BASE_API_URL);
+console.log("adsf", process.env.BASE_API_URL);
+const API_URL = `${process.env.BASE_API_URL}/api/auth/login`;
+console.log(process.env.BASE_API_URL);
 const ModernSignInScreen = () => {
   const { setPermissions } = usePermissions();
 
@@ -21,20 +21,20 @@ const ModernSignInScreen = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [emailFocused, setEmailFocused] = useState(false)
   const [passwordFocused, setPasswordFocused] = useState(false)
- 
+
   const fadeAnim = useRef(new Animated.Value(0)).current
   const scaleAnim = useRef(new Animated.Value(0.9)).current
- 
+
   const navigation = useNavigation()
- 
+
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Incomplete Form', 'Please fill in all fields.')
       return
     }
- 
+
     setIsLoading(true)
- 
+
     try {
       const response = await fetch(API_URL, {
         method: 'POST',
@@ -46,52 +46,55 @@ const ModernSignInScreen = () => {
           password,
         }),
       })
- if (response.status === 403) {
-   
-    
-   
- navigation.navigate("NewClientPassword", { email });
- 
-    return; // stop further execution
-  }
+    if (response.status == 403) {
+      const dd= await response.json();
+      console.log(dd);
+      if (dd.message === "Update Password") {
+  navigation.navigate("NewClientPassword", { email });
+  return;
+}
+  alert("Please check email and verify");
+  return; // ❗ IMPORTANT
+}
+
       if (response.ok) {
         const data = await response.json()
         console.log('Login successful:', data)
- 
+
         if (data.data?.token) {
           await AsyncStorage.setItem('userToken', data.data.token)
         }
- 
-       if (data.data?.user) {
-  await AsyncStorage.setItem('userData', JSON.stringify(data.data.user));
-  setPermissions(data.data.user);
-   await AsyncStorage.setItem("userPermissions", JSON.stringify(data.data.user));
-  // ⭐ If role is NOT admin or client → store permissions in context
-  if (data.data.user.role !== "admin" && data.data.user.role !== "client") {
-    setPermissions(data.data.user);
 
-    // Optional: also save permissions locally
-    await AsyncStorage.setItem("userPermissions", JSON.stringify(data.data.user));
-  }
-}
+        if (data.data?.user) {
+          await AsyncStorage.setItem('userData', JSON.stringify(data.data.user));
+          setPermissions(data.data.user);
+          await AsyncStorage.setItem("userPermissions", JSON.stringify(data.data.user));
+          // ⭐ If role is NOT admin or client → store permissions in context
+          if (data.data.user.role !== "admin" && data.data.user.role !== "client") {
+            setPermissions(data.data.user);
 
- 
+            // Optional: also save permissions locally
+            await AsyncStorage.setItem("userPermissions", JSON.stringify(data.data.user));
+          }
+        }
+
+
         if (rememberMe) {
           await AsyncStorage.setItem('rememberedEmail', email)
         }
- 
+
         setModalVisible(true)
         setTimeout(() => {
           setModalVisible(false)
           if (data.data.user.role === "client") {
-          
-                navigation.navigate('ClientApp');
+
+            navigation.navigate('ClientApp');
           } else {
-      navigation.navigate('MainApp');
+            navigation.navigate('MainApp');
           }
         }, 2000)
       } else {
-        
+
         const errorData = await response.json().catch(() => ({}))
         Alert.alert('Login Failed', errorData.message || 'Invalid email or password.')
       }
@@ -102,23 +105,23 @@ const ModernSignInScreen = () => {
       setIsLoading(false)
     }
   }
-useEffect(() => {
-  const checkStorage = async () => {
-    const token = await AsyncStorage.getItem('userToken');
-    console.log("🔍 TOKEN ON SCREEN LOAD on splash screen:", token);
- 
-    const user = await AsyncStorage.getItem('userData');
-    console.log("🔍 USER ON SCREEN LOAD on splash screen:", user);
-     const userData = JSON.parse(user);
-    if(userData.role=="admin"){
-       navigation.navigate('MainApp');
-    }else{
-      navigation.navigate('ClientApp');
-    }
-  };
- 
-  checkStorage();
-}, []);
+  useEffect(() => {
+    const checkStorage = async () => {
+      const token = await AsyncStorage.getItem('userToken');
+      console.log("🔍 TOKEN ON SCREEN LOAD on splash screen:", token);
+
+      const user = await AsyncStorage.getItem('userData');
+      console.log("🔍 USER ON SCREEN LOAD on splash screen:", user);
+      const userData = JSON.parse(user);
+      if (userData.role == "admin") {
+        navigation.navigate('MainApp');
+      } else {
+        navigation.navigate('ClientApp');
+      }
+    };
+
+    checkStorage();
+  }, []);
   useEffect(() => {
     const loadRememberedEmail = async () => {
       try {
@@ -133,7 +136,7 @@ useEffect(() => {
     }
     loadRememberedEmail()
   }, [])
- 
+
   useEffect(() => {
     if (modalVisible) {
       Animated.parallel([
@@ -154,22 +157,22 @@ useEffect(() => {
       scaleAnim.setValue(0.9)
     }
   }, [modalVisible])
- 
+
   return (
     <View style={{ flex: 1, backgroundColor: '#ffffff' }}>
-      <Header/>
+      <Header />
       <StatusBar barStyle="light-content" backgroundColor="#ffffff" />
- 
-     
-<ScrollView
-  showsVerticalScrollIndicator={false}
-  contentContainerStyle={{
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 20
-  }}
->
+
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: 'center',
+          paddingHorizontal: 24,
+          paddingVertical: 20
+        }}
+      >
         {/* Logo */}
         <View style={{ alignItems: 'center', marginBottom: 32 }}>
           <Image
@@ -178,7 +181,7 @@ useEffect(() => {
             resizeMode="contain"
           />
         </View>
- 
+
         {/* Header */}
         <View style={{ marginBottom: 40 }}>
           <Text style={{
@@ -199,7 +202,7 @@ useEffect(() => {
             Sign in to your account
           </Text>
         </View>
- 
+
         {/* Email Input */}
         <View style={{ marginBottom: 20 }}>
           <Text style={{
@@ -241,7 +244,7 @@ useEffect(() => {
             />
           </View>
         </View>
- 
+
         {/* Password Input */}
         <View style={{ marginBottom: 20 }}>
           <Text style={{
@@ -289,7 +292,7 @@ useEffect(() => {
             </TouchableOpacity>
           </View>
         </View>
- 
+
         {/* Remember Me & Forgot Password */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 }}>
           <TouchableOpacity
@@ -319,7 +322,7 @@ useEffect(() => {
               Remember me
             </Text>
           </TouchableOpacity>
-         
+
           <TouchableOpacity onPress={() => navigation.navigate('ResetPassword')}>
             <Text style={{
               fontSize: 14,
@@ -331,7 +334,7 @@ useEffect(() => {
             </Text>
           </TouchableOpacity>
         </View>
- 
+
         {/* Sign In Button */}
         <TouchableOpacity
           onPress={handleLogin}
@@ -356,7 +359,7 @@ useEffect(() => {
             {isLoading ? 'Signing in...' : 'Sign in'}
           </Text>
         </TouchableOpacity>
- 
+
         {/* Sign Up Link */}
         <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 32 }}>
           <Text style={{
@@ -377,7 +380,7 @@ useEffect(() => {
             </Text>
           </TouchableOpacity>
         </View>
- 
+
         {/* Divider */}
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}>
           <View style={{ flex: 1, height: 1, backgroundColor: '#E5E7EB' }} />
@@ -391,7 +394,7 @@ useEffect(() => {
           </Text>
           <View style={{ flex: 1, height: 1, backgroundColor: '#E5E7EB' }} />
         </View>
- 
+
         {/* Social Login */}
         <TouchableOpacity
           style={{
@@ -421,7 +424,7 @@ useEffect(() => {
           </Text>
         </TouchableOpacity>
       </ScrollView>
- 
+
       {/* Success Modal */}
       <Modal
         visible={modalVisible}
@@ -454,7 +457,7 @@ useEffect(() => {
               }}>
                 <MaterialIcons name="check" size={48} color="#ffffff" />
               </View>
- 
+
               <Text style={{
                 fontSize: 24,
                 fontWeight: '700',
@@ -465,7 +468,7 @@ useEffect(() => {
               }}>
                 Success!
               </Text>
- 
+
               <Text style={{
                 fontSize: 15,
                 color: '#6B7280',
@@ -481,6 +484,5 @@ useEffect(() => {
     </View>
   )
 }
- 
+
 export default ModernSignInScreen
- 

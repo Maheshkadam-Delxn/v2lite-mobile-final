@@ -113,6 +113,7 @@ import clientProfilePage from 'screens/HomeOwner/clientpages/clientProfilePage';
 import CreateTemplate from 'screens/Proposals/CreateTemplate';
 import TemplatePreview from 'screens/HomeOwner/TemplatePreview';
 import PaymentScreen from 'screens/payments/Payment';
+import SiteSurveysTab from 'screens/siteSurveys/SurveysList';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const TOKEN_KEY = 'userToken';
@@ -235,6 +236,9 @@ const MaterialsStack = () => (
 
 // Main Tab Navigator (Bottom Tabs)
 function MainTabs() {
+  const [userData,SetUserData]=useState();
+  const [accessPayment,setPayment]=useState();
+  const [siteSurveys,setSurvey]=useState();
 useEffect(() => {
   const checkStorage = async () => {
     const token = await AsyncStorage.getItem('userToken');
@@ -242,12 +246,42 @@ useEffect(() => {
 
     const user = await AsyncStorage.getItem('userData');
     console.log("🔍 USER ON SCREEN LOAD:", user);
+      const parsedUser = JSON.parse(user);
+    SetUserData(parsedUser);
+
+
+    
+ const canAccessPayment =
+  parsedUser?.role === "admin" ||
+  !!(
+    parsedUser?.permissions?.payment &&
+    (
+      parsedUser.permissions.payment.create ||
+      parsedUser.permissions.payment.update ||
+      parsedUser.permissions.payment.delete ||
+      parsedUser.permissions.payment.view
+    )
+  );
+  const canAccessSiteSurveys =
+  parsedUser?.role !== "admin" ||
+  !!(
+    parsedUser?.permissions?.siteSurvey &&
+    (
+      parsedUser.permissions.siteSurvey.create ||
+      parsedUser.permissions.siteSurvey.update ||
+      parsedUser.permissions.siteSurvey.delete ||
+      parsedUser.permissions.siteSurvey.view
+    )
+  );
+setSurvey(canAccessSiteSurveys);
+  setPayment(canAccessPayment);
   };
 
   checkStorage();
 }, []);
 
-  return (
+
+     return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['bottom']}>
       <Tab.Navigator
         screenOptions={({ route }) => ({
@@ -260,6 +294,8 @@ useEffect(() => {
             else if (route.name === 'Materials') iconName = focused ? 'cube' : 'cube-outline';
             else if (route.name === 'Account') iconName = focused ? 'settings' : 'settings-outline';
             else if (route.name === 'Audit') iconName = focused ? 'person' : 'person-outline';
+            else if (route.name === 'Site Surveys')
+  iconName = focused ? 'clipboard' : 'clipboard-outline';
 
             return <Ionicons name={iconName} size={size} color={color} />;
           },
@@ -283,7 +319,13 @@ useEffect(() => {
         })}>
         <Tab.Screen name="Projects" component={ProjectStack} options={{ title: 'Projects' }} />
         <Tab.Screen name="Templates" component={ProposalStack} options={{ title: 'Templates' }} />
-        <Tab.Screen name="Payments" component={PaymentStack} options={{ title: 'Payments' }} />
+        {accessPayment && (
+  <Tab.Screen name="Payments" component={PaymentStack} options={{ title: 'Payments' }} />
+)}
+{siteSurveys && (
+    <Tab.Screen name="Site Surveys" component={SiteSurveysStack} options={{ title: 'Site Surveys' }} />
+)}
+
         <Tab.Screen name="Audit" component={AuditStack} options={{ title: 'Audit' }} />
         {/* <Tab.Screen name="Materials" component={MaterialsStack} options={{ title: 'Materials' }} /> */}
         <Tab.Screen name="Account" component={ProfileStack} options={{ title: 'Settings' }} />
@@ -297,6 +339,13 @@ useEffect(() => {
 const PaymentStack=()=>(
   <Stack.Navigator screenOptions={{ headerShown: false }}>
  <Stack.Screen name="PaymentScreen" component={PaymentScreen} />
+  </Stack.Navigator>
+
+)
+
+const SiteSurveysStack=()=>(
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+ <Stack.Screen name="SiteSurveysList" component={SiteSurveysTab} />
   </Stack.Navigator>
 
 )

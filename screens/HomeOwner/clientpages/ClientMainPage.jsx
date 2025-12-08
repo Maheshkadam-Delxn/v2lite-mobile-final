@@ -1125,7 +1125,7 @@ export default function ClientMainPage({ navigation }) {
       <View style={styles.loading}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#0066FF" />
-          <Text style={styles.loadingText}>Loading proposals...</Text>
+          <Text style={styles.loadingText}>Loading Projects...</Text>
         </View>
       </View>
     );
@@ -1150,7 +1150,7 @@ export default function ClientMainPage({ navigation }) {
           <View style={styles.searchBar}>
             <Ionicons name="search" size={20} color="#9CA3AF" />
             <TextInput
-              placeholder="Search proposals..."
+              placeholder="Search Projects..."
               placeholderTextColor="#9CA3AF"
               style={styles.searchInput}
               value={searchQuery}
@@ -1172,7 +1172,7 @@ export default function ClientMainPage({ navigation }) {
         {filteredList.length > 0 && (
           <View style={styles.listHeader}>
             <Text style={styles.listHeaderText}>
-              {searchQuery ? `${filteredList.length} Result${filteredList.length !== 1 ? 's' : ''}` : 'Your Proposals'}
+              {searchQuery ? `${filteredList.length} Result${filteredList.length !== 1 ? 's' : ''}` : 'Your Projects'}
             </Text>
           </View>
         )}
@@ -1188,7 +1188,7 @@ export default function ClientMainPage({ navigation }) {
               <View style={styles.emptyIconContainer}>
                 <Ionicons name="folder-open-outline" size={64} color="#0066FF" />
               </View>
-              <Text style={styles.emptyTitle}>No Proposals Found</Text>
+              <Text style={styles.emptyTitle}>No Projects Found</Text>
               <Text style={styles.emptySubtitle}>
                 {searchQuery 
                   ? "Try adjusting your search terms or clear the search to see all proposals" 
