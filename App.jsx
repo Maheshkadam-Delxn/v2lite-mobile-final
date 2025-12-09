@@ -348,7 +348,6 @@ const SiteSurveysStack=()=>(
   <Stack.Navigator screenOptions={{ headerShown: false }}>
  <Stack.Screen name="SiteSurveysList" component={SiteSurveysTab} />
   <Stack.Screen name="SiteSurveyForm" component={SiteSurveyForm} />
-
   </Stack.Navigator>
 
 )
