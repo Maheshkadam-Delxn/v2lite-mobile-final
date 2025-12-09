@@ -114,6 +114,7 @@ import CreateTemplate from 'screens/Proposals/CreateTemplate';
 import TemplatePreview from 'screens/HomeOwner/TemplatePreview';
 import PaymentScreen from 'screens/payments/Payment';
 import SiteSurveysTab from 'screens/siteSurveys/SurveysList';
+import SiteSurveyForm from 'screens/siteSurveys/SiteSurveyForm';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const TOKEN_KEY = 'userToken';
@@ -346,6 +347,8 @@ const PaymentStack=()=>(
 const SiteSurveysStack=()=>(
   <Stack.Navigator screenOptions={{ headerShown: false }}>
  <Stack.Screen name="SiteSurveysList" component={SiteSurveysTab} />
+  <Stack.Screen name="SiteSurveyForm" component={SiteSurveyForm} />
+
   </Stack.Navigator>
 
 )
