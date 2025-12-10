@@ -222,6 +222,7 @@ const handleSubmit = async () => {
     if (response.ok) {
       Alert.alert("Success", "Proposal submitted successfully!");
       //navigation.navigate("ViewCustomerProposal", { payload: data });
+      navigation.navigate("ClientTabs");
     } else {
       Alert.alert("Error", data.message || "Something went wrong.");
     }
