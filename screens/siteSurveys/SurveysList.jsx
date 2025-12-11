@@ -727,7 +727,7 @@ export default function SiteSurveysTab() {
   {item.status === "completed" && (
     <TouchableOpacity
       onPress={() =>
-        navigationRef.current?.navigate("SiteSurveyForm", {
+        navigationRef.current?.navigate("ViewSiteSurvey", {
           survey: item,
           mode: "view",
         })
