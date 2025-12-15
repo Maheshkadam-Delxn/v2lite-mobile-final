@@ -115,6 +115,10 @@ import TemplatePreview from 'screens/HomeOwner/TemplatePreview';
 import PaymentScreen from 'screens/payments/Payment';
 import SiteSurveysTab from 'screens/siteSurveys/SurveysList';
 import SiteSurveyForm from 'screens/siteSurveys/SiteSurveyForm';
+import viewSiteSurvey from 'screens/siteSurveys/viewSiteSurvey';
+import BOQListScreen from 'screens/BOQ/BOQListScreen';
+import CreateBOQDraftScreen from 'screens/BOQ/CreateBOQDraftScreen';
+import BOQDetailScreen from 'screens/BOQ/BOQDetailScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const TOKEN_KEY = 'userToken';
@@ -133,6 +137,8 @@ const ProjectStack = () => (
     <Stack.Screen name="AddMembers" component={AddMembers} />
     <Stack.Screen name="ImagePreview" component={ImagePreviewScreen} />
     <Stack.Screen name="ReportDetailScreen" component={ReportDetailScreen} />
+        <Stack.Screen name="BOQcreateScreen" component={CreateBOQDraftScreen} />
+         <Stack.Screen name="BOQdetailsScreen" component={BOQDetailScreen} />
     <Stack.Screen name="FolderDetails" component={FolderDetailsScreen} />
     <Stack.Screen name="View Report" component={GenerateReportScreen} />
     <Stack.Screen name="AddDocumentScreen" component={AddDocumentScreen} />
@@ -348,6 +354,7 @@ const SiteSurveysStack=()=>(
   <Stack.Navigator screenOptions={{ headerShown: false }}>
  <Stack.Screen name="SiteSurveysList" component={SiteSurveysTab} />
   <Stack.Screen name="SiteSurveyForm" component={SiteSurveyForm} />
+   <Stack.Screen name="ViewSiteSurvey" component={viewSiteSurvey} />
   </Stack.Navigator>
 
 )
