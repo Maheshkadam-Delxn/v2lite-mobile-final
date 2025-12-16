@@ -366,7 +366,7 @@ const ProposalsListScreen = () => {
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
           <View style={{ backgroundColor: 'white', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: 20, paddingBottom: 30, paddingHorizontal: 20 }}>
             <View style={{ width: 40, height: 4, backgroundColor: '#E0E0E0', borderRadius: 2, alignSelf: 'center', marginBottom: 20 }} />
-            <Text style={{ fontFamily: 'Urbanist-Bold', fontSize: 18, color: '#000', textAlign: 'center', marginBottom: 24 }}>Project Type Actions</Text>
+            <Text style={{ fontFamily: 'Urbanist-Bold', fontSize: 18, color: '#000', textAlign: 'center', marginBottom: 24 }}>Project Proposals Actions</Text>
 
             <TouchableOpacity
               style={{ backgroundColor: '#0066FF', borderRadius: 12, paddingVertical: 16, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}
