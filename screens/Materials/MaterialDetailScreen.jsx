@@ -245,9 +245,9 @@ const MaterialDetailScreen = ({ route, navigation }) => {
               </Text>
             </View>
             <View className="w-1/2 pr-2">
-              <Text className="text-xs text-slate-500 mb-1">GST Rate</Text>
+              <Text className="text-xs text-slate-500 mb-1">Tax</Text>
               <Text className="text-sm font-semibold text-slate-900">
-                {materialDetails?.gst || '18'}%
+                {materialDetails?.gst || '2.5'}%
               </Text>
             </View>
             <View className="w-1/2 pl-2">
