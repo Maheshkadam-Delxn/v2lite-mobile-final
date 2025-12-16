@@ -93,6 +93,14 @@ const Overview = () => {
     },
   ];
 
+  const subNavItems = [
+    { name: 'Project Timeline', screen: 'ProjectTimeline' },
+    { name: 'Budget Track', screen: 'BudgetTracker' },
+    { name: 'Quality Checks', screen: 'QualityChecks' },
+    { name: 'Change Request', screen: 'ChangeRequests' },
+    { name: 'Material Status', screen: 'MaterialStatus' },
+  ];
+
   return (
     <SafeAreaView className="flex-1 bg-white">
       <Header
@@ -103,6 +111,26 @@ const Overview = () => {
         titleColor="white"
         iconColor="white"
       />
+
+      {/* Sub Header for Navigation */}
+      {/* Sub Header for Navigation */}
+<View className="bg-white border-b border-gray-200 py-3">
+  <ScrollView 
+    horizontal 
+    showsHorizontalScrollIndicator={false}
+    contentContainerStyle={{ paddingHorizontal: 16 }}
+  >
+    {subNavItems.map((item, index) => (
+      <TouchableOpacity
+        key={index}
+        className="mr-2 px-4 py-1.5 rounded-md bg-blue-50"
+        onPress={() => navigation.navigate(item.screen)}
+      >
+        <Text className="text-xs font-semibold text-blue-600">{item.name}</Text>
+      </TouchableOpacity>
+    ))}
+  </ScrollView>
+</View>
 
       <ScrollView
         className="flex-1 bg-gray-50"
@@ -124,17 +152,17 @@ const Overview = () => {
         </View>
 
         {/* Current Phase - Exact match to provided image */}
-        <View className=" mx-4 rounded-xl p-4">
+        <View className="mx-4 rounded-xl p-4 bg-white mt-4">
           <Text className="text-base font-bold text-gray-800">
             Current Phase : <Text className="font-bold">Interior Finishing</Text>
           </Text>
           <Text className="mt-1 text-sm text-gray-500">
-            Expected completion: <Text className="font-medium text-blue-600">March 15, 2024</Text>
+            Expected completion: <Text className="font-medium text-blue-600">March 15, 2026</Text>
           </Text>
         </View>
 
         {/* Tasks Progress - With Blue Badge & Left Border */}
-        <View className="mx-4 mb-4 overflow-hidden rounded-xl border border-l-4 border-gray-200 border-l-blue-500 bg-white">
+        <View className="mx-4 mb-4 overflow-hidden rounded-xl border border-l-4 border-gray-200 border-l-blue-500 bg-white mt-4">
           <View className="flex-row items-center justify-between px-4 pb-2 pt-4">
             <View className="flex-row items-center">
               <View className="mr-2 rounded-full bg-blue-100 px-3 py-1">
@@ -163,7 +191,7 @@ const Overview = () => {
           ))}
         </View>
 
-        <View className=" mx-4 rounded-xl p-4">
+        <View className="mx-4 rounded-xl p-4 bg-white mb-4">
           <Text className="text-base font-bold text-gray-800">Recent Updates</Text>
         </View>
 
@@ -205,26 +233,12 @@ const Overview = () => {
             ))}
           </View>
         </View>
-
-        {/* Construction Phase Button */}
-        <View className="mx-4 mb-6">
-          <TouchableOpacity
-            className="rounded-xl bg-blue-600 px-6 py-4 shadow-md"
-            activeOpacity={0.8}
-            onPress={() => {
-              navigation.navigate('ProjectTimeline');
-            }}>
-            <Text className="text-center text-base font-semibold text-white">
-              Construction Phase
-            </Text>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
 
       {/* Bottom Nav Bar */}
-      <View className="absolute bottom-0 left-0 right-0">
+      {/* <View className="absolute bottom-0 left-0 right-0">
         <CustomerBottomNavBar />
-      </View>
+      </View> */}
     </SafeAreaView>
   );
 };
