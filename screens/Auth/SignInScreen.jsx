@@ -6,7 +6,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import Header from '../../components/Header'
  
 //const API_URL = 'https://skystruct-lite-backend.vercel.app/api/auth/login'
- const API_URL = `${process.env.BASE_API_URL}/api/auth/login`;
+console.log("jjnhj",process.env.NEXT_PUBLIC_BASE_API_URL);
+const API_URL = `${process.env.NEXT_PUBLIC_BASE_API_URL}/api/auth/login`;
  
 const ModernSignInScreen = () => {
   const [email, setEmail] = useState('')
