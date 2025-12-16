@@ -139,8 +139,10 @@ const ProjectsListScreen = () => {
       if (!Array.isArray(items) || items.length === 0) {
         setProjects([]);
       } else {
-        const filtered = items.filter(
-  (item) => item.status !== "Proposal Under Approval"
+       const filtered = items.filter(
+  (item) =>
+    item.status !== "Proposal Under Approval" &&
+    item.status !== "Initialize" &&  item.status !== "Rejected"
 );
         const mapped = filtered.map(mapItemToProject);
         setProjects(mapped);
@@ -326,7 +328,6 @@ const ProjectsListScreen = () => {
         });
       }}>
       <View style={styles.card}>
-        {/* Image + Title + Edit */}
         <View style={styles.cardHeader}>
           <View style={styles.imageContainer}>
             {project.raw.projectImages && project.raw.projectImages !== '' ? (
@@ -350,10 +351,6 @@ const ProjectsListScreen = () => {
               {project.location}
             </Text>
           </View>
-
-          <TouchableOpacity onPress={() => handleEditProject(project)} style={styles.editButton}>
-            <Ionicons name="create-outline" size={20} color="#0066FF" />
-          </TouchableOpacity>
         </View>
 
         {/* Due Date & Status */}
@@ -615,12 +612,12 @@ const ProjectsListScreen = () => {
           </View>
 
           {/* Customer Dashboard Button */}
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={styles.dashboardButton}
             onPress={() => navigation.navigate('CustomerChooseTemplate')}>
             <Ionicons name="grid-outline" size={20} color="white" style={{ marginRight: 8 }} />
             <Text style={styles.dashboardButtonText}>Go to Customer Dashboard</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           <View style={{ height: 20 }} />
         </ScrollView>

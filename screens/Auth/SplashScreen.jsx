@@ -18,10 +18,11 @@ useEffect(() => {
     const user = await AsyncStorage.getItem('userData');
     console.log("🔍 USER ON SCREEN LOAD on splash screen:", user);
      const userData = JSON.parse(user);
-    if(userData.role=="admin"){
-       navigation.navigate('MainApp');
+    if(userData.role=="client"){
+       navigation.navigate('ClientApp');
+       
     }else {
-        navigation.navigate('ClientApp');
+       navigation.navigate('MainApp');
           }
   };
  

@@ -1,4 +1,4 @@
-|-- .env
+|-- .env.local
 |-- .expo
     |-- devices.json
     |-- README.md
@@ -32,6 +32,7 @@
     |-- header.png
     |-- icon.png
     |-- logo.png
+    |-- one.png
     |-- pdfIcon.png
     |-- plan1.jpg
     |-- resetsuccesful.png
@@ -41,6 +42,7 @@
         |-- splash2.png
         |-- splash3.png
     |-- splash.png
+    |-- two.png
 |-- babel.config.js
 |-- cesconfig.jsonc
 |-- components
@@ -85,6 +87,7 @@
     |-- AsyncStorage.js
     |-- AuthContext.jsx
     |-- NotificationContext.jsx
+    |-- PermissionContext.js
     |-- ProjectContext.jsx
     |-- SnagContext.jsx
     |-- SurveyContext.jsx
@@ -162,6 +165,10 @@
         |-- SignUpScreen.jsx
         |-- SplashScreen.jsx
         |-- WelcomeScreen.jsx
+    |-- BOQ
+        |-- BOQDetailScreen.jsx
+        |-- BOQListScreen.jsx
+        |-- CreateBOQDraftScreen.jsx
     |-- Dashboard
         |-- ActivityScreen.jsx
         |-- AnalyticsScreen.jsx
@@ -204,12 +211,17 @@
     |-- Issues
         |-- EscalationMatrixScreen.jsx
         |-- RiskCategoriesScreen.jsx
+        |-- RiskDetail.jsx
         |-- TrackRiskScreen.jsx
     |-- Materials
         |-- InventoryScreen.jsx
         |-- MaterialDetailScreen.jsx
         |-- MaterialsListScreen.jsx
         |-- PurchaseScreen.jsx
+    |-- payments
+        |-- Payment.jsx
+    |-- plans
+        |-- planscreen.jsx
     |-- Profile
         |-- CustomerSupport.jsx
         |-- EditProfileScreen.jsx
@@ -247,6 +259,10 @@
         |-- PreferencesScreen.jsx
         |-- ProfileScreen.jsx
         |-- SettingsScreen.jsx
+    |-- siteSurveys
+        |-- SiteSurveyForm.jsx
+        |-- SurveysList.jsx
+        |-- viewSiteSurvey.jsx
     |-- Snags
         |-- CreateSnagScreen.jsx
         |-- PhotosScreen.jsx
@@ -267,11 +283,6 @@
         |-- SurveyDetailScreen.jsx
         |-- SurveyRequestScreen.jsx
         |-- SurveysListScreen.jsx
-    |-- Transactions
-        |-- ApprovalsScreen.jsx
-        |-- FilterScreen.jsx
-        |-- TransactionDetailScreen.jsx
-        |-- TransactionsListScreen.jsx
     |-- Users
         |-- UsersScreen.jsx
     |-- Utils

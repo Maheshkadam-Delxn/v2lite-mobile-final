@@ -29,17 +29,22 @@ const RolesMembersScreen = () => {
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
   const [showProjectDropdown, setShowProjectDropdown] = useState(false);
 
+  // Default permissions structure
+  const defaultPermissions = {
+    indent: { create: false, read: false, update: false, delete: false },
+    boq: { create: false, read: false, update: false, delete: false },
+    vendor: { create: false, read: false, update: false, delete: false },
+    user: { create: false, read: false, update: false, delete: false },
+    proposal: { create: false, read: false, update: false, delete: false },
+    siteSurvey: { create: false, read: false, update: false, delete: false }
+  };
+
   // Updated role form state to match API structure
   const [newRole, setNewRole] = useState({
     name: '',
     slug: '',
     description: '',
-    permissions: {
-      indent: { create: false, update: false, delete: false },
-      boq: { create: false, update: false, delete: false },
-      vendor: { create: false, update: false, delete: false },
-      user: { create: false, update: false }
-    },
+    permissions: { ...defaultPermissions },
     isSystem: false
   });
 
@@ -65,31 +70,44 @@ const RolesMembersScreen = () => {
       key: 'indent',
       label: 'Indent Management',
       description: 'Manage material indents and requests',
-      actions: ['create', 'update', 'delete']
+      actions: ['create', 'read', 'update', 'delete']
     },
     {
       key: 'boq',
       label: 'BOQ Management',
       description: 'Handle Bill of Quantities and estimates',
-      actions: ['create', 'update', 'delete']
+      actions: ['create', 'read', 'update', 'delete']
+    },
+     {
+      key: 'proposal',
+      label: 'Proposal Management',
+      description: 'Handle Proposal of Projects',
+      actions: ['create', 'read', 'update', 'delete']
     },
     {
       key: 'vendor',
       label: 'Vendor Management',
       description: 'Manage vendors and suppliers',
-      actions: ['create', 'update', 'delete']
+      actions: ['create', 'read', 'update', 'delete']
     },
     {
       key: 'user',
       label: 'User Management',
       description: 'Manage users and team members',
-      actions: ['create', 'update']
+      actions: ['create', 'read', 'update', 'delete']
+    },
+    {
+      key: 'siteSurvey',
+      label: 'Site Survey Management',
+      description: 'Manage site surveys and inspections',
+      actions: ['create', 'read', 'update', 'delete']
     }
   ];
 
   // Permission actions with labels
   const permissionActions = {
     create: { key: 'create', label: 'Create' },
+    read: { key: 'read', label: 'Read' },
     update: { key: 'update', label: 'Update' },
     delete: { key: 'delete', label: 'Delete' }
   };
@@ -138,7 +156,19 @@ const RolesMembersScreen = () => {
         }
         const rolesRes = await rolesResponse.json();
         console.log('Roles data:', rolesRes);
-        const mappedRoles = (rolesRes || []).map(role => ({ ...role, id: role._id }));
+
+        // Map roles with full permissions structure
+        const mappedRoles = (rolesRes || []).map(role => {
+          const fullPerms = { ...defaultPermissions };
+          if (role.permissions && typeof role.permissions === 'object') {
+            Object.entries(role.permissions).forEach(([modKey, modValue]) => {
+              if (modValue && typeof modValue === 'object') {
+                fullPerms[modKey] = { ...defaultPermissions[modKey], ...modValue };
+              }
+            });
+          }
+          return { ...role, id: role._id, permissions: fullPerms };
+        });
         setRoles(mappedRoles);
 
         // Fetch members
@@ -232,19 +262,23 @@ const RolesMembersScreen = () => {
 
   const openRoleSheet = (role = null) => {
     if (role) {
-      setSelectedRole(role);
+      // Ensure selectedRole has full permissions
+      const fullPerms = { ...defaultPermissions };
+      if (role.permissions && typeof role.permissions === 'object') {
+        Object.entries(role.permissions).forEach(([modKey, modValue]) => {
+          if (modValue && typeof modValue === 'object') {
+            fullPerms[modKey] = { ...defaultPermissions[modKey], ...modValue };
+          }
+        });
+      }
+      setSelectedRole({ ...role, permissions: fullPerms });
     } else {
       setSelectedRole(null);
       setNewRole({
         name: '',
         slug: '',
         description: '',
-        permissions: {
-          indent: { create: false, update: false, delete: false },
-          boq: { create: false, update: false, delete: false },
-          vendor: { create: false, update: false, delete: false },
-          user: { create: false, update: false }
-        },
+        permissions: { ...defaultPermissions },
         isSystem: false
       });
     }
@@ -268,12 +302,7 @@ const RolesMembersScreen = () => {
         name: '',
         slug: '',
         description: '',
-        permissions: {
-          indent: { create: false, update: false, delete: false },
-          boq: { create: false, update: false, delete: false },
-          vendor: { create: false, update: false, delete: false },
-          user: { create: false, update: false }
-        },
+        permissions: { ...defaultPermissions },
         isSystem: false
       });
     });
@@ -462,21 +491,28 @@ const RolesMembersScreen = () => {
 
   // Handle permission toggles for new role
   const handleNewRolePermissionToggle = (module, action) => {
-    setNewRole(prev => ({
-      ...prev,
-      permissions: {
-        ...prev.permissions,
-        [module]: {
-          ...prev.permissions[module],
-          [action]: !prev.permissions[module][action]
+    setNewRole(prev => {
+      const currentModule = prev.permissions[module] || defaultPermissions[module];
+      const currentValue = currentModule[action] ?? false;
+      return {
+        ...prev,
+        permissions: {
+          ...prev.permissions,
+          [module]: {
+            ...currentModule,
+            [action]: !currentValue
+          }
         }
-      }
-    }));
+      };
+    });
   };
 
   // Handle permission toggles for existing role
   const handlePermissionToggle = (module, action) => {
     if (!selectedRole || selectedRole.isSystem) return;
+
+    const currentModule = selectedRole.permissions[module] || defaultPermissions[module];
+    const currentValue = currentModule[action] ?? false;
 
     setRoles(prevRoles =>
       prevRoles.map(role =>
@@ -486,8 +522,8 @@ const RolesMembersScreen = () => {
               permissions: {
                 ...role.permissions,
                 [module]: {
-                  ...role.permissions[module],
-                  [action]: !role.permissions[module][action]
+                  ...currentModule,
+                  [action]: !currentValue
                 }
               }
             }
@@ -500,8 +536,8 @@ const RolesMembersScreen = () => {
       permissions: {
         ...prev.permissions,
         [module]: {
-          ...prev.permissions[module],
-          [action]: !prev.permissions[module][action]
+          ...currentModule,
+          [action]: !currentValue
         }
       }
     }));
@@ -549,9 +585,21 @@ const RolesMembersScreen = () => {
 
       const createdRole = await response.json();
       console.log('Created role data:', createdRole);
+
+      // Ensure full permissions for new role
+      const fullPerms = { ...defaultPermissions };
+      if (createdRole.permissions && typeof createdRole.permissions === 'object') {
+        Object.entries(createdRole.permissions).forEach(([modKey, modValue]) => {
+          if (modValue && typeof modValue === 'object') {
+            fullPerms[modKey] = { ...defaultPermissions[modKey], ...modValue };
+          }
+        });
+      }
+
       const newRoleWithDetails = {
         ...createdRole,
         id: createdRole._id,
+        permissions: fullPerms,
         memberCount: createdRole.memberCount || 0
       };
 
@@ -580,9 +628,11 @@ const RolesMembersScreen = () => {
         isSystem: selectedRole.isSystem || false
       };
 
+      const updateUrl = `${API_BASE}/api/admin/users/role/${selectedRole.id}`;
       console.log('Updating role with API body:', JSON.stringify(roleData, null, 2));
+      console.log('Update URL:', updateUrl);
       const headers = await getHeaders();
-      const response = await fetch(`${API_BASE}/api/admin/users/role/${selectedRole.id}`, {
+      const response = await fetch(updateUrl, {
         method: 'PUT',
         headers,
         body: JSON.stringify(roleData)
@@ -591,20 +641,36 @@ const RolesMembersScreen = () => {
       console.log('Update role response status:', response.status, response.statusText);
       if (!response.ok) {
         const errorText = await response.text().catch(() => '');
+        console.error('Full error response:', errorText);
         console.error('Update role failed:', response.status, response.statusText, errorText);
-        throw new Error(`Failed to update role permissions: ${response.status}`);
+        let msg = `Failed to update role permissions: ${response.status}`;
+        try {
+          const errorJson = JSON.parse(errorText);
+          if (errorJson?.message) msg = errorJson.message;
+        } catch {}  // Fallback to status
+        throw new Error(msg);
       }
 
       const updatedRole = await response.json();
       console.log('Updated role data:', updatedRole);
 
+      // Ensure full permissions for updated role
+      const fullPerms = { ...defaultPermissions };
+      if (updatedRole.permissions && typeof updatedRole.permissions === 'object') {
+        Object.entries(updatedRole.permissions).forEach(([modKey, modValue]) => {
+          if (modValue && typeof modValue === 'object') {
+            fullPerms[modKey] = { ...defaultPermissions[modKey], ...modValue };
+          }
+        });
+      }
+
       // Update local state
       setRoles(prevRoles =>
         prevRoles.map(role =>
-          role.id === selectedRole.id ? { ...updatedRole, id: updatedRole._id, memberCount: role.memberCount } : role
+          role.id === selectedRole.id ? { ...updatedRole, id: updatedRole._id, permissions: fullPerms, memberCount: role.memberCount } : role
         )
       );
-      setSelectedRole({ ...updatedRole, id: updatedRole._id, memberCount: selectedRole.memberCount });
+      setSelectedRole({ ...updatedRole, id: updatedRole._id, permissions: fullPerms, memberCount: selectedRole.memberCount });
       Alert.alert('Success', 'Role permissions updated successfully');
       closeRoleSheet();
     } catch (error) {
@@ -617,11 +683,15 @@ const RolesMembersScreen = () => {
 
   const getActivePermissionsCount = (permissions) => {
     let count = 0;
-    Object.values(permissions).forEach(module => {
-      Object.values(module).forEach(action => {
-        if (action) count++;
+    if (permissions && typeof permissions === 'object') {
+      Object.entries(permissions).forEach(([key, mod]) => {
+        if (mod && typeof mod === 'object') {
+          Object.values(mod).forEach(action => {
+            if (action) count++;
+          });
+        }
       });
-    });
+    }
     return count;
   };
 
@@ -691,9 +761,9 @@ const RolesMembersScreen = () => {
         </View>
 
         <View className="flex-row flex-wrap items-center gap-2">
-          {Object.entries(item.permissions)
+          {Object.entries(item.permissions || {})
             .filter(([module, actions]) =>
-              Object.values(actions).some(action => action)
+              actions && Object.values(actions).some(action => action)
             )
             .slice(0, 3)
             .map(([module]) => (
@@ -703,12 +773,12 @@ const RolesMembersScreen = () => {
                 </Text>
               </View>
             ))}
-          {Object.keys(item.permissions).filter(module =>
-            Object.values(item.permissions[module]).some(action => action)
+          {Object.keys(item.permissions || {}).filter(module =>
+            item.permissions[module] && Object.values(item.permissions[module]).some(action => action)
           ).length > 3 && (
             <Text className="text-xs font-urbanistRegular text-gray-500">
-              +{Object.keys(item.permissions).filter(module =>
-                Object.values(item.permissions[module]).some(action => action)
+              +{Object.keys(item.permissions || {}).filter(module =>
+                item.permissions[module] && Object.values(item.permissions[module]).some(action => action)
               ).length - 3} more
             </Text>
           )}
@@ -842,7 +912,7 @@ const RolesMembersScreen = () => {
                     {permissionActions[actionKey]?.label || actionKey}
                   </Text>
                   <Switch
-                    value={newRole.permissions[module.key]?.[actionKey] || false}
+                    value={newRole.permissions[module.key]?.[actionKey] ?? false}
                     onValueChange={() => handleNewRolePermissionToggle(module.key, actionKey)}
                     trackColor={{ false: '#f0f0f0', true: '#0066FF' }}
                     thumbColor="#fff"
@@ -914,7 +984,7 @@ const RolesMembersScreen = () => {
                     {permissionActions[actionKey]?.label || actionKey}
                   </Text>
                   <Switch
-                    value={selectedRole.permissions[module.key]?.[actionKey] || false}
+                    value={selectedRole.permissions[module.key]?.[actionKey] ?? false}
                     onValueChange={() => handlePermissionToggle(module.key, actionKey)}
                     trackColor={{ false: '#f0f0f0', true: '#0066FF' }}
                     thumbColor="#fff"
@@ -1524,9 +1594,6 @@ const RolesMembersScreen = () => {
     </Animated.View>
   </View>
 </Modal>
-
-
-
     </View>
   );
 };

@@ -1138,7 +1138,7 @@ const parseDDMMYYYYToISO = (value) => {
 const CreateProjectScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  
+
   // Check if we're in edit mode
   const isEditMode = route.params?.project ? true : false;
   const existingProject = route.params?.project || null;
@@ -1230,6 +1230,7 @@ const CreateProjectScreen = () => {
   // Fetch project types from API
   useEffect(() => {
     fetchProjectTypes();
+
   }, []);
 
   const fetchProjectTypes = async () => {

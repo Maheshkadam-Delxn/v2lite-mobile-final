@@ -1,163 +1,3 @@
-// // MaterialDetailsScreen.js
-// import React, { useState } from 'react';
-// import {
-//   View,
-//   Text,
-//   TouchableOpacity,
-//   SafeAreaView,
-//   ScrollView,
-//   FlatList,
-// } from 'react-native';
-// import { Ionicons } from '@expo/vector-icons';
-// import Header from '../../components/Header';
-
-// const MaterialDetailsScreen = ({ route, navigation }) => {
-//   const { item } = route.params;
-//   const [activeTab, setActiveTab] = useState('All Entries');
-
-//   // Mock entries
-//   const entries = [
-//     {
-//       id: '1',
-//       date: '30 Apr 2025',
-//       party: 'Party: Others',
-//       qty: '+10',
-//       type: 'received',
-//     },
-//     {
-//       id: '2',
-//       date: 'On Arc 2025',
-//       party: 'Party: Aura Mishra',
-//       qty: '5',
-//       type: 'used',
-//     },
-//   ];
-
-//   const filteredEntries = activeTab === 'All Entries'
-//     ? entries
-//     : activeTab === 'Received Entries'
-//     ? entries.filter(e => e.type === 'received')
-//     : entries.filter(e => e.type === 'used');
-
-//   const renderEntry = ({ item }) => (
-//     <View className="mb-4">
-//       <View className="flex-row justify-between items-start">
-//         <View className="flex-1">
-//           <Text className="text-sm font-medium text-gray-900">{item.date}</Text>
-//           <Text className="text-xs text-gray-500 mt-1">{item.party}</Text>
-//         </View>
-//         <Text
-//           className={`text-sm font-medium ${
-//             item.type === 'received' ? 'text-green-600' : 'text-red-600'
-//           }`}
-//         >
-//           {item.qty}
-//         </Text>
-//       </View>
-//       <View className="h-px bg-gray-200 mt-3" />
-//     </View>
-//   );
-
-//   return (
-//     <SafeAreaView className="flex-1 bg-gray-50">
-//       {/* Header */}
-//       <Header
-//         title="Details"
-//         showBackButton={true}
-//         backgroundColor="#0066FF"
-//         titleColor="white"
-//         iconColor="white"
-//         onBackPress={() => navigation.goBack()}
-//       />
-
-//       <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
-//         {/* Material Info Card */}
-//         <View className="mx-4 mt-4 rounded-xl bg-white p-4">
-//           <Text className="text-lg font-bold text-gray-900">Test Material</Text>
-//           <Text className="mt-2 text-sm text-gray-500">Cost Code: 123</Text>
-//           <Text className="mt-1 text-sm text-gray-500">Category:</Text>
-          
-//           {/* Quantity Section */}
-//           <View className="mt-4">
-//             <Text className="text-sm font-medium text-gray-700 mb-2">15,000 m</Text>
-//             <View className="flex-row justify-between border-b border-gray-200 pb-2">
-//               <Text className="text-xs text-gray-500">Quantity</Text>
-//               <Text className="text-xs text-gray-500">NETEGIES ID</Text>
-//               <Text className="text-xs text-gray-500">TEMA ADD</Text>
-//             </View>
-//             <View className="flex-row justify-between mt-2">
-//               <Text className="text-sm font-medium text-gray-900">0</Text>
-//               <Text className="text-sm font-medium text-gray-900">20</Text>
-//               <Text className="text-sm font-medium text-gray-900">5</Text>
-//             </View>
-//           </View>
-//         </View>
-
-//         {/* Entries Container */}
-//         <View className="mx-4 mt-4 rounded-xl bg-white p-4">
-//           {/* Entries List Header */}
-//           <View className="flex-row justify-between items-center mb-4">
-//             <Text className="text-sm font-medium text-gray-700">Amount</Text>
-//             <Text className="text-sm font-medium text-gray-700">No Stock</Text>
-//           </View>
-
-//           {/* Entries List */}
-//           <FlatList
-//             data={filteredEntries}
-//             renderItem={renderEntry}
-//             keyExtractor={(item) => item.id}
-//             showsVerticalScrollIndicator={false}
-//             scrollEnabled={false}
-//           />
-
-//           {/* Empty State for Other Tabs */}
-//           {filteredEntries.length === 0 && (
-//             <View className="py-8 items-center">
-//               <Text className="text-gray-500 text-sm">No {activeTab.toLowerCase()} found</Text>
-//             </View>
-//           )}
-//         </View>
-
-//         {/* Additional Containers Section */}
-//         <View className="mx-4 mt-4 rounded-xl bg-white p-4">
-//           <Text className="text-sm font-medium text-gray-700 mb-3">Other Information</Text>
-//           <View className="space-y-3">
-//             <View className="flex-row justify-between items-center">
-//               <Text className="text-sm text-gray-600">Total Transactions</Text>
-//               <Text className="text-sm font-medium text-gray-900">2</Text>
-//             </View>
-//             <View className="h-px bg-gray-200" />
-//             <View className="flex-row justify-between items-center">
-//               <Text className="text-sm text-gray-600">Last Updated</Text>
-//               <Text className="text-sm font-medium text-gray-900">30 Apr 2025</Text>
-//             </View>
-//             <View className="h-px bg-gray-200" />
-//             <View className="flex-row justify-between items-center">
-//               <Text className="text-sm text-gray-600">Status</Text>
-//               <View className="bg-green-100 px-2 py-1 rounded-full">
-//                 <Text className="text-xs font-medium text-green-800">Active</Text>
-//               </View>
-//             </View>
-//           </View>
-//         </View>
-//       </ScrollView>
-
-//       {/* Bottom Action Buttons */}
-//       <View className="absolute bottom-16 left-0 right-0 flex-row px-4">
-//         <TouchableOpacity className="mr-2 flex-1 flex-row items-center justify-center rounded-xl bg-red-50 py-3">
-//           <Text className="text-sm font-semibold text-red-600">Used</Text>
-//         </TouchableOpacity>
-//         <TouchableOpacity className="ml-2 flex-1 flex-row items-center justify-center rounded-xl bg-green-50 py-3">
-//           <Text className="text-sm font-semibold text-green-600">Received</Text>
-//         </TouchableOpacity>
-//       </View>
-//     </SafeAreaView>
-//   );
-// };
-
-// export default MaterialDetailsScreen;
-
-
 // MaterialDetailScreen.js
 import React, { useState, useEffect } from 'react';
 import {
@@ -175,7 +15,6 @@ import { Ionicons } from '@expo/vector-icons';
 import Header from '../../components/Header';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-//const BASE_URL = 'https://skystruct-lite-backend.vercel.app';
 const BASE_URL = `${process.env.BASE_API_URL}`;
 const TOKEN_KEY = 'userToken';
 
@@ -185,53 +24,67 @@ const MaterialDetailScreen = ({ route, navigation }) => {
   const [materialDetails, setMaterialDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   
-  // === Modal States for MaterialDetailScreen ===
+  // Modal States
   const [usedModalVisible, setUsedModalVisible] = useState(false);
   const [receivedModalVisible, setReceivedModalVisible] = useState(false);
 
-  // Mock entries
+  // Sample entries with Doha-based names
   const entries = [
     {
       id: '1',
       date: '30 Apr 2025',
-      party: 'Party: Others',
-      qty: '+10',
+      party: 'Al-Thani Trading Co.',
+      qty: '+150',
       type: 'received',
     },
     {
       id: '2',
-      date: 'On Arc 2025',
-      party: 'Party: Aura Mishra',
-      qty: '5',
+      date: '28 Apr 2025',
+      party: 'Site A - Foundation Work',
+      qty: '-75',
+      type: 'used',
+    },
+    {
+      id: '3',
+      date: '25 Apr 2025',
+      party: 'Qatar Building Materials',
+      qty: '+200',
+      type: 'received',
+    },
+    {
+      id: '4',
+      date: '22 Apr 2025',
+      party: 'Site B - Masonry',
+      qty: '-50',
       type: 'used',
     },
   ];
 
-  // Forms for modals in MaterialDetailScreen
+  // Forms for modals
   const [usedForm, setUsedForm] = useState({
-    date: '01-04-25',
+    date: new Date().toLocaleDateString('en-GB'),
     material: '',
     quantity: '',
     notes: ''
   });
 
   const [receivedForm, setReceivedForm] = useState({
-    partyName: 'XYZ Constructions Ltd.',
-    materialName: 'Test Material',
+    partyName: '',
+    materialName: '',
     quantity: '',
-    challanNo: '10',
-    vehicleNo: '₹ 1,900',
+    challanNo: '',
+    vehicleNo: '',
     notes: ''
   });
 
   // Sub tabs array
   const subTabs = [
-    { id: 'All Entries', label: 'All Entries' },
+    { id: 'All Entries', label: 'All' },
     { id: 'Received Entries', label: 'Received' },
     { id: 'Used Entries', label: 'Used' },
   ];
 
-  // === API Function to Fetch Material Details ===
+  // Fetch Material Details
   const fetchMaterialDetails = async () => {
     try {
       setLoading(true);
@@ -253,9 +106,6 @@ const MaterialDetailScreen = ({ route, navigation }) => {
       const text = await res.text();
       let json;
       try { json = JSON.parse(text); } catch { json = text; }
-
-      console.log('[Material Details] GET status:', res.status);
-      console.log('[Material Details] GET response:', json);
 
       if (!res.ok) {
         throw new Error(typeof json === 'object' && json?.message ? json.message : `Failed with status ${res.status}`);
@@ -282,44 +132,66 @@ const MaterialDetailScreen = ({ route, navigation }) => {
     : entries.filter(e => e.type === 'used');
 
   const renderEntry = ({ item }) => (
-    <View className="mb-4">
-      <View className="flex-row justify-between items-start">
+    <View className="mb-3">
+      <View className="flex-row justify-between items-center mb-2">
         <View className="flex-1">
-          <Text className="text-sm font-medium text-gray-900">{item.date}</Text>
-          <Text className="text-xs text-gray-500 mt-1">{item.party}</Text>
+          <Text className="text-sm font-semibold text-slate-900">{item.date}</Text>
+          <Text className="text-xs text-slate-500 mt-0.5">{item.party}</Text>
         </View>
-        <Text
-          className={`text-sm font-medium ${
-            item.type === 'received' ? 'text-green-600' : 'text-red-600'
-          }`}
+        <View 
+          style={{
+            backgroundColor: item.type === 'received' ? '#10b98115' : '#ef444415'
+          }}
+          className="px-3 py-1.5 rounded-full"
         >
-          {item.qty}
-        </Text>
+          <Text
+            style={{
+              color: item.type === 'received' ? '#10b981' : '#ef4444'
+            }}
+            className="text-sm font-bold"
+          >
+            {item.qty}
+          </Text>
+        </View>
       </View>
-      <View className="h-px bg-gray-200 mt-3" />
+      <View className="h-px bg-slate-100" />
     </View>
   );
 
   const renderSubTab = ({ item }) => (
     <TouchableOpacity
-      className={`mx-1.5 px-4 py-1.5 ${
-        activeTab === item.id ? 'border-b-2 border-blue-500' : ''
-      }`}
-      onPress={() => setActiveTab(item.id)}>
+      style={activeTab === item.id ? { backgroundColor: '#0066FF' } : { backgroundColor: '#f8fafc' }}
+      className="mx-1 px-5 py-2.5 rounded-full"
+      onPress={() => setActiveTab(item.id)}
+    >
       <Text
-        className={`text-sm font-medium ${
-          activeTab === item.id ? 'text-blue-500' : 'text-gray-600'
-        }`}>
+        className={`text-sm font-semibold ${
+          activeTab === item.id ? 'text-white' : 'text-slate-600'
+        }`}
+      >
         {item.label}
       </Text>
     </TouchableOpacity>
   );
 
+  const handleSaveUsed = () => {
+    // TODO: Add API call to save used material
+    Alert.alert('Success', 'Material usage recorded successfully');
+    setUsedModalVisible(false);
+    setUsedForm({ date: new Date().toLocaleDateString('en-GB'), material: '', quantity: '', notes: '' });
+  };
+
+  const handleSaveReceived = () => {
+    // TODO: Add API call to save received material
+    Alert.alert('Success', 'Material receipt recorded successfully');
+    setReceivedModalVisible(false);
+    setReceivedForm({ partyName: '', materialName: '', quantity: '', challanNo: '', vehicleNo: '', notes: '' });
+  };
+
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      {/* Header */}
+    <SafeAreaView className="flex-1 bg-slate-50">
       <Header
-        title="Details"
+        title="Material Details"
         showBackButton={true}
         backgroundColor="#0066FF"
         titleColor="white"
@@ -329,274 +201,324 @@ const MaterialDetailScreen = ({ route, navigation }) => {
 
       <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
         {/* Material Info Card */}
-        <View className="mx-4 mt-4 rounded-xl bg-white p-4">
-          <Text className="text-lg font-bold text-gray-900">
-            {materialDetails?.name || item?.name || 'Test Material'}
-          </Text>
-          <Text className="mt-2 text-sm text-gray-500">
-            Cost Code: {materialDetails?.costCode || '123'}
-          </Text>
-          <Text className="mt-1 text-sm text-gray-500">
-            Category: {materialDetails?.category || 'Not specified'}
-          </Text>
-          
-          {/* Quantity Section */}
-          <View className="mt-4">
-            <Text className="text-sm font-medium text-gray-700 mb-2">
-              {materialDetails?.stock || item?.stock || '15,000'} {materialDetails?.unit || item?.unit || 'm'}
-            </Text>
-            <View className="flex-row justify-between border-b border-gray-200 pb-2">
-              <Text className="text-xs text-gray-500">Quantity</Text>
-              <Text className="text-xs text-gray-500">NETEGIES ID</Text>
-              <Text className="text-xs text-gray-500">TEMA ADD</Text>
+        <View className="mx-4 mt-4 rounded-2xl bg-white p-5">
+          <View className="flex-row items-start justify-between mb-4">
+            <View className="flex-1">
+              <Text className="text-xl font-bold text-slate-900">
+                {materialDetails?.name || item?.name || 'Steel Rebar'}
+              </Text>
+              <Text className="text-sm text-slate-500 mt-1">
+                {materialDetails?.category || 'Raw Materials'}
+              </Text>
             </View>
-            <View className="flex-row justify-between mt-2">
-              <Text className="text-sm font-medium text-gray-900">0</Text>
-              <Text className="text-sm font-medium text-gray-900">20</Text>
-              <Text className="text-sm font-medium text-gray-900">5</Text>
+            <View 
+              style={{ backgroundColor: '#10b98115' }}
+              className="px-3 py-1.5 rounded-full"
+            >
+              <Text style={{ color: '#10b981' }} className="text-xs font-semibold">
+                Active
+              </Text>
+            </View>
+          </View>
+          
+          {/* Stock Info */}
+          {/* <View className="bg-slate-50 rounded-xl p-4 mb-4">
+            <Text className="text-xs text-slate-500 mb-1">Current Stock</Text>
+            <Text className="text-3xl font-bold text-slate-900">
+              {materialDetails?.stock || item?.stock || '15,000'} 
+              <Text className="text-xl text-slate-500"> {materialDetails?.unit || item?.unit || 'kg'}</Text>
+            </Text>
+          </View> */}
+
+          {/* Details Grid */}
+          <View className="flex-row flex-wrap">
+            <View className="w-1/2 pr-2 mb-3">
+              <Text className="text-xs text-slate-500 mb-1">Cost Code</Text>
+              <Text className="text-sm font-semibold text-slate-900">
+                {materialDetails?.costCode || 'MTL-001'}
+              </Text>
+            </View>
+            <View className="w-1/2 pl-2 mb-3">
+              <Text className="text-xs text-slate-500 mb-1">HSN Code</Text>
+              <Text className="text-sm font-semibold text-slate-900">
+                {materialDetails?.hsnCode || '7213'}
+              </Text>
+            </View>
+            <View className="w-1/2 pr-2">
+              <Text className="text-xs text-slate-500 mb-1">GST Rate</Text>
+              <Text className="text-sm font-semibold text-slate-900">
+                {materialDetails?.gst || '18'}%
+              </Text>
+            </View>
+            <View className="w-1/2 pl-2">
+              <Text className="text-xs text-slate-500 mb-1">Unit Price</Text>
+              <Text className="text-sm font-semibold text-slate-900">
+                QAR {materialDetails?.unitPrice || '45.00'}
+              </Text>
             </View>
           </View>
         </View>
 
         {/* Sub Tabs */}
-        <View className="mb-1 mt-3 flex-row px-4">
+        <View className="mt-4 mb-3 px-4">
           <FlatList
             data={subTabs}
             renderItem={renderSubTab}
             keyExtractor={(item) => item.id}
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 0 }}
+            contentContainerStyle={{ gap: 4 }}
           />
         </View>
 
-        {/* Entries Container */}
-        <View className="mx-4 mt-4 rounded-xl bg-white p-4">
-          {/* Entries List Header */}
-          <View className="flex-row justify-between items-center mb-4">
-            <Text className="text-sm font-medium text-gray-700">Amount</Text>
-            <Text className="text-sm font-medium text-gray-700">No Stock</Text>
+        {/* Entries List */}
+        <View className="mx-4 rounded-2xl bg-white p-4">
+          <View className="flex-row items-center justify-between mb-4">
+            <Text className="text-base font-bold text-slate-900">Transaction History</Text>
+            <Text className="text-sm text-slate-500">{filteredEntries.length} entries</Text>
           </View>
 
-          {/* Entries List */}
-          <FlatList
-            data={filteredEntries}
-            renderItem={renderEntry}
-            keyExtractor={(item) => item.id}
-            showsVerticalScrollIndicator={false}
-            scrollEnabled={false}
-          />
-
-          {/* Empty State for Other Tabs */}
-          {filteredEntries.length === 0 && (
-            <View className="py-8 items-center">
-              <Text className="text-gray-500 text-sm">No {activeTab.toLowerCase()} found</Text>
+          {filteredEntries.length > 0 ? (
+            <FlatList
+              data={filteredEntries}
+              renderItem={renderEntry}
+              keyExtractor={(item) => item.id}
+              showsVerticalScrollIndicator={false}
+              scrollEnabled={false}
+            />
+          ) : (
+            <View className="py-12 items-center">
+              <Ionicons name="document-text-outline" size={48} color="#cbd5e1" />
+              <Text className="text-slate-400 text-sm mt-3">No {activeTab.toLowerCase()} found</Text>
             </View>
           )}
         </View>
 
-        {/* Additional Containers Section */}
-        <View className="mx-4 mt-4 rounded-xl bg-white p-4">
-          <Text className="text-sm font-medium text-gray-700 mb-3">Other Information</Text>
-          <View className="space-y-3">
-            <View className="flex-row justify-between items-center">
-              <Text className="text-sm text-gray-600">HSN Code</Text>
-              <Text className="text-sm font-medium text-gray-900">
-                {materialDetails?.hsnCode || '-'}
-              </Text>
+        {/* Summary Stats */}
+        <View className="mx-4 mt-4 rounded-2xl bg-white p-4 mb-24">
+          <Text className="text-base font-bold text-slate-900 mb-4">Summary</Text>
+          
+          <View className="flex-row mb-3">
+            <View className="flex-1 bg-green-50 rounded-xl p-3 mr-2">
+              <Text className="text-xs text-green-700 mb-1">Total Received</Text>
+              <Text className="text-xl font-bold text-green-600">+350</Text>
             </View>
-            <View className="h-px bg-gray-200" />
-            <View className="flex-row justify-between items-center">
-              <Text className="text-sm text-gray-600">GST (%)</Text>
-              <Text className="text-sm font-medium text-gray-900">
-                {materialDetails?.gst || 0}%
-              </Text>
+            <View className="flex-1 bg-red-50 rounded-xl p-3 ml-2">
+              <Text className="text-xs text-red-700 mb-1">Total Used</Text>
+              <Text className="text-xl font-bold text-red-600">-125</Text>
             </View>
-            <View className="h-px bg-gray-200" />
-            <View className="flex-row justify-between items-center">
-              <Text className="text-sm text-gray-600">Total Transactions</Text>
-              <Text className="text-sm font-medium text-gray-900">2</Text>
-            </View>
-            <View className="h-px bg-gray-200" />
-            <View className="flex-row justify-between items-center">
-              <Text className="text-sm text-gray-600">Last Updated</Text>
-              <Text className="text-sm font-medium text-gray-900">
-                {materialDetails?.updatedAt ? 
-                  new Date(materialDetails.updatedAt).toLocaleDateString('en-GB', { 
-                    day: '2-digit', 
-                    month: 'short', 
-                    year: 'numeric' 
-                  }) : '30 Apr 2025'
-                }
-              </Text>
-            </View>
-            <View className="h-px bg-gray-200" />
-            <View className="flex-row justify-between items-center">
-              <Text className="text-sm text-gray-600">Status</Text>
-              <View className="bg-green-100 px-2 py-1 rounded-full">
-                <Text className="text-xs font-medium text-green-800">Active</Text>
-              </View>
-            </View>
+          </View>
+
+          <View className="h-px bg-slate-100 my-3" />
+
+          <View className="flex-row justify-between items-center mb-2">
+            <Text className="text-sm text-slate-600">Last Updated</Text>
+            <Text className="text-sm font-semibold text-slate-900">
+              {materialDetails?.updatedAt ? 
+                new Date(materialDetails.updatedAt).toLocaleDateString('en-GB', { 
+                  day: '2-digit', 
+                  month: 'short', 
+                  year: 'numeric' 
+                }) : '30 Apr 2025'
+              }
+            </Text>
           </View>
         </View>
       </ScrollView>
 
-      {/* Bottom Action Buttons - Updated to open modals */}
-      <View className="absolute bottom-16 left-0 right-0 flex-row px-4">
-        <TouchableOpacity 
-          className="mr-2 flex-1 flex-row items-center justify-center rounded-xl bg-red-50 py-3"
-          onPress={() => setUsedModalVisible(true)}
-        >
-          <Text className="text-sm font-semibold text-red-600">Used</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          className="ml-2 flex-1 flex-row items-center justify-center rounded-xl bg-green-50 py-3"
-          onPress={() => setReceivedModalVisible(true)}
-        >
-          <Text className="text-sm font-semibold text-green-600">Received</Text>
-        </TouchableOpacity>
+      {/* Floating Action Buttons */}
+      <View className="absolute bottom-0 left-0 right-0 bg-white p-4" style={{ borderTopWidth: 1, borderTopColor: '#f1f5f9' }}>
+        <View className="flex-row">
+          <TouchableOpacity 
+            className="flex-1 flex-row items-center justify-center rounded-2xl bg-red-50 py-4 mr-2"
+            onPress={() => setUsedModalVisible(true)}
+          >
+            <Ionicons name="remove-circle" size={20} color="#ef4444" />
+            <Text className="text-sm font-semibold text-red-600 ml-2">Material Used</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            className="flex-1 flex-row items-center justify-center rounded-2xl bg-green-50 py-4 ml-2"
+            onPress={() => setReceivedModalVisible(true)}
+          >
+            <Ionicons name="add-circle" size={20} color="#10b981" />
+            <Text className="text-sm font-semibold text-green-600 ml-2">Received</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* === USED MODAL in MaterialDetailScreen === */}
+      {/* USED MODAL */}
       <Modal
         visible={usedModalVisible}
         transparent={true}
         animationType="slide"
-        onRequestClose={() => setUsedModalVisible(false)}>
-        <TouchableOpacity
-          className="flex-1 justify-end bg-black/50"
-          activeOpacity={1}
-          onPress={() => setUsedModalVisible(false)}
-        >
-          <TouchableOpacity activeOpacity={1} className="bg-white rounded-t-3xl p-5" onPress={() => {}}>
-            <View className="items-center pt-3 pb-2">
-              <View className="h-1 w-10 bg-gray-300 rounded-full" />
-            </View>
-            <Text className="text-lg font-bold text-gray-900 mb-4">Material Used</Text>
-            <Text className="text-sm text-gray-600 mb-4">Material: {materialDetails?.name || 'Current Material'}</Text>
-            
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-sm text-gray-600">01-04-25</Text>
-              <Ionicons name="chevron-down" size={20} color="#9CA3AF" />
-            </View>
-            <View className="h-px bg-gray-300 mb-4" />
-            
-            <View className="mb-4">
-              <Text className="text-sm text-gray-500 mb-1">Quantity in numbers</Text>
-              <TextInput
-                className="text-base text-gray-900 p-3 border border-gray-300 rounded-lg"
-                placeholder="0"
-                placeholderTextColor="#9CA3AF"
-                keyboardType="numeric"
-                value={usedForm.quantity}
-                onChangeText={(text) => setUsedForm({...usedForm, quantity: text})}
-              />
+        onRequestClose={() => setUsedModalVisible(false)}
+      >
+        <View className="flex-1 justify-end bg-black/50">
+          <View className="bg-white rounded-t-3xl p-5 max-h-[90%]">
+            <View className="items-center mb-4">
+              <View className="h-1.5 w-12 bg-slate-200 rounded-full" />
             </View>
             
-            <View className="mb-6">
-              <Text className="text-sm font-medium text-gray-700 mb-1">Notes</Text>
-              <TextInput
-                className="h-20 text-base text-gray-900 p-3 border border-gray-300 rounded-lg"
-                placeholder="Enter notes..."
-                placeholderTextColor="#9CA3AF"
-                multiline
-                value={usedForm.notes}
-                onChangeText={(text) => setUsedForm({...usedForm, notes: text})}
-              />
+            <View className="flex-row items-center justify-between mb-5">
+              <Text className="text-xl font-bold text-slate-900">Material Used</Text>
+              <TouchableOpacity onPress={() => setUsedModalVisible(false)}>
+                <Ionicons name="close-circle" size={28} color="#94a3b8" />
+              </TouchableOpacity>
             </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View className="bg-slate-50 rounded-xl p-4 mb-4">
+                <Text className="text-sm text-slate-600">Material</Text>
+                <Text className="text-base font-semibold text-slate-900 mt-1">
+                  {materialDetails?.name || item?.name || 'Steel Rebar'}
+                </Text>
+              </View>
+              
+              <View className="mb-4">
+                <Text className="text-sm font-semibold text-slate-700 mb-2">Date</Text>
+                <View className="flex-row items-center justify-between bg-slate-50 rounded-xl p-4">
+                  <Text className="text-base text-slate-900">{usedForm.date}</Text>
+                  <Ionicons name="calendar-outline" size={20} color="#64748b" />
+                </View>
+              </View>
+              
+              <View className="mb-4">
+                <Text className="text-sm font-semibold text-slate-700 mb-2">Quantity ({materialDetails?.unit || 'kg'})</Text>
+                <TextInput
+                  className="text-base text-slate-900 p-4 bg-slate-50 rounded-xl"
+                  placeholder="Enter quantity"
+                  placeholderTextColor="#94a3b8"
+                  keyboardType="numeric"
+                  value={usedForm.quantity}
+                  onChangeText={(text) => setUsedForm({...usedForm, quantity: text})}
+                />
+              </View>
+              
+              <View className="mb-6">
+                <Text className="text-sm font-semibold text-slate-700 mb-2">Notes (Optional)</Text>
+                <TextInput
+                  className="h-24 text-base text-slate-900 p-4 bg-slate-50 rounded-xl"
+                  placeholder="Add notes here..."
+                  placeholderTextColor="#94a3b8"
+                  multiline
+                  textAlignVertical="top"
+                  value={usedForm.notes}
+                  onChangeText={(text) => setUsedForm({...usedForm, notes: text})}
+                />
+              </View>
+            </ScrollView>
             
-            <TouchableOpacity className="bg-blue-600 rounded-xl py-3.5 flex-row items-center justify-center">
-              <Text className="text-white font-semibold text-base mr-2">Save</Text>
-              <Ionicons name="checkmark" size={20} color="white" />
+            <TouchableOpacity 
+              style={{ backgroundColor: '#0066FF' }}
+              className="rounded-2xl py-4 flex-row items-center justify-center"
+              onPress={handleSaveUsed}
+            >
+              <Ionicons name="checkmark-circle" size={22} color="white" />
+              <Text className="text-white font-bold text-base ml-2">Save Entry</Text>
             </TouchableOpacity>
-          </TouchableOpacity>
-        </TouchableOpacity>
+          </View>
+        </View>
       </Modal>
 
-      {/* === RECEIVED MODAL in MaterialDetailScreen === */}
+      {/* RECEIVED MODAL */}
       <Modal
         visible={receivedModalVisible}
         transparent={true}
         animationType="slide"
-        onRequestClose={() => setReceivedModalVisible(false)}>
-        <TouchableOpacity
-          className="flex-1 justify-end bg-black/50"
-          activeOpacity={1}
-          onPress={() => setReceivedModalVisible(false)}
-        >
-          <TouchableOpacity activeOpacity={1} className="max-h-[90%] rounded-t-3xl bg-white p-5" onPress={() => {}}>
-            <View className="mb-4 flex-row items-center justify-between">
-              <Text className="text-lg font-bold text-gray-900">Material Received</Text>
+        onRequestClose={() => setReceivedModalVisible(false)}
+      >
+        <View className="flex-1 justify-end bg-black/50">
+          <View className="bg-white rounded-t-3xl p-5 max-h-[90%]">
+            <View className="items-center mb-4">
+              <View className="h-1.5 w-12 bg-slate-200 rounded-full" />
+            </View>
+            
+            <View className="flex-row items-center justify-between mb-5">
+              <Text className="text-xl font-bold text-slate-900">Material Received</Text>
               <TouchableOpacity onPress={() => setReceivedModalVisible(false)}>
-                <Ionicons name="close" size={24} color="#6B7280" />
+                <Ionicons name="close-circle" size={28} color="#94a3b8" />
               </TouchableOpacity>
             </View>
             
-            <Text className="text-sm text-gray-600 mb-4">Material: {materialDetails?.name || 'Current Material'}</Text>
-            
             <ScrollView showsVerticalScrollIndicator={false}>
+              <View className="bg-slate-50 rounded-xl p-4 mb-4">
+                <Text className="text-sm text-slate-600">Material</Text>
+                <Text className="text-base font-semibold text-slate-900 mt-1">
+                  {materialDetails?.name || item?.name || 'Steel Rebar'}
+                </Text>
+              </View>
+
               <View className="mb-4">
-                <Text className="mb-1 text-sm font-medium text-gray-700">Party Name</Text>
+                <Text className="text-sm font-semibold text-slate-700 mb-2">Party Name</Text>
                 <TextInput
-                  className="text-base text-gray-900 p-3 border border-gray-300 rounded-lg"
+                  className="text-base text-slate-900 p-4 bg-slate-50 rounded-xl"
+                  placeholder="Enter supplier name"
+                  placeholderTextColor="#94a3b8"
                   value={receivedForm.partyName}
                   onChangeText={(text) => setReceivedForm({...receivedForm, partyName: text})}
                 />
               </View>
 
               <View className="mb-4">
-                <Text className="mb-1 text-sm text-gray-500">Enter Quantity</Text>
+                <Text className="text-sm font-semibold text-slate-700 mb-2">Quantity ({materialDetails?.unit || 'kg'})</Text>
                 <TextInput
-                  className="text-base text-gray-900 p-3 border border-gray-300 rounded-lg"
+                  className="text-base text-slate-900 p-4 bg-slate-50 rounded-xl"
                   placeholder="Enter quantity"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor="#94a3b8"
                   value={receivedForm.quantity}
                   onChangeText={(text) => setReceivedForm({...receivedForm, quantity: text})}
                   keyboardType="numeric"
                 />
               </View>
 
-              <View className="mb-4">
-                <Text className="mb-1 text-sm font-medium text-gray-700">Challan No.</Text>
-                <TextInput
-                  className="text-base text-gray-900 p-3 border border-gray-300 rounded-lg"
-                  value={receivedForm.challanNo}
-                  onChangeText={(text) => setReceivedForm({...receivedForm, challanNo: text})}
-                  keyboardType="numeric"
-                />
-              </View>
-
-              <View className="mb-4">
-                <Text className="mb-1 text-sm font-medium text-gray-700">Vehicle No.</Text>
-                <TextInput
-                  className="text-base text-gray-900 p-3 border border-gray-300 rounded-lg"
-                  value={receivedForm.vehicleNo}
-                  onChangeText={(text) => setReceivedForm({...receivedForm, vehicleNo: text})}
-                />
+              <View className="flex-row mb-4">
+                <View className="flex-1 mr-2">
+                  <Text className="text-sm font-semibold text-slate-700 mb-2">Challan No.</Text>
+                  <TextInput
+                    className="text-base text-slate-900 p-4 bg-slate-50 rounded-xl"
+                    placeholder="Challan"
+                    placeholderTextColor="#94a3b8"
+                    value={receivedForm.challanNo}
+                    onChangeText={(text) => setReceivedForm({...receivedForm, challanNo: text})}
+                  />
+                </View>
+                <View className="flex-1 ml-2">
+                  <Text className="text-sm font-semibold text-slate-700 mb-2">Vehicle No.</Text>
+                  <TextInput
+                    className="text-base text-slate-900 p-4 bg-slate-50 rounded-xl"
+                    placeholder="Vehicle"
+                    placeholderTextColor="#94a3b8"
+                    value={receivedForm.vehicleNo}
+                    onChangeText={(text) => setReceivedForm({...receivedForm, vehicleNo: text})}
+                  />
+                </View>
               </View>
 
               <View className="mb-6">
-                <Text className="mb-1 text-sm font-medium text-gray-700">Notes</Text>
+                <Text className="text-sm font-semibold text-slate-700 mb-2">Notes (Optional)</Text>
                 <TextInput
-                  className="h-20 text-sm text-gray-900 p-3 border border-gray-300 rounded-lg"
-                  placeholder="Enter notes..."
-                  placeholderTextColor="#9CA3AF"
+                  className="h-24 text-base text-slate-900 p-4 bg-slate-50 rounded-xl"
+                  placeholder="Add notes here..."
+                  placeholderTextColor="#94a3b8"
                   value={receivedForm.notes}
                   onChangeText={(text) => setReceivedForm({...receivedForm, notes: text})}
                   multiline
-                  numberOfLines={4}
+                  textAlignVertical="top"
                 />
               </View>
             </ScrollView>
             
-            <TouchableOpacity className="flex-row items-center justify-center rounded-xl bg-blue-600 py-3.5">
-              <Text className="text-base font-semibold text-white">Save</Text>
-              <Ionicons name="checkmark" size={20} color="white" style={{ marginLeft: 6 }} />
+            <TouchableOpacity 
+              style={{ backgroundColor: '#0066FF' }}
+              className="flex-row items-center justify-center rounded-2xl py-4"
+              onPress={handleSaveReceived}
+            >
+              <Ionicons name="checkmark-circle" size={22} color="white" />
+              <Text className="text-base font-bold text-white ml-2">Save Entry</Text>
             </TouchableOpacity>
-          </TouchableOpacity>
-        </TouchableOpacity>
+          </View>
+        </View>
       </Modal>
-
     </SafeAreaView>
   );
 };

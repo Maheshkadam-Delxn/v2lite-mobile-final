@@ -16,10 +16,41 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import Header from '../../components/Header';
 
-//const API_URL = 'https://skystruct-lite-backend.vercel.app/api/users';
+import { usePermissions } from 'context/PermissionContext';
+
+
 const API_URL = `${process.env.BASE_API_URL}/api/users`;
 
 const ProfilePageScreen = () => {
+  const { permissions , setPermissions  } = usePermissions();
+console.log(permissions?.role);
+
+const [admin,setAdmin]=useState();
+useEffect(() => {
+  const loadUserRole = async () => {
+    try {
+      const data = await AsyncStorage.getItem("userData");
+      if (data) {
+        const parsed = JSON.parse(data);
+        setAdmin(parsed || null);
+      }
+    } catch (e) {
+      console.log("Error loading role:", e);
+    }
+  };
+
+  loadUserRole();
+}, [])
+  const canAccessUserManagement =
+  admin?.role === "admin" ||
+  (admin?.permissions?.user &&
+    (admin?.permissions?.user.create ||
+     admin?.permissions?.user.update ||admin?.permissions?.user.delete || admin?.permissions?.user.view ));
+
+     const canAccessVendorManagement =
+     admin?.role=="admin" || admin?.permissions?.vendor ;
+  console.log(canAccessUserManagement);
+  const[userM,setUserman]=useState();
   const navigation = useNavigation();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [userData, setUserData] = useState(null);
@@ -80,6 +111,8 @@ const ProfilePageScreen = () => {
           try {
             await AsyncStorage.removeItem('userToken');
             await AsyncStorage.removeItem('userData');
+            await AsyncStorage.removeItem('userPermissions');
+            setPermissions(null);
             console.log('✅ User logged out successfully');
             navigation.navigate('Auth');
           } catch (error) {
@@ -320,21 +353,26 @@ const ProfilePageScreen = () => {
             iconColor="#4A7CFF"
           />
           <View className="h-[0.5px] bg-[#E5E5EA] ml-[70px]" />
-          <MenuItem
+
+          {canAccessUserManagement && (
+            <MenuItem
             icon="users"
             title="User Management"
             onPress={() => navigation.navigate('UsersList')}
             iconBg="#FFF0F5"
             iconColor="#FF3B8F"
           />
+          )}
+          
           <View className="h-[0.5px] bg-[#E5E5EA] ml-[70px]" />
-          <MenuItem
+          {canAccessVendorManagement && (<MenuItem
             icon="briefcase"
             title="Vendor Management"
             onPress={() => navigation.navigate('Vendors')}
             iconBg="#F0FFF4"
             iconColor="#22C55E"
-          />
+          /> )}
+          
         </View>
 
         {/* Preferences Section */}

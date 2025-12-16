@@ -86,6 +86,23 @@ const SubmitProposalCustomer = ({ navigation, route }) => {
   const [uploading, setUploading] = useState(false);
   const [note, setNote] = useState("");
 
+useEffect(() => {
+  const fetchUserData = async () => {
+    const userdata = await AsyncStorage.getItem("userData");
+
+    if (!userdata) return;
+
+    const parsedUser = JSON.parse(userdata); // ✔ convert string → object
+
+    console.log("Parsed User:", parsedUser);
+    console.log("User Name:", parsedUser.name);
+
+    setClientName(parsedUser.name);
+    setClientEmail(parsedUser.email) // ✔ correct
+  };
+
+  fetchUserData();
+}, []);
 
   const handleDocumentPick = async () => {
     const result = await DocumentPicker.getDocumentAsync({
@@ -188,6 +205,7 @@ const handleSubmit = async () => {
 
   try {
   const token = await AsyncStorage.getItem('userToken');
+  console.log("token",token);
     const response = await fetch(API_URL, {
       method: "POST",
       headers: {
@@ -203,7 +221,8 @@ const handleSubmit = async () => {
 
     if (response.ok) {
       Alert.alert("Success", "Proposal submitted successfully!");
-      navigation.navigate("ViewCustomerProposal", { payload: data });
+      //navigation.navigate("ViewCustomerProposal", { payload: data });
+      navigation.navigate("ClientTabs");
     } else {
       Alert.alert("Error", data.message || "Something went wrong.");
     }
@@ -287,6 +306,7 @@ const handleSubmit = async () => {
                 placeholder="Enter client's name"
                 placeholderTextColor="#999"
                 value={clientName}
+                  editable={false}
                 onChangeText={setClientName}
               />
             </View>
@@ -303,6 +323,7 @@ const handleSubmit = async () => {
                 placeholder="client@example.com"
                 placeholderTextColor="#999"
                 keyboardType="email-address"
+                  editable={false}   
                 autoCapitalize="none"
                 value={clientEmail}
                 onChangeText={setClientEmail}
