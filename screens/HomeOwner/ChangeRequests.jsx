@@ -204,9 +204,9 @@ const ChangeRequests = () => {
       </ScrollView>
 
       {/* ---------- BOTTOM NAV ---------- */}
-      <View className="absolute bottom-0 left-0 right-0">
+      {/* <View className="absolute bottom-0 left-0 right-0">
         <CustomerBottomNavBar />
-      </View>
+      </View> */}
     </SafeAreaView>
   );
 };
