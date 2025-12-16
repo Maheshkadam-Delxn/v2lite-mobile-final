@@ -804,8 +804,8 @@ export default function BOQDetailScreen({ route, navigation }) {
               </Text>
 
               <DetailRow label="Quantity" value={`${mat.qty} ${mat.unit}`} />
-              <DetailRow label="Rate" value={`﷼ ${convertToQAR(mat.rate)}`} />
-              <DetailRow label="Amount" value={`﷼ ${convertToQAR(mat.amount)}`} />
+              <DetailRow label="Rate" value={`QAR ${convertToQAR(mat.rate)}`} />
+              <DetailRow label="Amount" value={`QAR ${convertToQAR(mat.amount)}`} />
             </View>
           ))}
         </View>
@@ -817,14 +817,14 @@ export default function BOQDetailScreen({ route, navigation }) {
             <Text style={styles.sectionTitle}>Cost Summary</Text>
           </View>
 
-          <DetailRow label="Material Cost" value={`﷼ ${convertToQAR(boqData.totalMaterialCost)}`} />
-          <DetailRow label="Labor Cost" value={`﷼ ${convertToQAR(boqData.laborCost)}`} />
-          <DetailRow label="Misc Cost" value={`﷼ ${convertToQAR(boqData.miscCost)}`} />
+          <DetailRow label="Material Cost" value={`QAR ${convertToQAR(boqData.totalMaterialCost)}`} />
+          <DetailRow label="Labor Cost" value={`QAR ${convertToQAR(boqData.laborCost)}`} />
+          <DetailRow label="Misc Cost" value={`QAR ${convertToQAR(boqData.miscCost)}`} />
           <DetailRow label="Contingency" value={`${boqData.contingency}%`} />
 
           <View style={styles.totalBox}>
             <Text style={styles.totalLabel}>Total Cost</Text>
-            <Text style={styles.totalValue}>﷼ {convertToQAR(boqData.totalCost)}</Text>
+            <Text style={styles.totalValue}>QAR {convertToQAR(boqData.totalCost)}</Text>
           </View>
         </View>
 
