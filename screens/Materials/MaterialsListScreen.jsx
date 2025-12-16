@@ -1588,13 +1588,13 @@ const MaterialsListScreen = () => {
             return;
           }
 
-          navigation.navigate('Materials', {
-            screen: 'MaterialDetailScreen',
-            params: {
-              materialId,
-              item: item.__raw,
-            },
-          });
+         navigation.navigate('Materials', {
+  screen: 'MaterialDetailScreen',
+  params: {
+    materialId,
+    item: item.__raw,
+  },
+});
         }}
       >
         <View className="flex-row items-center flex-1">

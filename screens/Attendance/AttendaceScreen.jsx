@@ -1,127 +1,236 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
-import { Feather } from '@expo/vector-icons';
- 
- 
-const AttendanceScreen = () => {
-  const [activeTab, setActiveTab] = useState('All');
-  const [isActiveFilter, setIsActiveFilter] = useState(true);
- 
-  const tabs = ['All', 'Site Staff', 'Labour Contractor'];
- 
-  const staffData = [
-    { id: 1, name: 'Arun Mishra', role: 'Project Manager', time: '12:45', status: 'Present' },
-    { id: 2, name: 'Arun Mishra', role: 'Project Manager', time: '12:45', status: 'Present' },
-    { id: 3, name: 'Arun Mishra', role: 'Project Manager', time: '12:45', status: 'Present' },
-    { id: 4, name: 'Arun Mishra', role: 'Project Manager', time: '12:45', status: 'Present' },
-    { id: 5, name: 'Arun Mishra', role: 'Project Manager', time: '12:45', status: 'Present' },
-    { id: 6, name: 'Arun Mishra', role: 'Project Manager', time: '12:45', status: 'Present' },
-    { id: 7, name: 'Arun Mishra', role: 'Project Manager', time: '12:45', status: 'Present' },
-    { id: 8, name: 'Arun Mishra', role: 'Project Manager', time: '12:45', status: 'Present' },
+import {
+  View,
+  Text,
+  ScrollView,
+  SafeAreaView,
+  TouchableOpacity,
+  StatusBar,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+
+const AttendanceScreen = ({ navigation }) => {
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [view, setView] = useState('daily'); // daily, weekly, monthly
+
+  const attendanceData = [
+    {
+      id: '1',
+      name: 'Fatima Ahmed',
+      role: 'Site Engineer',
+      checkIn: '08:00 AM',
+      checkOut: '05:00 PM',
+      status: 'present',
+      hours: '9h',
+    },
+    {
+      id: '2',
+      name: 'Mohammed Saleem',
+      role: 'Foreman',
+      checkIn: '07:30 AM',
+      checkOut: '04:30 PM',
+      status: 'present',
+      hours: '9h',
+    },
+    {
+      id: '3',
+      name: 'Fatima Ahmed',
+      role: 'Architect',
+      checkIn: '09:00 AM',
+      checkOut: '03:00 PM',
+      status: 'present',
+      hours: '6h',
+    },
+    {
+      id: '4',
+      name: 'Hassan Abdelaal',
+      role: 'Labor',
+      checkIn: '-',
+      checkOut: '-',
+      status: 'absent',
+      hours: '0h',
+    },
+    {
+      id: '5',
+      name: 'Noora Ali',
+      role: 'Safety Officer',
+      checkIn: '08:15 AM',
+      checkOut: '05:15 PM',
+      status: 'present',
+      hours: '9h',
+    },
+    {
+      id: '6',
+      name: 'Khalid Ahmed',
+      role: 'Project Manager',
+      checkIn: '08:30 AM',
+      checkOut: '05:30 PM',
+      status: 'present',
+      hours: '9h',
+    },
+    {
+      id: '7',
+      name: 'Maryam Samad',
+      role: 'Quality Inspector',
+      checkIn: '08:00 AM',
+      checkOut: '-',
+      status: 'late',
+      hours: '4h',
+    },
   ];
- 
-  return (
-    <SafeAreaView className="flex-1 bg-white">
-      {/* Header */}
-      <View className="flex-row items-center justify-between px-4 py-3 border-b border-gray-200">
-        <TouchableOpacity>
-          <Feather name="arrow-left" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text className="text-lg font-semibold">1 Present</Text>
-        <View className="flex-row items-center space-x-2">
-          <TouchableOpacity>
-            <Feather name="log-out" size={20} color="#666" />
-          </TouchableOpacity>
-          <TouchableOpacity>
-            <Feather name="map-pin" size={20} color="#666" />
-          </TouchableOpacity>
-        </View>
-      </View>
- 
-      {/* Tabs */}
-      <View className="flex-row border-b border-gray-200 px-4">
-        {tabs.map((tab) => (
-          <TouchableOpacity
-            key={tab}
-            onPress={() => setActiveTab(tab)}
-            className={`py-3 mr-6 ${activeTab === tab ? 'border-b-2 border-blue-500' : ''}`}
-          >
-            <Text className={`${activeTab === tab ? 'text-blue-500 font-semibold' : 'text-gray-600'}`}>
-              {tab}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
- 
-      {/* Date Badge and Filter */}
-      <View className="flex-row items-center justify-between px-4 py-3">
-        <View className="flex-row items-center space-x-2">
-          <View className="bg-blue-500 rounded-lg px-3 py-1.5">
-            <Text className="text-white font-bold text-xs">JUN</Text>
-            <Text className="text-white font-bold text-lg leading-tight">30</Text>
-          </View>
-          <View className="flex-row items-center space-x-1">
-            <Feather name="circle" size={16} color="#10b981" fill="#10b981" />
-            <Text className="text-xs text-gray-600">1 Present</Text>
-            <Feather name="circle" size={16} color="#ef4444" fill="#ef4444" />
-            <Text className="text-xs text-gray-600">0 Absent</Text>
-            <Feather name="circle" size={16} color="#f59e0b" fill="#f59e0b" />
-            <Text className="text-xs text-gray-600">0 Hold Leave</Text>
-          </View>
-        </View>
-      </View>
- 
-      {/* Active Filter */}
-      <View className="px-4 py-2">
-        <TouchableOpacity
-          onPress={() => setIsActiveFilter(!isActiveFilter)}
-          className="flex-row items-center space-x-2"
+
+  const stats = {
+    total: 15,
+    present: 12,
+    absent: 2,
+    late: 1,
+  };
+
+  const AttendanceItem = ({ item }) => (
+    <View className="bg-white rounded-2xl p-4 mb-3">
+      <View className="flex-row items-center mb-3">
+        <View 
+          style={{ backgroundColor: '#0066FF' }}
+          className="w-12 h-12 rounded-full items-center justify-center mr-3"
         >
-          <Text className="text-sm text-gray-700">Active</Text>
-          <Feather
-            name={isActiveFilter ? "check-square" : "square"}
-            size={18}
-            color={isActiveFilter ? "#0066FF" : "#9ca3af"}
-          />
-        </TouchableOpacity>
-      </View>
- 
-      {/* Add Site Staff Button */}
-      <TouchableOpacity className="mx-4 mb-3">
-        <Text className="text-blue-500 text-sm font-medium text-right">+ Add Site Staff</Text>
-      </TouchableOpacity>
- 
-      {/* Staff List */}
-      <ScrollView className="flex-1 px-4">
-        {staffData.map((staff) => (
-          <TouchableOpacity
-            key={staff.id}
-            className="flex-row items-center py-3 border-b border-gray-100"
+          <Text className="text-white font-semibold text-base">
+            {item.name.split(' ').map(n => n[0]).join('')}
+          </Text>
+        </View>
+        <View className="flex-1">
+          <Text className="text-base font-semibold text-slate-900 mb-1">{item.name}</Text>
+          <Text className="text-sm text-slate-500">{item.role}</Text>
+        </View>
+        <View 
+          style={{
+            backgroundColor: 
+              item.status === 'present' ? '#10b98115' : 
+              item.status === 'absent' ? '#ef444415' : '#f59e0b15'
+          }}
+          className="px-3 py-1.5 rounded-full"
+        >
+          <Text 
+            style={{
+              color: 
+                item.status === 'present' ? '#10b981' : 
+                item.status === 'absent' ? '#ef4444' : '#f59e0b'
+            }}
+            className="text-xs font-semibold capitalize"
           >
-            {/* Avatar */}
-            <View className="w-10 h-10 rounded-full bg-blue-100 items-center justify-center mr-3">
-              <Text className="text-blue-600 font-semibold text-base">AM</Text>
+            {item.status}
+          </Text>
+        </View>
+      </View>
+
+      <View className="flex-row items-center justify-between pt-3" style={{ borderTopWidth: 1, borderTopColor: '#f1f5f9' }}>
+        <View className="flex-1">
+          <Text className="text-xs text-slate-500 mb-1">Check In</Text>
+          <Text className="text-sm font-semibold text-slate-900">{item.checkIn}</Text>
+        </View>
+        <View className="flex-1 items-center">
+          <Text className="text-xs text-slate-500 mb-1">Check Out</Text>
+          <Text className="text-sm font-semibold text-slate-900">{item.checkOut}</Text>
+        </View>
+        <View className="flex-1 items-end">
+          <Text className="text-xs text-slate-500 mb-1">Total Hours</Text>
+          <Text style={{ color: '#0066FF' }} className="text-sm font-bold">{item.hours}</Text>
+        </View>
+      </View>
+    </View>
+  );
+
+  return (
+    <SafeAreaView className="flex-1 bg-slate-50">
+      <StatusBar backgroundColor="#0066FF" barStyle="light-content" />
+      
+
+      <ScrollView className="flex-1 px-4 pt-4" showsVerticalScrollIndicator={false}>
+        {/* Stats Overview */}
+        <View className="bg-white rounded-2xl p-5 mb-5">
+          <Text className="text-base font-bold text-slate-900 mb-4">Today's Overview</Text>
+          <View className="flex-row justify-between">
+            <View className="flex-1 items-center">
+              <Text className="text-3xl font-bold text-slate-900 mb-1">{stats.total}</Text>
+              <Text className="text-xs text-slate-500">Total</Text>
             </View>
- 
-            {/* Staff Info */}
-            <View className="flex-1">
-              <Text className="text-base font-semibold text-gray-900">{staff.name}</Text>
-              <Text className="text-xs text-gray-500">{staff.role}</Text>
+            <View className="w-px bg-slate-100" />
+            <View className="flex-1 items-center">
+              <Text className="text-3xl font-bold mb-1" style={{ color: '#10b981' }}>{stats.present}</Text>
+              <Text className="text-xs text-slate-500">Present</Text>
             </View>
- 
-            {/* Time and Status */}
-            <View className="items-end">
-              <Text className="text-xs text-gray-500">{staff.time}</Text>
-              <Text className="text-xs text-gray-500">{staff.status}</Text>
+            <View className="w-px bg-slate-100" />
+            <View className="flex-1 items-center">
+              <Text className="text-3xl font-bold mb-1" style={{ color: '#ef4444' }}>{stats.absent}</Text>
+              <Text className="text-xs text-slate-500">Absent</Text>
             </View>
-          </TouchableOpacity>
-        ))}
+            <View className="w-px bg-slate-100" />
+            <View className="flex-1 items-center">
+              <Text className="text-3xl font-bold mb-1" style={{ color: '#f59e0b' }}>{stats.late}</Text>
+              <Text className="text-xs text-slate-500">Late</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Date Selector */}
+        <View className="bg-white rounded-2xl p-4 mb-4">
+          <View className="flex-row items-center justify-between">
+            <TouchableOpacity className="w-10 h-10 items-center justify-center rounded-xl bg-slate-50">
+              <Ionicons name="chevron-back" size={20} color="#0066FF" />
+            </TouchableOpacity>
+            <Text className="text-base font-semibold text-slate-900">March 25, 2024</Text>
+            <TouchableOpacity className="w-10 h-10 items-center justify-center rounded-xl bg-slate-50">
+              <Ionicons name="chevron-forward" size={20} color="#0066FF" />
+            </TouchableOpacity>
+          </View>
+        </View>
+        
+        {/* View Selector */}
+        <View className="bg-white rounded-2xl p-1.5 mb-5 flex-row">
+          {['daily', 'weekly', 'monthly'].map((viewType) => (
+            <TouchableOpacity
+              key={viewType}
+              style={view === viewType ? { backgroundColor: '#0066FF' } : {}}
+              className={`flex-1 py-3 rounded-xl items-center`}
+              onPress={() => setView(viewType)}
+            >
+              <Text 
+                className={`text-sm font-semibold ${view === viewType ? 'text-white' : 'text-slate-500'}`}
+              >
+                {viewType.charAt(0).toUpperCase() + viewType.slice(1)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Attendance List */}
+        <View className="mb-5">
+          <Text className="text-base font-bold text-slate-900 mb-3">Attendance Records</Text>
+          {attendanceData.map((item) => (
+            <AttendanceItem key={item.id} item={item} />
+          ))}
+        </View>
+
+        <View className="h-5" />
       </ScrollView>
- 
-    
+
+      {/* Action Buttons */}
+      {/* <View className="flex-row p-4 bg-white" style={{ borderTopWidth: 1, borderTopColor: '#f1f5f9' }}>
+        <TouchableOpacity 
+          style={{ backgroundColor: '#0066FF' }}
+          className="flex-2 flex-row rounded-2xl py-4 items-center justify-center mr-3"
+        >
+          <Ionicons name="download-outline" size={20} color="#FFFFFF" />
+          <Text className="text-white font-semibold text-sm ml-2">Export Report</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          className="flex-1 flex-row rounded-2xl py-4 items-center justify-center bg-slate-50"
+        >
+          <Ionicons name="add" size={20} color="#0066FF" />
+          <Text style={{ color: '#0066FF' }} className="font-semibold text-sm ml-2">Add</Text>
+        </TouchableOpacity>
+      </View> */}
     </SafeAreaView>
   );
 };
- 
+
 export default AttendanceScreen;
- 

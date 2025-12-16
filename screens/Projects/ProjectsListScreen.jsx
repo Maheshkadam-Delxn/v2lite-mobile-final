@@ -328,7 +328,6 @@ const ProjectsListScreen = () => {
         });
       }}>
       <View style={styles.card}>
-        {/* Image + Title + Edit */}
         <View style={styles.cardHeader}>
           <View style={styles.imageContainer}>
             {project.raw.projectImages && project.raw.projectImages !== '' ? (
@@ -352,10 +351,6 @@ const ProjectsListScreen = () => {
               {project.location}
             </Text>
           </View>
-
-          <TouchableOpacity onPress={() => handleEditProject(project)} style={styles.editButton}>
-            <Ionicons name="create-outline" size={20} color="#0066FF" />
-          </TouchableOpacity>
         </View>
 
         {/* Due Date & Status */}

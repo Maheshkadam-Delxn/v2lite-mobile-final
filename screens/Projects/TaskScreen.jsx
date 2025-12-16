@@ -38,7 +38,7 @@ const TaskScreen = ({ project: projectProp }) => {
   const [tasksError, setTasksError] = useState(null);
 
   const projectStatus = [
-    { label: 'Completed (110)', color: '#1DD1A1', icon: 'checkmark-circle' },
+    { label: 'Completed (100)', color: '#1DD1A1', icon: 'checkmark-circle' },
     { label: 'In Progress (80)', color: '#0066FF', icon: 'time' },
     { label: 'Ongoing (40)', color: '#FFA800', icon: 'play-circle' },
     { label: 'Cancelled (10)', color: '#FF3B30', icon: 'close-circle' },
