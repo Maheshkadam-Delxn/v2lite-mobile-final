@@ -31,7 +31,7 @@ const ViewDetailsScreen = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const { project } = route.params || {};
-  // console.log("ProjectData",project);
+  console.log("ProjectData",project);
   const [activeTab, setActiveTab] = useState('Details');
   const [activeView, setActiveView] = useState('Calendar');
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -198,7 +198,7 @@ const ViewDetailsScreen = () => {
           case 'Plans':
         // Render the PaymentsTransaction component inline
         // return <PlansScreen project={project} />;
-        return <PlansTab/>
+        return <PlansTab project ={project}/>
 
         case 'BOQ':
           return <BOQListScreen navigation={navigation} project={project}/>;
