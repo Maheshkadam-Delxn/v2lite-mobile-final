@@ -1,157 +1,630 @@
-// import React, { useState, useMemo } from "react";
-// import {
-//   View,
-//   Text,
-//   ScrollView,
-//   Image,
-//   FlatList,
-//   TouchableOpacity,
-//   Linking,
-//   Alert,
-// } from "react-native";
-// import { SafeAreaView } from "react-native-safe-area-context";
-// import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { View, Text, FlatList, Linking, ActivityIndicator, Alert, Modal, TextInput, TouchableOpacity, ScrollView, Image } from 'react-native'
+import React, { useState, useEffect } from 'react'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import * as ImagePicker from 'expo-image-picker'
+import * as Crypto from 'expo-crypto'
+import { Feather } from '@expo/vector-icons'
+import WebView from 'react-native-webview'
 
-// /**
-//  * PlansTab - Modern UI for finalized plan data
-//  * Now with Tailwind CSS styling via NativeWind
-//  */
+const PlansTab = ({ project }) => {
+  const [plans, setPlans] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [isUpdateMode, setIsUpdateMode] = useState(false)
+  const [showDetailsModal, setShowDetailsModal] = useState(false)
+  const [selectedPlan, setSelectedPlan] = useState(null)
+  const [planHistory, setPlanHistory] = useState([])
+  const [annotations, setAnnotations] = useState([])
+  const [showAnnotationModal, setShowAnnotationModal] = useState(false)
+  const [isAnnotationUpdate, setIsAnnotationUpdate] = useState(false)
+  const [selectedAnnotation, setSelectedAnnotation] = useState(null)
+  const [annotationForm, setAnnotationForm] = useState({
+    title: '',
+    description: '',
+    category: '',
+    severity: 'medium',
+    position: { x: 0, y: 0, page: 1 },
+    attachments: [],
+  })
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
+  const [showSeverityDropdown, setShowSeverityDropdown] = useState(false)
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [detailsLoading, setDetailsLoading] = useState(false)
+  const [annotationsLoading, setAnnotationsLoading] = useState(false)
+  const [formData, setFormData] = useState({
+    title: '',
+    planType: '',
+    floor: '',
+    area: '',
+    remarks: '',
+    file: null,
+  })
+  const [uploading, setUploading] = useState(false)
+  const [showPlanTypeDropdown, setShowPlanTypeDropdown] = useState(false)
+  const [showFilePreview, setShowFilePreview] = useState(false)
+  const [previewFile, setPreviewFile] = useState(null)
+  const planTypes = [
+    { value: 'architectural', label: 'Architectural' },
+    { value: 'structural', label: 'Structural' },
+    { value: 'services', label: 'Services' },
+    { value: 'execution', label: 'Execution' },
+    { value: 'shop_drawing', label: 'Shop Drawing' },
+  ]
+  const annotationCategories = [
+    'design_issue',
+    'site_condition',
+    'clarification',
+    'change_request',
+    'execution_note',
+    'quality_issue',
+  ]
+  const annotationSeverities = [
+    'low',
+    'medium',
+    'high',
+    'critical',
+  ]
+  const CLOUDINARY_CONFIG = {
+    cloudName: 'dmlsgazvr',
+    apiKey: '353369352647425',
+    apiSecret: '8qcz7uAdftDVFNd6IqaDOytg_HI',
+  }
+  useEffect(() => {
+    console.log("Project = ", project)
+    if (project?._id) {
+      console.log("Project ID in PlansTab:", project._id)
+    } else {
+      console.log("No projectId available in PlansTab")
+    }
+  }, [project])
+  useEffect(() => {
+    const projectId = project?._id
+    if (!projectId) {
+      setError('Project ID is required')
+      setLoading(false)
+      return
+    }
+    refreshPlans(projectId)
+  }, [project])
+  const refreshPlans = async (projectId) => {
+    setLoading(true)
+    try {
+      const refreshedPlans = await fetchLatestPlans(projectId)
+      setPlans(refreshedPlans)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+  const fetchLatestPlans = async (projectId) => {
+    const token = await AsyncStorage.getItem('userToken')
+    const response = await fetch(`${process.env.BASE_API_URL}/api/plan/latest?projectId=${projectId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    })
+    const data = await response.json()
+    if (data.success) {
+      return data.data.sort((a, b) => {
+        if (a.planType !== b.planType) return a.planType.localeCompare(b.planType)
+        if (a.floor !== b.floor) return (a.floor || '').localeCompare(b.floor || '')
+        if (a.area !== b.area) return (a.area || '').localeCompare(b.area || '')
+        return b.version - a.version
+      })
+    }
+    throw new Error(data.message || 'Failed to fetch latest plans')
+  }
+  const fetchPlanById = async (planId) => {
+    const token = await AsyncStorage.getItem('userToken')
+    const response = await fetch(`${process.env.BASE_API_URL}/api/plan/${planId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    })
+    const data = await response.json()
+    if (data.success) {
+      return data.data
+    }
+    throw new Error(data.message || 'Failed to fetch plan')
+  }
+  const fetchPlanHistory = async (currentPlan) => {
+    setHistoryLoading(true)
+    const history = []
+    let plan = currentPlan
+    while (plan.previousPlanId) {
+      try {
+        const prevPlan = await fetchPlanById(plan.previousPlanId)
+        history.push(prevPlan)
+        plan = prevPlan
+      } catch (err) {
+        console.error('Failed to fetch previous plan:', err)
+        break
+      }
+    }
+    setPlanHistory(history)
+    setHistoryLoading(false)
+  }
+  const fetchAnnotations = async (planId) => {
+    setAnnotationsLoading(true)
+    try {
+      const token = await AsyncStorage.getItem('userToken')
+      const response = await fetch(`${process.env.BASE_API_URL}/api/annotation?planId=${planId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+      })
+      const data = await response.json()
+      if (data.success) {
+        setAnnotations(data.data)
+      } else {
+        throw new Error(data.message || 'Failed to fetch annotations')
+      }
+    } catch (err) {
+      Alert.alert('Error', err.message)
+      setAnnotations([])
+    } finally {
+      setAnnotationsLoading(false)
+    }
+  }
+  const generateSignature = async (timestamp) => {
+    try {
+      const stringToSign = `timestamp=${timestamp}${CLOUDINARY_CONFIG.apiSecret}`
+      const signature = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA1,
+        stringToSign
+      )
+      return signature
+    } catch (error) {
+      console.error('Error generating signature:', error)
+      throw new Error('Failed to generate signature')
+    }
+  }
+  const uploadToCloudinary = async (uri, fileType = 'image') => {
+    try {
+      const timestamp = Math.round(Date.now() / 1000)
+      const signature = await generateSignature(timestamp)
+     
+      const formData = new FormData()
+      const filename = uri.split('/').pop()
+      const match = /\.(\w+)$/.exec(filename || '')
+      const type = match ? `${fileType}/${match[1]}` : `${fileType}/jpeg`
+      formData.append('file', {
+        uri: uri,
+        type: type,
+        name: filename || `${fileType}_${Date.now()}.${fileType === 'image' ? 'jpg' : 'pdf'}`,
+      })
+     
+      formData.append('timestamp', timestamp.toString())
+      formData.append('signature', signature)
+      formData.append('api_key', CLOUDINARY_CONFIG.apiKey)
+      const uploadUrl = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/${fileType}/upload`
+      const response = await fetch(uploadUrl, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+      const data = await response.json()
+     
+      if (response.ok && data.secure_url) {
+        return {
+          success: true,
+          url: data.secure_url,
+          publicId: data.public_id,
+        }
+      } else {
+        return {
+          success: false,
+          error: data.error?.message || `Upload failed with status ${response.status}`,
+        }
+      }
+    } catch (error) {
+      console.error('Cloudinary upload error:', error)
+      return {
+        success: false,
+        error: error.message,
+      }
+    }
+  }
+  const handleFileSelect = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
+    if (status !== 'granted') {
+      Alert.alert('Permission required', 'Need camera roll permissions')
+      return
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: false,
+      quality: 0.7,
+    })
+    if (!result.canceled && result.assets && result.assets[0]) {
+      setFormData(prev => ({ ...prev, file: result.assets[0] }))
+    }
+  }
+  const handleAddOrUpdatePlan = async () => {
+    const projectId = project?._id
+    if (!projectId || !formData.title || !formData.planType) {
+      Alert.alert('Missing Fields', 'Please fill all required fields.')
+      return
+    }
+    setUploading(true)
+    try {
+      let fileMetadata = null
+      if (formData.file) {
+        const asset = formData.file
+        const fileType = asset.type === 'image' ? 'image' : 'raw'
+        const uploadResult = await uploadToCloudinary(asset.uri, fileType)
+        if (!uploadResult.success) {
+          throw new Error(uploadResult.error || 'Upload failed')
+        }
+        fileMetadata = {
+          url: uploadResult.url,
+          fileType: asset.type === 'image' ? (asset.mimeType || 'jpg') : 'pdf',
+          fileSize: asset.fileSize || 0,
+          originalName: asset.fileName || 'plan_file',
+        }
+      } else if (isUpdateMode && selectedPlan.file) {
+        fileMetadata = selectedPlan.file
+      }
+      if (!fileMetadata) {
+        throw new Error('No file selected')
+      }
+      const token = await AsyncStorage.getItem('userToken')
+      const response = await fetch(`${process.env.BASE_API_URL}/api/plan`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify({
+          projectId,
+          title: formData.title,
+          planType: formData.planType,
+          floor: formData.floor,
+          area: formData.area,
+          file: fileMetadata,
+          remarks: formData.remarks,
+        }),
+      })
+      const data = await response.json()
+      if (data.success) {
+        Alert.alert('Success', `Plan ${isUpdateMode ? 'updated' : 'added'} successfully`)
+        setShowAddModal(false)
+        refreshPlans(projectId)
+        setFormData({
+          title: '',
+          planType: '',
+          floor: '',
+          area: '',
+          remarks: '',
+          file: null,
+        })
+        setIsUpdateMode(false)
+      } else {
+        throw new Error(data.message || `Failed to ${isUpdateMode ? 'update' : 'add'} plan`)
+      }
+    } catch (err) {
+      Alert.alert('Error', err.message)
+    } finally {
+      setUploading(false)
+    }
+  }
+  const handleViewDetails = async (planId) => {
+    setDetailsLoading(true)
+    setHistoryLoading(true)
+    setAnnotationsLoading(true)
+    setShowDetailsModal(true)
+    setPlanHistory([])
+    setAnnotations([])
+    try {
+      const currentPlan = await fetchPlanById(planId)
+      setSelectedPlan(currentPlan)
+      await fetchPlanHistory(currentPlan)
+      await fetchAnnotations(planId)
+    } catch (err) {
+      Alert.alert('Error', err.message)
+      setShowDetailsModal(false)
+    } finally {
+      setDetailsLoading(false)
+    }
+  }
+  const handleUpdatePlan = () => {
+    setFormData({
+      title: selectedPlan.title,
+      planType: selectedPlan.planType,
+      floor: selectedPlan.floor || '',
+      area: selectedPlan.area || '',
+      remarks: selectedPlan.remarks || '',
+      file: null,
+    })
+    setIsUpdateMode(true)
+    setShowDetailsModal(false)
+    setShowAddModal(true)
+  }
+  const handleDeletePlan = async (planId) => {
+    Alert.alert('Confirm Delete', 'Are you sure you want to delete this plan?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            const token = await AsyncStorage.getItem('userToken')
+            const response = await fetch(`${process.env.BASE_API_URL}/api/plan/${planId}`, {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(token && { Authorization: `Bearer ${token}` }),
+              },
+            })
+            const data = await response.json()
+            if (data.success) {
+              Alert.alert('Success', 'Plan deleted successfully')
+              setShowDetailsModal(false)
+              refreshPlans(project._id)
+            } else {
+              throw new Error(data.message || 'Failed to delete plan')
+            }
+          } catch (err) {
+            Alert.alert('Error', err.message)
+          }
+        },
+      },
+    ])
+  }
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+  }
+  const handleAnnotationInput = (field, value) => {
+    setAnnotationForm(prev => ({ ...prev, [field]: value }))
+  }
+  const handlePositionChange = (subField, value) => {
+    setAnnotationForm(prev => ({
+      ...prev,
+      position: { ...prev.position, [subField]: parseFloat(value) || 0 }
+    }))
+  }
+  const handleAddAnnotationAttachment = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
+    if (status !== 'granted') {
+      Alert.alert('Permission required', 'Need camera roll permissions')
+      return
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: false,
+      quality: 0.7,
+    })
+    if (!result.canceled && result.assets && result.assets[0]) {
+      const asset = result.assets[0]
+      const fileType = asset.type === 'image' ? 'image' : 'raw'
+      const uploadResult = await uploadToCloudinary(asset.uri, fileType)
+      if (uploadResult.success) {
+        const attachment = {
+          url: uploadResult.url,
+          fileType: asset.type === 'image' ? (asset.mimeType || 'jpg') : 'pdf',
+          fileSize: asset.fileSize || 0,
+          uploadedAt: new Date(),
+        }
+        setAnnotationForm(prev => ({
+          ...prev,
+          attachments: [...prev.attachments, attachment]
+        }))
+      } else {
+        Alert.alert('Upload Failed', uploadResult.error)
+      }
+    }
+  }
+  const handleRemoveAnnotationAttachment = (index) => {
+    setAnnotationForm(prev => ({
+      ...prev,
+      attachments: prev.attachments.filter((_, i) => i !== index)
+    }))
+  }
+  const handleAddOrUpdateAnnotation = async () => {
+    if (!annotationForm.title || !annotationForm.category) {
+      Alert.alert('Missing Fields', 'Please fill required fields')
+      return
+    }
+    try {
+      const token = await AsyncStorage.getItem('userToken')
+      const method = isAnnotationUpdate ? 'PATCH' : 'POST'
+      const url = isAnnotationUpdate
+        ? `${process.env.BASE_API_URL}/api/annotation/${selectedAnnotation._id}`
+        : `${process.env.BASE_API_URL}/api/annotation`
+      const body = {
+        projectId: selectedPlan.projectId,
+        planId: selectedPlan._id,
+        planVersion: selectedPlan.version,
+        position: annotationForm.position,
+        title: annotationForm.title,
+        description: annotationForm.description,
+        category: annotationForm.category,
+        severity: annotationForm.severity,
+        attachments: annotationForm.attachments,
+      }
+      if (isAnnotationUpdate) {
+        // For update, only send changed fields, but for simplicity send all
+        if (body.status === 'resolved') {
+          body.resolvedAt = new Date()
+        }
+      }
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify(body),
+      })
+      const data = await response.json()
+      if (data.success) {
+        Alert.alert('Success', `Annotation ${isAnnotationUpdate ? 'updated' : 'added'}`)
+        setShowAnnotationModal(false)
+        fetchAnnotations(selectedPlan._id)
+        setAnnotationForm({
+          title: '',
+          description: '',
+          category: '',
+          severity: 'medium',
+          position: { x: 0, y: 0, page: 1 },
+          attachments: [],
+        })
+        setIsAnnotationUpdate(false)
+      } else {
+        throw new Error(data.message || 'Operation failed')
+      }
+    } catch (err) {
+      Alert.alert('Error', err.message)
+    }
+  }
+  const handleEditAnnotation = (annotation) => {
+    setAnnotationForm({
+      title: annotation.title,
+      description: annotation.description || '',
+      category: annotation.category,
+      severity: annotation.severity,
+      position: annotation.position,
+      attachments: annotation.attachments || [],
+    })
+    setSelectedAnnotation(annotation)
+    setIsAnnotationUpdate(true)
+    setShowAnnotationModal(true)
+  }
+  const handleDeleteAnnotation = async (annotationId) => {
+    Alert.alert('Confirm Delete', 'Delete this annotation?', [
+      { text: 'Cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            const token = await AsyncStorage.getItem('userToken')
+            const response = await fetch(`${process.env.BASE_API_URL}/api/annotation/${annotationId}`, {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(token && { Authorization: `Bearer ${token}` }),
+              },
+            })
+            const data = await response.json()
+            if (data.success) {
+              Alert.alert('Success', 'Annotation deleted')
+              fetchAnnotations(selectedPlan._id)
+            } else {
+              throw new Error(data.message || 'Failed to delete')
+            }
+          } catch (err) {
+            Alert.alert('Error', err.message)
+          }
+        }
+      }
+    ])
+  }
+  const renderPlanItem = ({ item }) => (
+    
+    <TouchableOpacity className="bg-white rounded-xl p-4 mb-3">
+      <View className="flex-row items-center justify-between mb-3">
+        <View className="flex-1">
+          <Text className="text-base font-urbanist-bold text-gray-900 mb-1">{item.title}</Text>
+          <View className="flex-row items-center">
+            <View className="bg-blue-50 px-2 py-1 rounded">
+              <Text className="text-xs font-urbanist-semibold text-[#0066FF]">{item.planType}</Text>
+            </View>
+            {item.isLatest && (
+              <View className="bg-green-50 px-2 py-1 rounded ml-2">
+                <Text className="text-xs font-urbanist-semibold text-green-600">Latest</Text>
+              </View>
+            )}
+          </View>
+        </View>
+        <Text className="text-sm font-urbanist-semibold text-gray-500">v{item.version}</Text>
+      </View>
+      <View className="space-y-2 mb-3">
+        {item.floor && (
+          <View className="flex-row">
+            <Text className="text-sm font-urbanist-medium text-gray-500 w-20">Floor:</Text>
+            <Text className="text-sm font-urbanist-regular text-gray-900 flex-1">{item.floor}</Text>
+          </View>
+        )}
+        {item.area && (
+          <View className="flex-row">
+            <Text className="text-sm font-urbanist-medium text-gray-500 w-20">Area:</Text>
+            <Text className="text-sm font-urbanist-regular text-gray-900 flex-1">{item.area}</Text>
+          </View>
+        )}
+        <View className="flex-row">
+          <Text className="text-sm font-urbanist-medium text-gray-500 w-20">By:</Text>
+          <Text className="text-sm font-urbanist-regular text-gray-900 flex-1">{item.uploadedBy?.name || 'Unknown'}</Text>
+        </View>
+        <View className="flex-row">
+          <Text className="text-sm font-urbanist-medium text-gray-500 w-20">Date:</Text>
+          <Text className="text-sm font-urbanist-regular text-gray-900 flex-1">{new Date(item.createdAt).toLocaleDateString()}</Text>
+        </View>
+        {item.remarks && (
+          <View className="flex-row">
+            <Text className="text-sm font-urbanist-medium text-gray-500 w-20">Notes:</Text>
+            <Text className="text-sm font-urbanist-regular text-gray-900 flex-1">{item.remarks}</Text>
+          </View>
+        )}
+      </View>
+      <View className="flex-row space-x-2">
+        <TouchableOpacity
+          className="flex-1 bg-[#0066FF] py-3 rounded-lg flex-row items-center justify-center"
+          onPress={() => {
+            setPreviewFile(item.file)
+            setShowFilePreview(true)
+          }}
+          disabled={!item.file || !item.file.url}
+        >
+          <Feather name="eye" size={16} color="#fff" />
+          <Text className="text-sm font-urbanist-semibold text-white ml-2">View File</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          className="flex-1 bg-gray-100 py-3 rounded-lg flex-row items-center justify-center"
+          onPress={() => handleViewDetails(item._id)}
+        >
+          <Feather name="info" size={16} color="#374151" />
+          <Text className="text-sm font-urbanist-semibold text-gray-700 ml-2">Details</Text>
+        </TouchableOpacity>
+      </View>
+      <View className="flex-1">
+        <Text className="text-sm font-semibold text-slate-900 mb-0.5">{doc.name}</Text>
+        <Text className="text-xs text-slate-500">{doc.type}</Text>
+      </View>
+      <MaterialCommunityIcons name="arrow-right" size={20} color="#0066FF" />
+    </TouchableOpacity>
+  );
+}
 
-// // ---------- Sample Data ----------
-// const sampleData = {
-//   projectId: "proj-001",
-//   name: "Luxury 7BHK Villa - Plot A",
-//   finalizedBy: {
-//     consultant: "Ahmed Hassan (Consultant)",
-//     siteManager: "Mohamed Ali",
-//     date: "2025-05-22",
-//   },
-//   measurements: [
-//     { label: "Plot Area", value: "450 sq.m" },
-//     { label: "Setback Front", value: "6 m" },
-//     { label: "Setback Rear", value: "4 m" },
-//     { label: "Plinth Area", value: "380 sq.m" },
-//     { label: "Ground Floor Builtup", value: "200 sq.m" },
-//   ],
-//   photos: [
-//     { id: "p1", source: require("../../assets/one.png"), caption: "Site - Front view" },
-//     { id: "p2", source: require("../../assets/two.png"), caption: "Ground - Soil check" },
-//   ],
-//   boqSnapshot: {
-//     totalItems: 42,
-//     totalAmount: 38200000,
-//     categories: [
-//       { id: "c1", name: "RCC & Foundation", qty: "120 m3", amount: 8200000 },
-//       { id: "c2", name: "Masonry & Brickwork", qty: "950 m2", amount: 4200000 },
-//       { id: "c3", name: "Finishes", qty: "-", amount: 11200000 },
-//     ],
-//   },
-//   budget: {
-//     baseline: 35000000,
-//     revised: 38200000,
-//     currency: "QAR",
-//   },
-//   documents: [
-//     { id: "d1", name: "Survey Report.pdf", url: "https://example.com/survey.pdf", type: "PDF" },
-//     { id: "d2", name: "Plan_V1.pdf", url: "https://example.com/plan_v1.pdf", type: "PDF" },
-//     { id: "d3", name: "Soil Test Report.pdf", url: "https://example.com/soil.pdf", type: "PDF" },
-//   ],
-//   approvalStatus: {
-//     consultantApproved: true,
-//     siteManagerApproved: true,
-//     clientApproved: false,
-//   },
-// };
+function ApprovalBadge({ approved, label }) {
+  return (
+    <View className="flex-row items-center py-3 border-b border-slate-100">
+      <View className={`w-3 h-3 rounded-full mr-3 ${approved ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+      <View className="flex-1">
+        <Text className="text-sm font-semibold text-slate-900 mb-0.5">{label}</Text>
+        <Text className={`text-xs ${approved ? 'text-emerald-600 font-semibold' : 'text-slate-500'}`}>
+          {approved ? "Approved" : "Pending"}
+        </Text>
+      </View>
+      {approved && (
+        <MaterialCommunityIcons name="check-circle" size={18} color="#10b981" />
+      )}
+    </View>
+  );
+}
 
-// // ---------- Utility helpers ----------
-// const currencyFormatter = (amount, currency = "QAR") =>
-//   new Intl.NumberFormat("en-QA", { 
-//     style: "currency", 
-//     currency: "QAR", 
-//     maximumFractionDigits: 0 
-//   }).format(amount);
-
-// const SectionTitle = ({ title, right }) => (
-//   <View className="flex-row justify-between items-center  mb-3">
-//     <Text className="text-lg font-bold text-slate-900">{title}</Text>
-//     {right ? <View>{right}</View> : null}
-//   </View>
-// );
-
-// // ---------- Components ----------
-// function MeasurementRow({ item }) {
-//   return (
-//     <View className="bg-white rounded-2xl p-4 flex-row items-center shadow-sm shadow-black/5 mb-2">
-//       <View className="flex-1">
-//         <Text className="text-sm text-slate-500 mb-1">{item.label}</Text>
-//         <Text className="text-lg font-bold text-slate-900">{item.value}</Text>
-//       </View>
-//     </View>
-//   );
-// }
-
-// function BOQItem({ item, isLast }) {
-//   return (
-//     <View className={`flex-row items-center py-3 ${!isLast ? 'border-b border-slate-100' : ''}`}>
-//       <View className="flex-1">
-//         <Text className="text-sm font-semibold text-slate-900 mb-0.5">{item.name}</Text>
-//         <Text className="text-xs text-slate-500">{item.qty}</Text>
-//       </View>
-//       <Text className="text-base font-bold text-slate-900">{currencyFormatter(item.amount)}</Text>
-//     </View>
-//   );
-// }
-
-// function DocumentRow({ doc }) {
-//   const open = async (url) => {
-//     try {
-//       const supported = await Linking.canOpenURL(url);
-//       if (!supported) {
-//         Alert.alert("Can't open file", "No handler for this URL");
-//         return;
-//       }
-//       await Linking.openURL(url);
-//     } catch (e) {
-//       Alert.alert("Error", e.message);
-//     }
-//   };
-
-//   return (
-//     <TouchableOpacity 
-//       className="bg-white rounded-xl p-4 flex-row items-center shadow-sm shadow-black/5 mb-2"
-//       onPress={() => open(doc.url)}
-//     >
-//       <View style={{ backgroundColor: '#0066FF15' }} className="w-11 h-11 rounded-lg items-center justify-center mr-3">
-//         <MaterialCommunityIcons name="file-pdf-box" size={24} color="#0066FF" />
-//       </View>
-//       <View className="flex-1">
-//         <Text className="text-sm font-semibold text-slate-900 mb-0.5">{doc.name}</Text>
-//         <Text className="text-xs text-slate-500">{doc.type}</Text>
-//       </View>
-//       <MaterialCommunityIcons name="arrow-right" size={20} color="#0066FF" />
-//     </TouchableOpacity>
-//   );
-// }
-
-// function ApprovalBadge({ approved, label }) {
-//   return (
-//     <View className="flex-row items-center py-3 border-b border-slate-100">
-//       <View className={`w-3 h-3 rounded-full mr-3 ${approved ? 'bg-emerald-500' : 'bg-slate-300'}`} />
-//       <View className="flex-1">
-//         <Text className="text-sm font-semibold text-slate-900 mb-0.5">{label}</Text>
-//         <Text className={`text-xs ${approved ? 'text-emerald-600 font-semibold' : 'text-slate-500'}`}>
-//           {approved ? "Approved" : "Pending"}
-//         </Text>
-//       </View>
-//       {approved && (
-//         <MaterialCommunityIcons name="check-circle" size={18} color="#10b981" />
-//       )}
-//     </View>
-//   );
-// }
-
-// // ---------- Main Screen ----------
-// export default function PlansTab({ route }) {
+// ---------- Main Screen ----------
+// function PlansTab({ route }) {
 //   const [data] = useState(sampleData);
 //   const [clientApproved, setClientApproved] = useState(data.approvalStatus.clientApproved);
 
@@ -312,160 +785,4 @@
 //   );
 // }
 
-
-
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-
-/**
- * PlansScreen - List view for all plans in the system
- * Fetches from /api/plans (with optional projectId filter)
- */
-
-// ---------- Utility helpers ----------
-const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleDateString("en-QA", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-};
-
-// ---------- Components ----------
-function PlanCard({ plan, onPress }) {
-  return (
-    <TouchableOpacity
-      className="bg-white rounded-2xl p-4 mb-3 shadow-sm shadow-black/5"
-      onPress={() => onPress(plan._id)}
-      activeOpacity={0.7}
-    >
-      <View className="flex-row justify-between items-start mb-2">
-        <Text className="text-lg font-bold text-slate-900 flex-1 pr-2">{plan.name}</Text>
-        <View className={`px-2 py-1 rounded-full ${plan.isArchived ? 'bg-red-100' : 'bg-emerald-100'}`}>
-          <Text className={`text-xs font-semibold ${plan.isArchived ? 'text-red-600' : 'text-emerald-600'}`}>
-            {plan.isArchived ? 'Archived' : 'Active'}
-          </Text>
-        </View>
-      </View>
-      <View className="flex-row items-center mb-1">
-        <MaterialCommunityIcons name="calendar" size={16} color="#6b7280" />
-        <Text className="text-sm text-slate-500 ml-1.5">{formatDate(plan.uploadedAt)}</Text>
-      </View>
-      <View className="flex-row items-center">
-        <MaterialCommunityIcons name="account" size={16} color="#6b7280" />
-        <Text className="text-sm text-slate-500 ml-1.5">
-          Uploaded by {plan.uploadedBy?.name || 'Unknown'}
-        </Text>
-      </View>
-      {plan.projectId && (
-        <View className="flex-row items-center mt-1">
-          <MaterialCommunityIcons name="folder" size={16} color="#6b7280" />
-          <Text className="text-sm text-slate-500 ml-1.5">
-            Project: {plan.projectId.name}
-          </Text>
-        </View>
-      )}
-    </TouchableOpacity>
-  );
-}
-
-// ---------- Main Screen ----------
-export default function PlansScreen({ route, navigation }) {
-  const [plans, setPlans] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const API_BASE = `${process.env.BASE_API_URL}`;
-
-  const projectId = route?.params?.projectId; // Optional filter
-
-  useEffect(() => {
-    const fetchPlans = async () => {
-      try {
-        setLoading(true);
-        const token = await AsyncStorage.getItem('authToken'); // Adjust key as per your auth
-        const url = `${API_BASE}/api/plan${projectId ? `?projectId=${projectId}` : ''}`; // Replace with your Next.js URL
-        const response = await fetch(url, {
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token && { Authorization: `Bearer ${token}` }),
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const result = await response.json();
-        if (result.success) {
-          setPlans(result.data || []);
-        } else {
-          throw new Error(result.message || "Failed to fetch plans");
-        }
-      } catch (err) {
-        setError(err.message);
-        Alert.alert("Error", `Failed to load plans: ${err.message}`);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPlans();
-  }, [projectId]);
-
-  const handlePlanPress = (planId) => {
-    navigation.navigate('PlanDetail', { id: planId });
-  };
-
-  if (loading) {
-    return (
-      <SafeAreaView className="flex-1 bg-slate-50 justify-center items-center">
-        <ActivityIndicator size="large" color="#0066FF" />
-        <Text className="mt-2 text-slate-600">Loading plans...</Text>
-      </SafeAreaView>
-    );
-  }
-
-  if (error) {
-    return (
-      <SafeAreaView className="flex-1 bg-slate-50 justify-center items-center">
-        <MaterialCommunityIcons name="alert-circle" size={48} color="#ef4444" />
-        <Text className="mt-2 text-slate-600 text-center">{error}</Text>
-      </SafeAreaView>
-    );
-  }
-
-  return (
-    <SafeAreaView className="flex-1 bg-slate-50">
-      <View className="p-4">
-        <Text className="text-2xl font-bold text-slate-900 mb-4">
-          All Plans ({plans.length})
-        </Text>
-        {plans.length === 0 ? (
-          <View className="flex-1 justify-center items-center">
-            <MaterialCommunityIcons name="file-cad" size={64} color="#d1d5db" />
-            <Text className="text-lg text-slate-500 mt-2">No plans available</Text>
-          </View>
-        ) : (
-          <FlatList
-            data={plans}
-            keyExtractor={(item) => item._id}
-            renderItem={({ item }) => <PlanCard plan={item} onPress={handlePlanPress} />}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 20 }}
-          />
-        )}
-      </View>
-    </SafeAreaView>
-  );
-}
+export default PlansTab;

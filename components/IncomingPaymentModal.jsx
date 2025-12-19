@@ -622,7 +622,7 @@
 // export default IncomingPaymentModal;
 
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -634,6 +634,7 @@ import {
   Alert,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import InputField from '../components/Inputfield';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
@@ -645,6 +646,10 @@ const CLOUDINARY_CONFIG = {
   apiKey: '353369352647425',
   apiSecret: '8qcz7uAdftDVFNd6IqaDOytg_HI',
 };
+
+// ✅ API Configuration
+const API_URL = process.env.BASE_API_URL || 'https://skystruct-lite-backend.vercel.app';
+const TOKEN_KEY = 'userToken';
 
 // ✅ Generate signature for Cloudinary
 const generateSignature = async (timestamp) => {
@@ -687,22 +692,113 @@ const uploadToCloudinary = async (fileUri) => {
   }
 };
 
-const IncomingPaymentModal = ({ visible, onClose, onSave }) => {
+const IncomingPaymentModal = ({ 
+  visible, 
+  onClose, 
+  onSave, // This will now be callback after success
+  editingTransaction = null,
+  projectId = null,
+  project = null,
+  refreshTransactions = null // Optional: callback to refresh list
+}) => {
+  // Form state
   const [amount, setAmount] = useState('');
-  const [description, setDescription] = useState('');
+  const [remarks, setRemarks] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [uploadedDocs, setUploadedDocs] = useState([]);
+  const [invoiceNumber, setInvoiceNumber] = useState('');
+  const [invoiceDate, setInvoiceDate] = useState(new Date());
+  const [referenceNumber, setReferenceNumber] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Dropdown values
   const [selectedValues, setSelectedValues] = useState({
     vendorName: '',
-    mode: '',
+    paymentMode: '',
     bank: '',
     costCode: '',
-    category: '',
   });
+
+  // User info
+  const [userId, setUserId] = useState('');
 
   const [dropdownOptions, setDropdownOptions] = useState([]);
   const [showDropdown, setShowDropdown] = useState(null);
+
+  // Initialize user info
+  useEffect(() => {
+    const loadUserInfo = async () => {
+      try {
+        // Get user ID from AsyncStorage
+        const userData = await AsyncStorage.getItem('userData');
+        if (userData) {
+          const parsedUser = JSON.parse(userData);
+          setUserId(parsedUser.id || '');
+          console.log('[IncomingPayment] Loaded userId:', parsedUser.id);
+        }
+      } catch (error) {
+        console.error('[IncomingPayment] Error loading user info:', error);
+      }
+    };
+
+    loadUserInfo();
+  }, []);
+
+  // Initialize form with editing data
+  useEffect(() => {
+    if (editingTransaction) {
+      console.log('[IncomingPaymentModal] Editing transaction:', editingTransaction);
+      
+      // Set basic fields
+      setAmount(editingTransaction.amount?.toString() || '');
+      setRemarks(editingTransaction.remarks || '');
+      
+      // Set dates
+      if (editingTransaction.paymentDate) {
+        setSelectedDate(new Date(editingTransaction.paymentDate));
+      }
+      if (editingTransaction.invoiceDate) {
+        setInvoiceDate(new Date(editingTransaction.invoiceDate));
+      }
+      
+      // Set document URLs
+      setUploadedDocs(editingTransaction.documents || []);
+      
+      // Set dropdown values
+      setSelectedValues({
+        vendorName: editingTransaction.vendorName || '',
+        paymentMode: editingTransaction.paymentMode || '',
+        bank: editingTransaction.bank || '',
+        costCode: editingTransaction.costCode || '',
+      });
+      
+      // Set other fields
+      setInvoiceNumber(editingTransaction.invoiceNumber || '');
+      setReferenceNumber(editingTransaction.referenceNumber || '');
+    } else {
+      // Reset form for new entry
+      resetForm();
+    }
+  }, [editingTransaction]);
+
+  // Reset form function
+  const resetForm = () => {
+    setAmount('');
+    setRemarks('');
+    setSelectedDate(new Date());
+    setUploadedDocs([]);
+    setInvoiceNumber('');
+    setInvoiceDate(new Date());
+    setReferenceNumber('');
+    setSelectedValues({
+      vendorName: '',
+      paymentMode: '',
+      bank: '',
+      costCode: '',
+    });
+    setIsLoading(false);
+  };
 
   // 📅 Format Date
   const formatDate = (date) =>
@@ -742,10 +838,10 @@ const IncomingPaymentModal = ({ visible, onClose, onSave }) => {
     }
   };
 
-  // 📡 Fetch Dropdown Data with better error handling and fallbacks
+  // 📡 Fetch Dropdown Data with fallbacks
   const fetchDropdownData = async (type) => {
     try {
-      // Use fallback data directly since APIs are returning HTML
+      // Fallback data for development
       const fallbackData = {
         vendorName: [
           { label: 'ABC Construction Ltd.', value: 'abc' },
@@ -753,7 +849,7 @@ const IncomingPaymentModal = ({ visible, onClose, onSave }) => {
           { label: 'Global Suppliers Co.', value: 'global' },
           { label: 'Metro Contractors', value: 'metro' },
         ],
-        mode: [
+        paymentMode: [
           { label: 'Cash', value: 'cash' },
           { label: 'Bank Transfer', value: 'bank_transfer' },
           { label: 'UPI', value: 'upi' },
@@ -771,15 +867,8 @@ const IncomingPaymentModal = ({ visible, onClose, onSave }) => {
           { label: 'EQP-2024-003', value: 'eqp003' },
           { label: 'SVC-2024-004', value: 'svc004' },
         ],
-        category: [
-          { label: 'Material Purchase', value: 'material' },
-          { label: 'Labor Charges', value: 'labor' },
-          { label: 'Equipment Rental', value: 'equipment' },
-          { label: 'Service Charges', value: 'service' },
-        ],
       };
 
-      // Set the appropriate fallback data based on type
       if (fallbackData[type]) {
         setDropdownOptions(fallbackData[type]);
         setShowDropdown(type);
@@ -799,18 +888,110 @@ const IncomingPaymentModal = ({ visible, onClose, onSave }) => {
   };
 
   const handleSelect = (type, item) => {
-    setSelectedValues((prev) => ({ ...prev, [type]: item.label }));
+    setSelectedValues((prev) => ({ ...prev, [type]: item.value }));
     setShowDropdown(null);
   };
 
-  // 💾 Save handler — Mapped correctly to schema
-  const handleSave = () => {
+  // ✅ CREATE Transaction (POST to /api/transactions)
+  const createTransaction = async (payload) => {
+    try {
+      const token = await AsyncStorage.getItem(TOKEN_KEY);
+      if (!token) {
+        Alert.alert('Error', 'User not logged in.');
+        return false;
+      }
+
+      console.log('📤 Creating transaction:', payload);
+      
+      const response = await fetch(`${API_URL}/api/transactions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+      console.log('📥 Create response:', data);
+
+      if (!response.ok) {
+        throw new Error(data.message || `Failed with status ${response.status}`);
+      }
+
+      Alert.alert('Success', 'Transaction created successfully!');
+      return true;
+    } catch (error) {
+      console.error('❌ Create error:', error);
+      Alert.alert('Error', error.message || 'Failed to create transaction');
+      return false;
+    }
+  };
+
+  // ✅ UPDATE Transaction (PUT to /api/transactions/[id])
+  const updateTransaction = async (id, payload) => {
+    try {
+      const token = await AsyncStorage.getItem(TOKEN_KEY);
+      if (!token) {
+        Alert.alert('Error', 'User not logged in.');
+        return false;
+      }
+
+      console.log(`📤 Updating transaction ${id}:`, payload);
+      
+      const response = await fetch(`${API_URL}/api/transactions/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+      console.log('📥 Update response:', data);
+
+      if (!response.ok) {
+        throw new Error(data.message || `Failed with status ${response.status}`);
+      }
+
+      Alert.alert('Success', 'Transaction updated successfully!');
+      return true;
+    } catch (error) {
+      console.error('❌ Update error:', error);
+      Alert.alert('Error', error.message || 'Failed to update transaction');
+      return false;
+    }
+  };
+
+  // 💾 Save handler - Now makes direct API calls
+  const handleSave = async () => {
     if (!amount || !selectedValues.vendorName) {
       Alert.alert('Missing Fields', 'Please fill Vendor Name and Amount fields.');
       return;
     }
 
-    // Map payment mode display values to schema enum values
+    // Check if projectId is available
+    if (!projectId) {
+      Alert.alert('Missing Project', 'No project selected. Please go back and select a project.');
+      return;
+    }
+
+    // Try to get user ID from AsyncStorage if not already set
+    let finalUserId = userId;
+    if (!finalUserId) {
+      try {
+        const userData = await AsyncStorage.getItem('userData');
+        if (userData) {
+          const parsedUser = JSON.parse(userData);
+          finalUserId = parsedUser.id || '';
+        }
+      } catch (error) {
+        console.error('Error getting user ID:', error);
+      }
+    }
+
+    // Map display labels to actual values for payment mode
     const paymentModeMap = {
       'Cash': 'cash',
       'Bank Transfer': 'bank_transfer', 
@@ -818,25 +999,83 @@ const IncomingPaymentModal = ({ visible, onClose, onSave }) => {
       'Cheque': 'cheque'
     };
 
+    // Get actual payment mode value
+    const paymentModeValue = paymentModeMap[selectedValues.paymentMode] || selectedValues.paymentMode || 'cash';
+
+    // Build payload according to new schema
     const payload = {
-      type: 'payment_in',
+      // Required fields for project association - using projectId from props
+      projectId: projectId,
+      createdBy: finalUserId || '690d86c4425a1a0b7dfe7d42',
+      
+      // Required classification fields for new schema
+      category: 'payment',
+      nature: 'payment_in',
+      direction: 'credit',
+      
+      // Financial details
       amount: parseFloat(amount),
-      remarks: description,
-      vendorName: selectedValues.vendorName,
-      paymentMode: paymentModeMap[selectedValues.mode] || 'cash', // Map to schema enum
+      currency: 'INR',
+      paymentMode: paymentModeValue,
       paymentDate: selectedDate.toISOString(),
+      referenceNumber: referenceNumber,
+      
+      // Vendor/Invoice details
+      vendorName: selectedValues.vendorName,
+      invoiceNumber: invoiceNumber,
+      invoiceDate: invoiceDate.toISOString(),
+      
+      // Other fields
+      remarks: remarks,
       documents: uploadedDocs,
-      bank: selectedValues.bank,
-      costCode: selectedValues.costCode,
-      category: selectedValues.category,
+      
+      // Additional fields if needed
+      ...(selectedValues.costCode && { costCode: selectedValues.costCode }),
+      ...(selectedValues.bank && { bank: selectedValues.bank }),
+      
+      // Status for approval flow
+      status: 'pending'
     };
 
-    console.log('✅ Final Payload:', payload);
-    onSave(payload);
+    console.log('✅ Incoming Payment Payload:', payload);
+    
+    setIsLoading(true);
+    
+    let success = false;
+    
+    if (editingTransaction) {
+      // Update existing transaction
+      success = await updateTransaction(editingTransaction._id, payload);
+    } else {
+      // Create new transaction
+      success = await createTransaction(payload);
+    }
+    
+    setIsLoading(false);
+    
+    if (success) {
+      // Clear form
+      resetForm();
+      
+      // Call parent callback if provided
+      if (onSave) onSave();
+      
+      // Call refresh callback if provided
+      if (refreshTransactions) refreshTransactions();
+      
+      // Close modal
+      onClose();
+    }
+  };
+
+  // Handle close
+  const handleClose = () => {
+    resetForm();
+    onClose();
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
       <SafeAreaView style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' }}>
         <View style={{ flex: 1, justifyContent: 'flex-end' }}>
           <View
@@ -857,12 +1096,35 @@ const IncomingPaymentModal = ({ visible, onClose, onSave }) => {
             <ScrollView showsVerticalScrollIndicator={false} style={{ paddingHorizontal: 20 }}>
               {/* Title + Date */}
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 }}>
-                <Text style={{ fontFamily: 'Urbanist-Bold', fontSize: 20 }}>Incoming Payment</Text>
+                <Text style={{ fontFamily: 'Urbanist-Bold', fontSize: 20 }}>
+                  {editingTransaction ? 'Edit Incoming Payment' : 'Incoming Payment'}
+                </Text>
                 <TouchableOpacity onPress={() => setShowDatePicker(true)} style={{ flexDirection: 'row' }}>
                   <Text style={{ color: '#999', marginRight: 4 }}>{formatDate(selectedDate)}</Text>
                   <Feather name="chevron-down" size={20} color="#999" />
                 </TouchableOpacity>
               </View>
+
+              {/* Project Info Display */}
+              {projectId && (
+                <View style={{ 
+                  backgroundColor: '#E8F5E9', 
+                  padding: 10, 
+                  borderRadius: 8, 
+                  marginBottom: 16,
+                  borderLeftWidth: 4,
+                  borderLeftColor: '#4CAF50'
+                }}>
+                  <Text style={{ fontSize: 12, color: '#2E7D32', fontWeight: '600' }}>
+                    📁 Project ID: {projectId.substring(0, 8)}...
+                  </Text>
+                  {project && project.projectName && (
+                    <Text style={{ fontSize: 10, color: '#4CAF50', marginTop: 2 }}>
+                      Project: {project.projectName}
+                    </Text>
+                  )}
+                </View>
+              )}
 
               {/* Vendor */}
               <View style={{ marginBottom: 20 }}>
@@ -877,87 +1139,109 @@ const IncomingPaymentModal = ({ visible, onClose, onSave }) => {
                     justifyContent: 'space-between',
                   }}
                 >
-                  <Text>{selectedValues.vendorName || 'Select Vendor'}</Text>
+                  <Text style={{ color: selectedValues.vendorName ? '#000' : '#999' }}>
+                    {selectedValues.vendorName || 'Select Vendor'}
+                  </Text>
                   <Feather name="chevron-down" size={20} color="#999" />
                 </TouchableOpacity>
               </View>
 
-              <InputField label="Amount Received" placeholder="₹25,000" value={amount} onChangeText={setAmount} />
+              <InputField 
+                label="Amount Received" 
+                placeholder="₹25,000" 
+                value={amount} 
+                onChangeText={setAmount}
+                keyboardType="numeric"
+                editable={!isLoading}
+              />
+              
               <InputField
-                label="Description / Remarks"
+                label="Invoice Number"
+                placeholder="INV-2024-001"
+                value={invoiceNumber}
+                onChangeText={setInvoiceNumber}
+                editable={!isLoading}
+              />
+              
+              <InputField
+                label="Reference Number"
+                placeholder="REF-12345"
+                value={referenceNumber}
+                onChangeText={setReferenceNumber}
+                editable={!isLoading}
+              />
+              
+              <InputField
+                label="Remarks / Description"
                 placeholder="Advance payment for material supply"
-                value={description}
-                onChangeText={setDescription}
+                value={remarks}
+                onChangeText={setRemarks}
+                multiline
+                editable={!isLoading}
               />
 
-              {/* Mode */}
+              {/* Payment Mode */}
               <View style={{ marginBottom: 20 }}>
-                <Text style={{ fontSize: 13, color: '#000', marginBottom: 8 }}>Mode</Text>
+                <Text style={{ fontSize: 13, color: '#000', marginBottom: 8 }}>Payment Mode</Text>
                 <TouchableOpacity
-                  onPress={() => fetchDropdownData('mode')}
+                  onPress={() => fetchDropdownData('paymentMode')}
+                  disabled={isLoading}
                   style={{
                     borderBottomWidth: 1,
                     borderBottomColor: '#E0E0E0',
                     paddingVertical: 12,
                     flexDirection: 'row',
                     justifyContent: 'space-between',
+                    opacity: isLoading ? 0.5 : 1,
                   }}
                 >
-                  <Text>{selectedValues.mode || 'Select Mode'}</Text>
+                  <Text style={{ color: selectedValues.paymentMode ? '#000' : '#999' }}>
+                    {selectedValues.paymentMode || 'Select Payment Mode'}
+                  </Text>
                   <Feather name="chevron-down" size={20} color="#999" />
                 </TouchableOpacity>
               </View>
 
               {/* Bank Name */}
               <View style={{ marginBottom: 20 }}>
-                <Text style={{ fontSize: 13, color: '#000', marginBottom: 8 }}>Bank Name</Text>
+                <Text style={{ fontSize: 13, color: '#000', marginBottom: 8 }}>Bank Name (Optional)</Text>
                 <TouchableOpacity
                   onPress={() => fetchDropdownData('bank')}
+                  disabled={isLoading}
                   style={{
                     borderBottomWidth: 1,
                     borderBottomColor: '#E0E0E0',
                     paddingVertical: 12,
                     flexDirection: 'row',
                     justifyContent: 'space-between',
+                    opacity: isLoading ? 0.5 : 1,
                   }}
                 >
-                  <Text>{selectedValues.bank || 'Select Bank'}</Text>
+                  <Text style={{ color: selectedValues.bank ? '#000' : '#999' }}>
+                    {selectedValues.bank || 'Select Bank'}
+                  </Text>
                   <Feather name="chevron-down" size={20} color="#999" />
                 </TouchableOpacity>
               </View>
 
               {/* Cost Code */}
               <View style={{ marginBottom: 20 }}>
-                <Text style={{ fontSize: 13, color: '#000', marginBottom: 8 }}>Cost Code</Text>
+                <Text style={{ fontSize: 13, color: '#000', marginBottom: 8 }}>Cost Code (Optional)</Text>
                 <TouchableOpacity
                   onPress={() => fetchDropdownData('costCode')}
+                  disabled={isLoading}
                   style={{
                     borderBottomWidth: 1,
                     borderBottomColor: '#E0E0E0',
                     paddingVertical: 12,
                     flexDirection: 'row',
                     justifyContent: 'space-between',
+                    opacity: isLoading ? 0.5 : 1,
                   }}
                 >
-                  <Text>{selectedValues.costCode || 'Select Cost Code'}</Text>
-                  <Feather name="chevron-down" size={20} color="#999" />
-                </TouchableOpacity>
-              </View>
-
-              {/* Category */}
-              <View style={{ marginBottom: 20 }}>
-                <Text style={{ fontSize: 13, color: '#000', marginBottom: 8 }}>Category</Text>
-                <TouchableOpacity
-                  onPress={() => fetchDropdownData('category')}
-                  style={{
-                    borderBottomWidth: 1,
-                    borderBottomColor: '#E0E0E0',
-                    paddingVertical: 12,
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <Text>{selectedValues.category || 'Select Category'}</Text>
+                  <Text style={{ color: selectedValues.costCode ? '#000' : '#999' }}>
+                    {selectedValues.costCode || 'Select Cost Code'}
+                  </Text>
                   <Feather name="chevron-down" size={20} color="#999" />
                 </TouchableOpacity>
               </View>
@@ -967,7 +1251,7 @@ const IncomingPaymentModal = ({ visible, onClose, onSave }) => {
                 <View style={{ marginBottom: 16 }}>
                   <Text style={{ fontSize: 13, color: '#000', marginBottom: 8 }}>Uploaded Documents</Text>
                   {uploadedDocs.map((url, i) => (
-                    <Text key={i} style={{ color: '#0066FF', fontSize: 12 }}>
+                    <Text key={i} style={{ color: '#0066FF', fontSize: 12, marginBottom: 4 }}>
                       Document {i + 1}
                     </Text>
                   ))}
@@ -977,25 +1261,65 @@ const IncomingPaymentModal = ({ visible, onClose, onSave }) => {
               {/* Buttons */}
               <View style={{ flexDirection: 'row', gap: 12, marginBottom: 20 }}>
                 <TouchableOpacity
-                  style={{ flex: 1, backgroundColor: '#0066FF', borderRadius: 12, paddingVertical: 16, alignItems: 'center' }}
+                  style={{ 
+                    flex: 1, 
+                    backgroundColor: projectId && !isLoading ? '#0066FF' : '#CCCCCC',
+                    borderRadius: 12, 
+                    paddingVertical: 16, 
+                    alignItems: 'center',
+                    flexDirection: 'row',
+                    justifyContent: 'center',
+                    gap: 8,
+                  }}
                   onPress={handleSave}
+                  disabled={!projectId || isLoading}
                 >
-                  <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>Save</Text>
+                  {isLoading ? (
+                    <>
+                      <Feather name="loader" size={20} color="white" />
+                      <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
+                        {editingTransaction ? 'Updating...' : 'Saving...'}
+                      </Text>
+                    </>
+                  ) : (
+                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
+                      {editingTransaction ? 'Update' : 'Save'}
+                    </Text>
+                  )}
                 </TouchableOpacity>
+                
                 <TouchableOpacity
                   onPress={handleDocumentUpload}
+                  disabled={isLoading}
                   style={{
                     width: 56,
                     height: 56,
-                    backgroundColor: '#00C896',
+                    backgroundColor: isLoading ? '#CCCCCC' : '#00C896',
                     borderRadius: 12,
                     alignItems: 'center',
                     justifyContent: 'center',
+                    opacity: isLoading ? 0.5 : 1,
                   }}
                 >
                   <Feather name="paperclip" size={24} color="white" />
                 </TouchableOpacity>
               </View>
+              
+              {/* Cancel Button */}
+              <TouchableOpacity
+                onPress={handleClose}
+                disabled={isLoading}
+                style={{
+                  backgroundColor: '#F5F5F5',
+                  borderRadius: 12,
+                  paddingVertical: 16,
+                  alignItems: 'center',
+                  marginBottom: 20,
+                  opacity: isLoading ? 0.5 : 1,
+                }}
+              >
+                <Text style={{ color: '#666', fontSize: 16, fontWeight: '600' }}>Cancel</Text>
+              </TouchableOpacity>
             </ScrollView>
           </View>
 

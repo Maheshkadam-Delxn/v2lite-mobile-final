@@ -85,7 +85,7 @@ const CustomerChooseTemplate = ({ navigation }) => {
 
           return {
             id: item._id || item.id,
-            title: item.name || "Unnamed Template",
+            title: item.projectTypeName || "Unnamed Template",
             description: item.description || "",
             image: item.image || "https://via.placeholder.com/80",
             category: categoryNormalized,
