@@ -221,6 +221,7 @@
     |-- payments
         |-- Payment.jsx
     |-- plans
+        |-- PlanDetailScreen.jsx
         |-- planscreen.jsx
     |-- Profile
         |-- CustomerSupport.jsx
