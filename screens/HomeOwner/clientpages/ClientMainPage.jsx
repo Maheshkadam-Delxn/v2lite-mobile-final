@@ -879,6 +879,340 @@
 // });
 
 
+// import {
+//   View,
+//   Text,
+//   TextInput,
+//   ScrollView,
+//   TouchableOpacity,
+//   Image,
+//   RefreshControl,
+//   ActivityIndicator,
+//   Alert,
+//   StyleSheet,
+// } from "react-native";
+
+// import React, { useState, useEffect, useRef } from "react";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
+// import { Ionicons } from "@expo/vector-icons";
+// import Swipeable from "react-native-gesture-handler/Swipeable";
+// import { GestureHandlerRootView } from "react-native-gesture-handler";
+// import { LinearGradient } from "expo-linear-gradient";
+// import Header from "components/Header";
+
+// const CLIENT_API_URL = `${process.env.BASE_API_URL}/api/projects`;
+
+// export default function ClientMainPage({ navigation }) {
+//   const [dataList, setDataList] = useState([]);
+//   const [isLoading, setIsLoading] = useState(true);
+//   const [refreshing, setRefreshing] = useState(false);
+//   const [searchQuery, setSearchQuery] = useState("");
+
+//   const openSwipeRefs = useRef(new Map());
+
+//   // ===============================
+//   // Fetch Data
+//   // ===============================
+//   const fetchData = async () => {
+//     try {
+//       const token = await AsyncStorage.getItem("userToken");
+//       setIsLoading(true);
+
+//       const response = await fetch(CLIENT_API_URL, {
+//         headers: { Authorization: `Bearer ${token}` },
+//       });
+
+//       const json = await response.json();
+//       const list = Array.isArray(json.data) ? json.data : [];
+
+//       const stored = await AsyncStorage.getItem("userData");
+//       const user = stored ? JSON.parse(stored) : null;
+
+//       if (!user) {
+//         console.log("⚠ No user found in storage");
+//         return;
+//       }
+
+//       const loggedInId = String(user.id);
+//       const loggedInEmail = user.email;
+
+//       const filteredList = list.filter((item) => {
+//         const createdBy = item?.createdBy ? String(item.createdBy) : null;
+//         const clientEmail = item?.clientEmail;
+//         return createdBy === loggedInId || clientEmail === loggedInEmail;
+//       });
+
+//       setDataList(filteredList);
+//     } catch (err) {
+//       console.log("Fetch Error:", err);
+//     } finally {
+//       setIsLoading(false);
+//       setRefreshing(false);
+//     }
+//   };
+
+//   useEffect(() => {
+//     fetchData();
+//   }, []);
+
+//   const onRefresh = () => {
+//     setRefreshing(true);
+//     fetchData();
+//   };
+
+//   // ===============================
+//   // Delete Item
+//   // ===============================
+//   const deleteItem = async (id) => {
+//     try {
+//       openSwipeRefs.current.get(id)?.close();
+//       openSwipeRefs.current.delete(id);
+
+//       setDataList((prev) => prev.filter((x) => x._id !== id));
+
+//       await fetch(`${CLIENT_API_URL}/${id}`, {
+//         method: "DELETE",
+//       });
+//     } catch (err) {
+//       Alert.alert("Error", "Delete failed");
+//     }
+//   };
+
+//   const confirmDelete = (item) => {
+//     Alert.alert("Delete Proposal", `Are you sure you want to delete "${item.name}"?`, [
+//       { text: "Cancel", style: "cancel" },
+//       { text: "Delete", style: "destructive", onPress: () => deleteItem(item._id) },
+//     ]);
+//   };
+
+//   const renderRightActions = (progress, dragX, item) => (
+//     <View style={styles.deleteAction}>
+//       <TouchableOpacity style={styles.deleteBtn} onPress={() => confirmDelete(item)}>
+//         <Ionicons name="trash-outline" size={24} color="#fff" />
+//         <Text style={styles.deleteText}>Delete</Text>
+//       </TouchableOpacity>
+//     </View>
+//   );
+
+//   // ===============================
+//   // Navigation
+//   // ===============================
+//   const handleAddProject = () => {
+//     navigation.navigate('CustomerChooseTemplate');
+//   };
+
+//   // ===============================
+//   // Search
+//   // ===============================
+//   const filteredList = dataList.filter((item) =>
+//     item.name?.toLowerCase().includes(searchQuery.toLowerCase())
+//   );
+
+//   // ===============================
+//   // Get Status Color
+//   // ===============================
+//   const getStatusColor = (status) => {
+//     const statusLower = (status || "active").toLowerCase();
+//     switch (statusLower) {
+//       case "completed":
+//         return { bg: "#ECFDF5", dot: "#10B981", text: "#059669" };
+//       case "in progress":
+//       case "active":
+//         return { bg: "#EFF6FF", dot: "#3B82F6", text: "#2563EB" };
+//       case "pending":
+//         return { bg: "#FEF3C7", dot: "#F59E0B", text: "#D97706" };
+//       case "on hold":
+//         return { bg: "#FEE2E2", dot: "#EF4444", text: "#DC2626" };
+//       default:
+//         return { bg: "#F3F4F6", dot: "#6B7280", text: "#4B5563" };
+//     }
+//   };
+
+//   // ===============================
+//   // Card Component
+//   // ===============================
+//   const Card = ({ item, index }) => {
+//     const statusColors = getStatusColor(item.status);
+
+//     return (
+//       <Swipeable
+//         ref={(ref) => ref && openSwipeRefs.current.set(item._id, ref)}
+//         renderRightActions={(progress, dragX) =>
+//           renderRightActions(progress, dragX, item)
+//         }
+//         onSwipeableWillOpen={() => {
+//           openSwipeRefs.current.forEach((ref, id) => {
+//             if (id !== item._id) ref?.close();
+//           });
+//         }}
+//       >
+//         <TouchableOpacity 
+//           style={styles.card}
+//           activeOpacity={0.7}
+//           onPress={() => {/* Add navigation to project details */}}
+//         >
+//           {/* Card Header with Gradient */}
+//           <View style={styles.cardHeader}>
+//             <View style={styles.cardHeaderLeft}>
+//               <View style={styles.projectIconContainer}>
+//                 <Ionicons name="briefcase" size={20} color="#0066FF" />
+//               </View>
+//               <View style={styles.cardHeaderText}>
+//                 <Text style={styles.projectName} numberOfLines={1}>
+//                   {item.name || "Untitled Project"}
+//                 </Text>
+//                 <Text style={styles.projectType} numberOfLines={1}>
+//                   {item.projectType?.projectTypeName || "No type specified"}
+//                 </Text>
+//               </View>
+//             </View>
+//             <TouchableOpacity style={styles.moreButton}>
+//               <Ionicons name="ellipsis-horizontal" size={20} color="#6B7280" />
+//             </TouchableOpacity>
+//           </View>
+
+//           {/* Card Body */}
+//           <View style={styles.cardBody}>
+//             {/* Location */}
+//             <View style={styles.infoRow}>
+//               <View style={styles.infoIconContainer}>
+//                 <Ionicons name="location" size={18} color="#EF4444" />
+//               </View>
+//               <View style={styles.infoContent}>
+//                 <Text style={styles.infoLabel}>Location</Text>
+//                 <Text style={styles.infoValue} numberOfLines={1}>
+//                   {item.location || "Not specified"}
+//                 </Text>
+//               </View>
+//             </View>
+
+//             {/* Divider */}
+//             <View style={styles.divider} />
+
+//             {/* Status and Date Row */}
+//             <View style={styles.footerRow}>
+//               <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
+//                 <View style={[styles.statusDot, { backgroundColor: statusColors.dot }]} />
+//                 <Text style={[styles.statusText, { color: statusColors.text }]}>
+//                   {item.status || "Active"}
+//                 </Text>
+//               </View>
+              
+//               <View style={styles.dateContainer}>
+//                 <Ionicons name="calendar-outline" size={14} color="#9CA3AF" />
+//                 <Text style={styles.dateText}>
+//                   {item.createdAt 
+//                     ? new Date(item.createdAt).toLocaleDateString('en-US', { 
+//                         month: 'short', 
+//                         day: 'numeric',
+//                         year: 'numeric'
+//                       })
+//                     : 'No date'}
+//                 </Text>
+//               </View>
+//             </View>
+//           </View>
+
+//           {/* Card Accent Line */}
+//           <View style={[styles.cardAccent, { backgroundColor: statusColors.dot }]} />
+//         </TouchableOpacity>
+//       </Swipeable>
+//     );
+//   };
+
+//   if (isLoading) {
+//     return (
+//       <View style={styles.loading}>
+//         <View style={styles.loadingContainer}>
+//           <ActivityIndicator size="large" color="#0066FF" />
+//           <Text style={styles.loadingText}>Loading Projects...</Text>
+//         </View>
+//       </View>
+//     );
+//   }
+
+//   return (
+//     <GestureHandlerRootView style={{ flex: 1 }}>
+//       <Header title="Welcome to SkyStruct" />
+
+     
+
+//       <ScrollView
+//         style={styles.scrollView}
+//         contentContainerStyle={styles.scrollContent}
+//         refreshControl={
+//           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+//         }
+//         showsVerticalScrollIndicator={false}
+//       >
+//         {/* Search + Add Button */}
+//         <View style={styles.searchContainer}>
+//           <View style={styles.searchBar}>
+//             <Ionicons name="search" size={20} color="#9CA3AF" />
+//             <TextInput
+//               placeholder="Search Projects..."
+//               placeholderTextColor="#9CA3AF"
+//               style={styles.searchInput}
+//               value={searchQuery}
+//               onChangeText={setSearchQuery}
+//             />
+//             {searchQuery.length > 0 && (
+//               <TouchableOpacity onPress={() => setSearchQuery("")}>
+//                 <Ionicons name="close-circle" size={20} color="#9CA3AF" />
+//               </TouchableOpacity>
+//             )}
+//           </View>
+
+//           <TouchableOpacity style={styles.addButton} onPress={handleAddProject}>
+//             <Ionicons name="add" size={28} color="white" />
+//           </TouchableOpacity>
+//         </View>
+
+//         {/* List Header */}
+//         {filteredList.length > 0 && (
+//           <View style={styles.listHeader}>
+//             <Text style={styles.listHeaderText}>
+//               {searchQuery ? `${filteredList.length} Result${filteredList.length !== 1 ? 's' : ''}` : 'Your Projects'}
+//             </Text>
+//           </View>
+//         )}
+
+//         {/* List */}
+//         <View style={styles.listContainer}>
+//           {filteredList.map((item, index) => (
+//             <Card key={item._id} item={item} index={index} />
+//           ))}
+
+//           {filteredList.length === 0 && (
+//             <View style={styles.empty}>
+//               <View style={styles.emptyIconContainer}>
+//                 <Ionicons name="folder-open-outline" size={64} color="#0066FF" />
+//               </View>
+//               <Text style={styles.emptyTitle}>No Projects Found</Text>
+//               <Text style={styles.emptySubtitle}>
+//                 {searchQuery 
+//                   ? "Try adjusting your search terms or clear the search to see all proposals" 
+//                   : "Get started by creating your first proposal and begin managing your projects efficiently"}
+//               </Text>
+//               {!searchQuery && (
+//                 <TouchableOpacity style={styles.emptyButton} onPress={handleAddProject}>
+//                   <Ionicons name="add-circle" size={22} color="white" />
+//                   <Text style={styles.emptyButtonText}>Create New Proposal</Text>
+//                 </TouchableOpacity>
+//               )}
+//             </View>
+//           )}
+//         </View>
+
+//         <View style={{ height: 40 }} />
+//       </ScrollView>
+//     </GestureHandlerRootView>
+//   );
+// }
+
+
+
+
 import {
   View,
   Text,
@@ -1049,7 +1383,7 @@ export default function ClientMainPage({ navigation }) {
         <TouchableOpacity 
           style={styles.card}
           activeOpacity={0.7}
-          onPress={() => {/* Add navigation to project details */}}
+          onPress={() => navigation.navigate('Overview', { project: item })}  // Updated: Navigate to Overview with project data
         >
           {/* Card Header with Gradient */}
           <View style={styles.cardHeader}>
@@ -1209,6 +1543,12 @@ export default function ClientMainPage({ navigation }) {
     </GestureHandlerRootView>
   );
 }
+
+// ===============================
+// Styles
+// ===============================
+// (Styles remain the same, omitted for brevity)
+
 
 // ===============================
 // Styles

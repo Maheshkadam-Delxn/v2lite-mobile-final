@@ -130,14 +130,7 @@ const ChangeRequests = () => {
   /* ----------------------- RENDER ----------------------- */
   return (
     <SafeAreaView className="flex-1 bg-white">
-      {/* ---------- HEADER ---------- */}
-      <Header
-        title="Change Requests"
-        showBackButton={true}
-        backgroundColor="#0066FF"
-        titleColor="white"
-        iconColor="white"
-      />
+     
 
       <ScrollView
         className="flex-1 bg-gray-50"

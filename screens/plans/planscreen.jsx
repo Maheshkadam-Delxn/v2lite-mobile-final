@@ -1,10 +1,149 @@
-import { View, Text, FlatList, Linking, ActivityIndicator, Alert, Modal, TextInput, TouchableOpacity, ScrollView, Image } from 'react-native'
+import { View, Text, FlatList, Linking, ActivityIndicator, Alert, Modal, TextInput, TouchableOpacity, ScrollView, Image, Dimensions } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as ImagePicker from 'expo-image-picker'
 import * as Crypto from 'expo-crypto'
-import { Feather } from '@expo/vector-icons'
+import { Feather, Ionicons } from '@expo/vector-icons'
 import WebView from 'react-native-webview'
+import { PinchGestureHandler, State, GestureHandlerRootView } from 'react-native-gesture-handler'
+import { useSharedValue, useAnimatedStyle } from 'react-native-reanimated'
+import Animated from 'react-native-reanimated'
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window')
+
+const ImagePreviewModal = ({ visible, onClose, imageUri, planId, projectId, onAddAnnotation }) => {
+  const [annotations, setAnnotations] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [annotationMode, setAnnotationMode] = useState(false)
+  const [tempPosition, setTempPosition] = useState(null)
+
+  const baseScale = useSharedValue(1)
+  const pinchScale = useSharedValue(1)
+  const offset = useSharedValue({ x: 0, y: 0 })
+  const start = useSharedValue({ x: 0, y: 0 })
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: offset.value.x },
+      { translateY: offset.value.y },
+      { scale: baseScale.value * pinchScale.value },
+    ],
+  }))
+
+  useEffect(() => {
+    if (visible && planId) {
+      fetchAnnotations()
+    }
+  }, [visible, planId])
+
+  const fetchAnnotations = async () => {
+    setLoading(true)
+    try {
+      const token = await AsyncStorage.getItem('userToken')
+      const response = await fetch(`${process.env.BASE_API_URL}/api/annotation?planId=${planId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      })
+      const data = await response.json()
+      if (data.success) {
+        setAnnotations(data.data)
+      }
+    } catch (error) {
+      console.error('Fetch annotations error:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const onPinchGestureEvent = (event) => {
+    pinchScale.value = event.nativeEvent.scale
+  }
+
+  const onPinchHandlerStateChange = (event) => {
+    if (event.nativeEvent.oldState === State.ACTIVE) {
+      baseScale.value = Math.max(1, baseScale.value * event.nativeEvent.scale)
+      pinchScale.value = 1
+      start.value = { x: offset.value.x, y: offset.value.y }
+    }
+  }
+
+  const onImagePress = (event) => {
+    if (annotationMode) {
+      const { locationX, locationY } = event.nativeEvent
+      // Normalize position (0-1) based on screen dimensions
+      const normX = locationX / screenWidth
+      const normY = locationY / screenHeight
+      setTempPosition({ x: normX, y: normY })
+      onAddAnnotation({ x: normX, y: normY, page: 1 })
+      setAnnotationMode(false)
+      setTempPosition(null)
+    }
+  }
+
+  const toggleAnnotationMode = () => {
+    setAnnotationMode(!annotationMode)
+  }
+
+  if (!visible) return null
+
+  return (
+    <Modal visible={visible} animationType="fade" onRequestClose={onClose}>
+      <GestureHandlerRootView style={{ flex: 1, backgroundColor: 'black', justifyContent: 'center', alignItems: 'center' }}>
+        {loading ? (
+          <ActivityIndicator size="large" color="#0000ff" />
+        ) : (
+          <PinchGestureHandler
+            onGestureEvent={onPinchGestureEvent}
+            onHandlerStateChange={onPinchHandlerStateChange}
+          >
+            <Animated.View style={[ { flex: 1, justifyContent: 'center', alignItems: 'center' }, animatedStyle ]}>
+              <TouchableOpacity onPress={onImagePress} activeOpacity={1}>
+                <Image
+                  source={{ uri: imageUri }}
+                  style={{ width: screenWidth, height: screenHeight }}
+                  resizeMode="contain"
+                />
+                {/* Render annotations as pins */}
+                {annotations.map((anno, index) => (
+                  <TouchableOpacity
+                    key={anno._id}
+                    style={{
+                      position: 'absolute',
+                      left: anno.position.x * screenWidth - 12,
+                      top: anno.position.y * screenHeight - 24,
+                    }}
+                    onPress={() => Alert.alert(`Title: ${anno.title}`, `Description: ${anno.description}`)}
+                  >
+                    <Ionicons name="location" size={24} color="red" />
+                  </TouchableOpacity>
+                ))}
+                {tempPosition && (
+                  <View
+                    style={{
+                      position: 'absolute',
+                      left: tempPosition.x * screenWidth - 12,
+                      top: tempPosition.y * screenHeight - 24,
+                    }}
+                  >
+                    <Ionicons name="location-outline" size={24} color="blue" />
+                  </View>
+                )}
+              </TouchableOpacity>
+            </Animated.View>
+          </PinchGestureHandler>
+        )}
+        <TouchableOpacity style={{ position: 'absolute', top: 40, right: 20, backgroundColor: 'rgba(255,255,255,0.5)', padding: 10, borderRadius: 5 }} onPress={onClose}>
+          <Text style={{ color: 'black', fontWeight: 'bold' }}>Close</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={{ position: 'absolute', bottom: 40, right: 20, backgroundColor: 'blue', padding: 10, borderRadius: 50 }} onPress={toggleAnnotationMode}>
+          <Ionicons name={annotationMode ? "close" : "add"} size={30} color="white" />
+        </TouchableOpacity>
+      </GestureHandlerRootView>
+    </Modal>
+  )
+}
 
 const PlansTab = ({ project }) => {
   const [plans, setPlans] = useState([])
@@ -26,9 +165,13 @@ const PlansTab = ({ project }) => {
     severity: 'medium',
     position: { x: 0, y: 0, page: 1 },
     attachments: [],
+    status: 'open',
+    resolutionNote: '',
+    assignedTo: null,
   })
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
   const [showSeverityDropdown, setShowSeverityDropdown] = useState(false)
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false)
   const [historyLoading, setHistoryLoading] = useState(false)
   const [detailsLoading, setDetailsLoading] = useState(false)
   const [annotationsLoading, setAnnotationsLoading] = useState(false)
@@ -44,6 +187,7 @@ const PlansTab = ({ project }) => {
   const [showPlanTypeDropdown, setShowPlanTypeDropdown] = useState(false)
   const [showFilePreview, setShowFilePreview] = useState(false)
   const [previewFile, setPreviewFile] = useState(null)
+  const [previewPlanId, setPreviewPlanId] = useState(null)
   const planTypes = [
     { value: 'architectural', label: 'Architectural' },
     { value: 'structural', label: 'Structural' },
@@ -64,6 +208,12 @@ const PlansTab = ({ project }) => {
     'medium',
     'high',
     'critical',
+  ]
+  const annotationStatuses = [
+    'open',
+    'in_progress',
+    'resolved',
+    'closed',
   ]
   const CLOUDINARY_CONFIG = {
     cloudName: 'dmlsgazvr',
@@ -414,6 +564,7 @@ const PlansTab = ({ project }) => {
           fileType: asset.type === 'image' ? (asset.mimeType || 'jpg') : 'pdf',
           fileSize: asset.fileSize || 0,
           uploadedAt: new Date(),
+          originalName: asset.fileName || `attachment_${Date.now()}`,
         }
         setAnnotationForm(prev => ({
           ...prev,
@@ -451,12 +602,12 @@ const PlansTab = ({ project }) => {
         category: annotationForm.category,
         severity: annotationForm.severity,
         attachments: annotationForm.attachments,
+        status: annotationForm.status,
+        resolutionNote: annotationForm.resolutionNote,
+        assignedTo: annotationForm.assignedTo,
       }
-      if (isAnnotationUpdate) {
-        // For update, only send changed fields, but for simplicity send all
-        if (body.status === 'resolved') {
-          body.resolvedAt = new Date()
-        }
+      if (body.status === "resolved" && !isAnnotationUpdate) {
+        body.resolvedAt = new Date()
       }
       const response = await fetch(url, {
         method,
@@ -478,6 +629,9 @@ const PlansTab = ({ project }) => {
           severity: 'medium',
           position: { x: 0, y: 0, page: 1 },
           attachments: [],
+          status: 'open',
+          resolutionNote: '',
+          assignedTo: null,
         })
         setIsAnnotationUpdate(false)
       } else {
@@ -495,6 +649,9 @@ const PlansTab = ({ project }) => {
       severity: annotation.severity,
       position: annotation.position,
       attachments: annotation.attachments || [],
+      status: annotation.status,
+      resolutionNote: annotation.resolutionNote || '',
+      assignedTo: annotation.assignedTo?._id || null,
     })
     setSelectedAnnotation(annotation)
     setIsAnnotationUpdate(true)
@@ -529,6 +686,15 @@ const PlansTab = ({ project }) => {
         }
       }
     ])
+  }
+  const handleAddAnnotationFromPreview = (position) => {
+    setAnnotationForm(prev => ({
+      ...prev,
+      position,
+    }))
+    setIsAnnotationUpdate(false)
+    setShowAnnotationModal(true)
+    setShowFilePreview(false) // Close preview to open form, or keep open if needed
   }
   const renderPlanItem = ({ item }) => (
     <View className="bg-white rounded-xl p-4 mb-3">
@@ -581,6 +747,7 @@ const PlansTab = ({ project }) => {
           className="flex-1 bg-[#0066FF] py-3 rounded-lg flex-row items-center justify-center"
           onPress={() => {
             setPreviewFile(item.file)
+            setPreviewPlanId(item._id)
             setShowFilePreview(true)
           }}
           disabled={!item.file || !item.file.url}
@@ -599,7 +766,7 @@ const PlansTab = ({ project }) => {
     </View>
   )
   const renderHistoryItem = ({ item }) => (
-    <View className="bg-gray-50 rounded-lg p-4 mb-3">
+    <View key={item._id} className="bg-gray-50 rounded-lg p-4 mb-3">
       <View className="flex-row items-center justify-between mb-3">
         <Text className="text-base font-urbanist-bold text-gray-900">Version {item.version}</Text>
         <Text className="text-xs font-urbanist-regular text-gray-500">{new Date(item.createdAt).toLocaleDateString()}</Text>
@@ -622,6 +789,7 @@ const PlansTab = ({ project }) => {
           className="flex-1 bg-[#0066FF] py-2.5 rounded-lg"
           onPress={() => {
             setPreviewFile(item.file)
+            setPreviewPlanId(item._id)
             setShowFilePreview(true)
           }}
           disabled={!item.file || !item.file.url}
@@ -640,7 +808,7 @@ const PlansTab = ({ project }) => {
     </View>
   )
   const renderAnnotationItem = ({ item }) => (
-    <View className="bg-white rounded-lg p-4 mb-3 border border-gray-100">
+    <View key={item._id} className="bg-white rounded-lg p-4 mb-3 border border-gray-100">
       <View className="flex-row items-start justify-between mb-2">
         <View className="flex-1">
           <Text className="text-base font-urbanist-bold text-gray-900 mb-1">{item.title}</Text>
@@ -985,6 +1153,7 @@ const PlansTab = ({ project }) => {
                     className="flex-1 bg-[#0066FF] py-4 rounded-xl"
                     onPress={() => {
                       setPreviewFile(selectedPlan.file)
+                      setPreviewPlanId(selectedPlan._id)
                       setShowFilePreview(true)
                     }}
                     disabled={!selectedPlan.file || !selectedPlan.file.url}
@@ -1021,6 +1190,9 @@ const PlansTab = ({ project }) => {
                           severity: 'medium',
                           position: { x: 0, y: 0, page: 1 },
                           attachments: [],
+                          status: 'open',
+                          resolutionNote: '',
+                          assignedTo: null,
                         })
                         setIsAnnotationUpdate(false)
                         setShowAnnotationModal(true)
@@ -1040,12 +1212,9 @@ const PlansTab = ({ project }) => {
                       <Text className="text-sm font-urbanist-medium text-gray-500 mt-2">No annotations yet</Text>
                     </View>
                   ) : (
-                    <FlatList
-                      data={annotations}
-                      renderItem={renderAnnotationItem}
-                      keyExtractor={(item) => item._id.toString()}
-                      scrollEnabled={false}
-                    />
+                    <View>
+                      {annotations.map((item) => renderAnnotationItem({ item }))}
+                    </View>
                   )}
                 </View>
                 <Text className="text-lg font-urbanist-bold text-gray-900 mb-4">Previous Versions</Text>
@@ -1059,12 +1228,9 @@ const PlansTab = ({ project }) => {
                     <Text className="text-sm font-urbanist-medium text-gray-500 mt-2">No previous versions</Text>
                   </View>
                 ) : (
-                  <FlatList
-                    data={planHistory}
-                    renderItem={renderHistoryItem}
-                    keyExtractor={(item) => item._id.toString()}
-                    scrollEnabled={false}
-                  />
+                  <View>
+                    {planHistory.map((item) => renderHistoryItem({ item }))}
+                  </View>
                 )}
               </>
             ) : (
@@ -1072,6 +1238,188 @@ const PlansTab = ({ project }) => {
                 <Text className="text-base font-urbanist-medium text-gray-500">No details available</Text>
               </View>
             )}
+          </ScrollView>
+        </View>
+      </Modal>
+      {/* Annotation Modal */}
+      <Modal
+        visible={showAnnotationModal}
+        animationType="slide"
+        onRequestClose={() => setShowAnnotationModal(false)}
+      >
+        <View className="flex-1 bg-white">
+          <View className="bg-white border-b border-gray-100 px-4 pt-12 pb-4">
+            <View className="flex-row items-center justify-between">
+              <Text className="text-xl font-urbanist-bold text-gray-900">
+                {isAnnotationUpdate ? 'Update Annotation' : 'Add Annotation'}
+              </Text>
+              <TouchableOpacity onPress={() => setShowAnnotationModal(false)}>
+                <Feather name="x" size={24} color="#374151" />
+              </TouchableOpacity>
+            </View>
+          </View>
+          <ScrollView className="flex-1 px-4 py-6">
+            <View className="mb-4">
+              <Text className="text-sm font-urbanist-semibold text-gray-900 mb-2">Title *</Text>
+              <TextInput
+                className="bg-gray-50 rounded-lg px-4 py-3"
+                value={annotationForm.title}
+                onChangeText={(v) => handleAnnotationInput('title', v)}
+                placeholder="Enter title"
+              />
+            </View>
+            <View className="mb-4">
+              <Text className="text-sm font-urbanist-semibold text-gray-900 mb-2">Description</Text>
+              <TextInput
+                className="bg-gray-50 rounded-lg px-4 py-3"
+                value={annotationForm.description}
+                onChangeText={(v) => handleAnnotationInput('description', v)}
+                placeholder="Enter description"
+                multiline
+              />
+            </View>
+            <View className="mb-4">
+              <Text className="text-sm font-urbanist-semibold text-gray-900 mb-2">Category *</Text>
+              <TouchableOpacity
+                className="bg-gray-50 rounded-lg px-4 py-3 flex-row justify-between"
+                onPress={() => setShowCategoryDropdown(!showCategoryDropdown)}
+              >
+                <Text>{annotationForm.category || 'Select category'}</Text>
+                <Feather name="chevron-down" size={20} />
+              </TouchableOpacity>
+              {showCategoryDropdown && (
+                <View className="bg-white border border-gray-200 rounded-lg mt-1">
+                  {annotationCategories.map(cat => (
+                    <TouchableOpacity
+                      key={cat}
+                      className="px-4 py-3 border-b border-gray-100"
+                      onPress={() => {
+                        handleAnnotationInput('category', cat)
+                        setShowCategoryDropdown(false)
+                      }}
+                    >
+                      <Text>{cat}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+            <View className="mb-4">
+              <Text className="text-sm font-urbanist-semibold text-gray-900 mb-2">Severity</Text>
+              <TouchableOpacity
+                className="bg-gray-50 rounded-lg px-4 py-3 flex-row justify-between"
+                onPress={() => setShowSeverityDropdown(!showSeverityDropdown)}
+              >
+                <Text>{annotationForm.severity}</Text>
+                <Feather name="chevron-down" size={20} />
+              </TouchableOpacity>
+              {showSeverityDropdown && (
+                <View className="bg-white border border-gray-200 rounded-lg mt-1">
+                  {annotationSeverities.map(sev => (
+                    <TouchableOpacity
+                      key={sev}
+                      className="px-4 py-3 border-b border-gray-100"
+                      onPress={() => {
+                        handleAnnotationInput('severity', sev)
+                        setShowSeverityDropdown(false)
+                      }}
+                    >
+                      <Text>{sev}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+            <View className="mb-4">
+              <Text className="text-sm font-urbanist-semibold text-gray-900 mb-2">Status</Text>
+              <TouchableOpacity
+                className="bg-gray-50 rounded-lg px-4 py-3 flex-row justify-between"
+                onPress={() => setShowStatusDropdown(!showStatusDropdown)}
+              >
+                <Text>{annotationForm.status}</Text>
+                <Feather name="chevron-down" size={20} />
+              </TouchableOpacity>
+              {showStatusDropdown && (
+                <View className="bg-white border border-gray-200 rounded-lg mt-1">
+                  {annotationStatuses.map(stat => (
+                    <TouchableOpacity
+                      key={stat}
+                      className="px-4 py-3 border-b border-gray-100"
+                      onPress={() => {
+                        handleAnnotationInput('status', stat)
+                        setShowStatusDropdown(false)
+                      }}
+                    >
+                      <Text>{stat}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+            {annotationForm.status === 'resolved' && (
+              <View className="mb-4">
+                <Text className="text-sm font-urbanist-semibold text-gray-900 mb-2">Resolution Note</Text>
+                <TextInput
+                  className="bg-gray-50 rounded-lg px-4 py-3"
+                  value={annotationForm.resolutionNote}
+                  onChangeText={(v) => handleAnnotationInput('resolutionNote', v)}
+                  placeholder="Enter resolution note"
+                  multiline
+                />
+              </View>
+            )}
+            <View className="mb-4">
+              <Text className="text-sm font-urbanist-semibold text-gray-900 mb-2">Position</Text>
+              <View className="flex-row space-x-2">
+                <TextInput
+                  className="bg-gray-50 rounded-lg px-4 py-3 flex-1"
+                  value={annotationForm.position.x.toString()}
+                  onChangeText={(v) => handlePositionChange('x', v)}
+                  placeholder="X (0-1)"
+                  keyboardType="numeric"
+                />
+                <TextInput
+                  className="bg-gray-50 rounded-lg px-4 py-3 flex-1"
+                  value={annotationForm.position.y.toString()}
+                  onChangeText={(v) => handlePositionChange('y', v)}
+                  placeholder="Y (0-1)"
+                  keyboardType="numeric"
+                />
+                <TextInput
+                  className="bg-gray-50 rounded-lg px-4 py-3 flex-1"
+                  value={annotationForm.position.page.toString()}
+                  onChangeText={(v) => handlePositionChange('page', v)}
+                  placeholder="Page"
+                  keyboardType="numeric"
+                />
+              </View>
+            </View>
+            <View className="mb-6">
+              <Text className="text-sm font-urbanist-semibold text-gray-900 mb-2">Attachments</Text>
+              <TouchableOpacity
+                className="bg-gray-50 rounded-lg px-4 py-3 flex-row items-center justify-center mb-2"
+                onPress={handleAddAnnotationAttachment}
+              >
+                <Feather name="plus" size={20} />
+                <Text className="ml-2">Add Attachment</Text>
+              </TouchableOpacity>
+              {annotationForm.attachments.map((att, index) => (
+                <View key={index} className="flex-row items-center justify-between bg-gray-100 p-3 rounded-lg mb-2">
+                  <Text>{att.originalName || 'Attachment'}</Text>
+                  <TouchableOpacity onPress={() => handleRemoveAnnotationAttachment(index)}>
+                    <Feather name="trash" size={16} color="red" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+            <TouchableOpacity
+              className="bg-[#0066FF] py-4 rounded-xl"
+              onPress={handleAddOrUpdateAnnotation}
+            >
+              <Text className="text-white text-center font-bold">
+                {isAnnotationUpdate ? 'Update' : 'Add'} Annotation
+              </Text>
+            </TouchableOpacity>
           </ScrollView>
         </View>
       </Modal>
@@ -1090,10 +1438,13 @@ const PlansTab = ({ project }) => {
           </View>
           {previewFile ? (
             previewFile.fileType.startsWith('image') ? (
-              <Image
-                source={{ uri: previewFile.url }}
-                style={{ flex: 1 }}
-                resizeMode="contain"
+              <ImagePreviewModal
+                visible={showFilePreview}
+                onClose={() => setShowFilePreview(false)}
+                imageUri={previewFile.url}
+                planId={previewPlanId}
+                projectId={project?._id}
+                onAddAnnotation={handleAddAnnotationFromPreview}
               />
             ) : (
               <WebView
@@ -1111,5 +1462,4 @@ const PlansTab = ({ project }) => {
     </View>
   )
 }
-
 export default PlansTab
