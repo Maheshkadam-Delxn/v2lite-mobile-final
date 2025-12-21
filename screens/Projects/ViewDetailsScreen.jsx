@@ -187,7 +187,7 @@ const ViewDetailsScreen = () => {
         // Render the PaymentsTransaction component inline
         return <PaymentsTransaction project={project} />;
 
-      case 'Files':
+      case 'Plans':
         // Render the PaymentsTransaction component inline
         return <FilesScreen project={project} />;
 
@@ -195,10 +195,10 @@ const ViewDetailsScreen = () => {
    
         return <ApproveSurveyScreen project={siteData} />;
 
-          case 'Plans':
-        // Render the PaymentsTransaction component inline
-        // return <PlansScreen project={project} />;
-        return <PlansTab/>
+        //   case 'Files':
+        // // Render the PaymentsTransaction component inline
+        // // return <PlansScreen project={project} />;
+        // return <PlansTab/>
 
         case 'BOQ':
           return <BOQListScreen navigation={navigation} project={project}/>;

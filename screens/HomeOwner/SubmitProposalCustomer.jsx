@@ -21,7 +21,7 @@ const CLOUDINARY = {
   apiKey: "353369352647425",
   apiSecret: "8qcz7uAdftDVFNd6IqaDOytg_HI",
 };
-//const API_URL = 'https://skystruct-lite-backend.vercel.app/api/projects';
+
 
 const API_URL = `${process.env.BASE_API_URL}/api/projects`;
 const generateSignature = async (timestamp) => {
@@ -85,6 +85,8 @@ const SubmitProposalCustomer = ({ navigation, route }) => {
   const [documents, setDocuments] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [note, setNote] = useState("");
+  const [needsNewSiteSurvey, setNeedsNewSiteSurvey] = useState(false);
+
 
 useEffect(() => {
   const fetchUserData = async () => {
@@ -151,33 +153,6 @@ useEffect(() => {
     setDocuments((prev) => prev.filter((d) => d.id !== id));
   };
 
-// const handleSubmit = () => {
-//   if (!projectName || !clientName || !clientEmail) {
-//     Alert.alert("Required Fields", "Please fill in all required fields.");
-//     return;
-//   }
-
-//   const payload = {
-//     projectType: proposalData?.id,
-//     templateName: proposalData?.title,
-//     templateCategory: proposalData?.category,
-//     templateItems: proposalData?.items,
-//     name:projectName,
-//     clientName,
-//     clientEmail,
-//     clientPhone,
-//     location,
-//     projectDocuments:documents,
-//      description:note,
-//     status:"Proposal Under Approval"
-//   };
-
-//   console.log("====== FINAL SUBMISSION DATA ======");
-//   console.log(payload);
-
-
- 
-// };
 
 const handleSubmit = async () => {
   if (!projectName || !clientName || !clientEmail) {
@@ -197,6 +172,7 @@ const handleSubmit = async () => {
     location,
     projectDocuments: documents,
     description: note,
+    needsNewSiteSurvey:needsNewSiteSurvey,
     status: "Proposal Under Approval",
   };
 
@@ -290,6 +266,37 @@ const handleSubmit = async () => {
             </View>
           </View>
         </View>
+{/* New Site Survey Checkbox */}
+<View style={styles.formSection}>
+  <Text style={styles.sectionTitle}>Site Survey</Text>
+
+  <TouchableOpacity
+    style={styles.checkboxRow}
+    activeOpacity={0.7}
+    onPress={() => setNeedsNewSiteSurvey(prev => !prev)}
+  >
+    <View
+      style={[
+        styles.checkbox,
+        needsNewSiteSurvey && styles.checkboxChecked,
+      ]}
+    >
+      {needsNewSiteSurvey && (
+        <Feather name="check" size={16} color="#FFF" />
+      )}
+    </View>
+
+    <Text style={styles.checkboxLabel}>
+      Do you want a new site survey?
+    </Text>
+  </TouchableOpacity>
+
+  {needsNewSiteSurvey && (
+    <Text style={styles.checkboxHint}>
+      A site manager will visit the location and perform a fresh site survey.
+    </Text>
+  )}
+</View>
 
         {/* Client Section */}
         <View style={styles.formSection}>
@@ -508,6 +515,43 @@ const styles = StyleSheet.create({
     color: "#0F172A",
     marginBottom: 4,
   },
+  checkboxRow: {
+  flexDirection: "row",
+  alignItems: "center",
+  marginTop: 12,
+},
+
+checkbox: {
+  width: 22,
+  height: 22,
+  borderRadius: 6,
+  borderWidth: 2,
+  borderColor: "#CBD5E1",
+  alignItems: "center",
+  justifyContent: "center",
+  marginRight: 12,
+  backgroundColor: "#FFF",
+},
+
+checkboxChecked: {
+  backgroundColor: "#0066FF",
+  borderColor: "#0066FF",
+},
+
+checkboxLabel: {
+  fontFamily: "Urbanist-Medium",
+  fontSize: 15,
+  color: "#0F172A",
+},
+
+checkboxHint: {
+  marginTop: 8,
+  marginLeft: 34,
+  fontFamily: "Urbanist-Regular",
+  fontSize: 13,
+  color: "#64748B",
+},
+
   sectionSubtitle: {
     fontFamily: "Urbanist-Regular",
     fontSize: 14,

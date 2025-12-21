@@ -1133,7 +1133,7 @@ import SubmitProposalCustomer from 'screens/HomeOwner/SubmitProposalCustomer';
 import EditProfileScreen from 'screens/Profile/EditProfileScreen';
 import PrivacyPolicyScreen from 'screens/Profile/PrivacyPolicyScreen';
 import CustomerSupport from 'screens/Profile/CustomerSupport';
-
+import ViewDocument from 'screens/Document-Management/viewDocument';
 // Materials Screens
 import MaterialsListScreen from 'screens/Materials/MaterialsListScreen';
 import MaterialDetailScreen from 'screens/Materials/MaterialDetailScreen';
@@ -1172,6 +1172,8 @@ import viewSiteSurvey from 'screens/siteSurveys/viewSiteSurvey';
 import BOQListScreen from 'screens/BOQ/BOQListScreen';
 import CreateBOQDraftScreen from 'screens/BOQ/CreateBOQDraftScreen';
 import BOQDetailScreen from 'screens/BOQ/BOQDetailScreen';
+import SiteSurveyTemplateForm from 'screens/Proposals/SiteSurveyForTemplate';
+import { StoreProvider } from 'context/StoreProvider';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const TOKEN_KEY = 'userToken';
@@ -1193,6 +1195,7 @@ const ProjectStack = () => (
         <Stack.Screen name="BOQcreateScreen" component={CreateBOQDraftScreen} />
          <Stack.Screen name="BOQdetailsScreen" component={BOQDetailScreen} />
     <Stack.Screen name="FolderDetails" component={FolderDetailsScreen} />
+     <Stack.Screen name="viewDocument" component={ViewDocument} />
     <Stack.Screen name="View Report" component={GenerateReportScreen} />
     <Stack.Screen name="AddDocumentScreen" component={AddDocumentScreen} />
   </Stack.Navigator>
@@ -1207,6 +1210,9 @@ const ProposalStack = () => (
 
     <Stack.Screen name="CreateProposalScreen" component={CreateProposalScreen} />
     <Stack.Screen name="CreateTemplate" component={CreateTemplate}/>
+        <Stack.Screen name="SiteSurveyTemplate" component={SiteSurveyTemplateForm}/>
+
+
     <Stack.Screen name="SubmitProposal" component={SubmitProposal} />
     <Stack.Screen name="ViewProposal" component={ViewProposal} />
     <Stack.Screen name="ChooseTemplate" component={ChooseTemplate} />
@@ -1532,6 +1538,7 @@ export default function App() {
   }
 
   return (
+    <StoreProvider>
      <PermissionProvider>
     <View style={{ flex: 1 }}>
       <StatusBar style="light" backgroundColor="#ffffff" />
@@ -1582,5 +1589,6 @@ export default function App() {
       </NavigationContainer>
     </View>
      </PermissionProvider>
+     </StoreProvider>
   );
 }
