@@ -31,7 +31,7 @@ const ViewDetailsScreen = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const { project } = route.params || {};
-  // console.log("ProjectData",project);
+  console.log("ProjectData",project);
   const [activeTab, setActiveTab] = useState('Details');
   const [activeView, setActiveView] = useState('Calendar');
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -86,7 +86,7 @@ const ViewDetailsScreen = () => {
       { id: 'Plans', label: 'Plans' },
     { id: 'Task', label: 'Task' },
     { id: 'Transaction', label: 'Transaction' },
-    { id: 'Files', label: 'Files' },
+    // { id: 'Files', label: 'Files' },
    
    
     { id: 'Material', label: 'Material' },

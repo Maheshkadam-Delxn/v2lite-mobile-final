@@ -1442,8 +1442,8 @@ const ClientTabs = () => (
 
         if (route.name === "ClientHome")
           icon = focused ? "home" : "home-outline";
-        else if (route.name === "Projects")
-          icon = focused ? "apps-sharp" : "apps-outline";
+          else if (route.name === "AI")
+          icon = focused ? "sparkles" : "sparkles-outline";
         else if (route.name === "ClientProfile")
           icon = focused ? "person" : "person-outline";
 
@@ -1468,16 +1468,20 @@ const ClientTabs = () => (
       </SafeAreaView>
     )}
   >
+   
+  <Tab.Screen 
+  name="ClientHome"
+  component={ClientProjectStack}
+  options={{ title: "Home" }}
+  />
+    
+     {/* AI TAB (NEW MIDDLE BUTTON) */}
     <Tab.Screen
-      name="ClientHome"
-      component={ClientMainPage}
-      options={{ title: "Home" }}
+      name="AI"
+       component={AIStack}   // <-- replace with actual screen
+      options={{ title: "AI" }}
     />
-    <Tab.Screen
-      name="Projects"
-      component={Overview}
-      options={{ title: "Projects" }}
-    />
+
     <Tab.Screen
       name="ClientProfile"
       component={clientProfilePage}
@@ -1485,6 +1489,27 @@ const ClientTabs = () => (
     />
   </Tab.Navigator>
 );
+
+const AIStack = ()=>(
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Cost Estimation" component={costestimation}/>
+
+    </Stack.Navigator>
+  );
+
+const ClientProjectStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="ClientHome" component={ClientMainPage} />
+    <Stack.Screen name="Overview" component={Overview} />
+    <Stack.Screen name="ProjectTimeline" component={ProjectTimeline} />
+    <Stack.Screen name="BudgetTracker" component={BudgetTracker} />
+    <Stack.Screen name="QualityChecks" component={QualityChecks} />
+    <Stack.Screen name="ChangeRequests" component={ChangeRequests} />
+    <Stack.Screen name="MaterialStatus" component={MaterialStatus} />
+
+  </Stack.Navigator>
+);
+
 
 const ClientStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -1559,17 +1584,12 @@ export default function App() {
          
           <Stack.Screen name="CustomerCreateProposal" component={CustomerCreateProposal} />
          
-          <Stack.Screen name="Overview" component={Overview} />
-          <Stack.Screen name="ProjectTimeline" component={ProjectTimeline} />
-          <Stack.Screen name="BudgetTracker" component={BudgetTracker} />
+          
           
           <Stack.Screen name="FeedDetails" component={FeedDetailsScreen} />
           <Stack.Screen name="ChatScreen" component={ChatScreen} />
 
           <Stack.Screen name="DesignApprovals" component={DesignApprovals} />
-          <Stack.Screen name="QualityChecks" component={QualityChecks} />
-          <Stack.Screen name="ChangeRequests" component={ChangeRequests} />
-          <Stack.Screen name="MaterialStatus" component={MaterialStatus} />
           <Stack.Screen name="SurveyRequestScreen" component={SurveyRequestScreen} />
           <Stack.Screen name="SurveyApprovalScreen" component={SurveyApprovalScreen} />
           <Stack.Screen name="NewSurveyScreen" component={NewSurveyScreen} />

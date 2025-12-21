@@ -13,6 +13,7 @@ const CLOUDINARY_CONFIG = {
   apiKey: '353369352647425',
   apiSecret: '8qcz7uAdftDVFNd6IqaDOytg_HI', 
 };
+
 const SiteSurveyForm = ({ navigation ,route}) => {
 
  const dataofpropopsal = route?.params;
