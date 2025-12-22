@@ -1050,6 +1050,8 @@
 //      </PermissionProvider>
 //   );
 // }
+
+
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -1145,6 +1147,7 @@ import RiskDetail from 'screens/Issues/RiskDetail';
 import EscalationMatrixScreen from 'screens/Issues/EscalationMatrixScreen';
 
 // Reports & Documents
+import costEstimation from './screens/HomeOwner/AI/costestimation';
 import ReportsListScreen from 'screens/Reports/ReportsListScreen';
 import ReportDetailScreen from 'screens/Reports/ReportDetailScreen';
 import FolderDetailsScreen from 'screens/Document-Management/FolderDetailsScreen';
@@ -1174,6 +1177,7 @@ import CreateBOQDraftScreen from 'screens/BOQ/CreateBOQDraftScreen';
 import BOQDetailScreen from 'screens/BOQ/BOQDetailScreen';
 import SiteSurveyTemplateForm from 'screens/Proposals/SiteSurveyForTemplate';
 import { StoreProvider } from 'context/StoreProvider';
+import CostEstimation from './screens/HomeOwner/AI/costestimation';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const TOKEN_KEY = 'userToken';
@@ -1492,7 +1496,7 @@ const ClientTabs = () => (
 
 const AIStack = ()=>(
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Cost Estimation" component={costestimation}/>
+      <Stack.Screen name="Cost Estimation" component={CostEstimation}/>
 
     </Stack.Navigator>
   );
@@ -1589,6 +1593,7 @@ export default function App() {
           
           <Stack.Screen name="FeedDetails" component={FeedDetailsScreen} />
           <Stack.Screen name="ChatScreen" component={ChatScreen} />
+          
 
           <Stack.Screen name="DesignApprovals" component={DesignApprovals} />
           <Stack.Screen name="SurveyRequestScreen" component={SurveyRequestScreen} />
