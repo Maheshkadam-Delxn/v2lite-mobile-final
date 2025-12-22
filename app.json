@@ -3,6 +3,7 @@
     "name": "v2-lite",
     "slug": "v2-lite",
     "version": "1.0.0",
+      "scheme": "v2lite", 
     "owner": "maheshkadam",
     "web": {
       "favicon": "./assets/favicon.png"
