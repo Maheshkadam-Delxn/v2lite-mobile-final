@@ -3049,7 +3049,6 @@
 
 // export default MaterialsListScreen;
 
-
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   View,
@@ -3125,6 +3124,7 @@ const MaterialsListScreen = ({ project }) => {
   const [addMaterialPurchaseModalVisible, setAddMaterialPurchaseModalVisible] = useState(false);
   const [usedModalVisible, setUsedModalVisible] = useState(false);
   const [editMaterialModalVisible, setEditMaterialModalVisible] = useState(false);
+  const [materialDetailModalVisible, setMaterialDetailModalVisible] = useState(false);
 
   // Selection Modals
   const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -3144,12 +3144,13 @@ const MaterialsListScreen = ({ project }) => {
   const [showMaterialListInPurchase, setShowMaterialListInPurchase] = useState(false);
   const [showMaterialListInUsed, setShowMaterialListInUsed] = useState(false);
 
-  // Selected materials
+  // Selected materials and details
   const [selectedReceivedMaterial, setSelectedReceivedMaterial] = useState(null);
   const [selectedRequestMaterial, setSelectedRequestMaterial] = useState(null);
   const [selectedPurchaseMaterial, setSelectedPurchaseMaterial] = useState(null);
   const [selectedUsedMaterial, setSelectedUsedMaterial] = useState(null);
   const [selectedMaterials, setSelectedMaterials] = useState([]);
+  const [selectedMaterialDetail, setSelectedMaterialDetail] = useState(null);
 
   // Forms
   const [receivedForm, setReceivedForm] = useState({
@@ -3829,6 +3830,32 @@ const MaterialsListScreen = ({ project }) => {
     }
   }, [materialLibraryData, showMaterialListInRequest, showMaterialListInPurchase, showMaterialListInReceived, showMaterialListInUsed]);
 
+  // === Show Material Details ===
+  const showMaterialDetails = useCallback((item) => {
+    const rawMaterial = item.__raw || item;
+    
+    // Extract all relevant details from the material
+    const materialDetails = {
+      _id: rawMaterial._id || item._id,
+      name: rawMaterial.materialName || rawMaterial.name || item.name || 'Unknown Material',
+      category: rawMaterial.category || 'Other',
+      unit: rawMaterial.unit || item.unit || 'nos',
+      gst: rawMaterial.gst || 0,
+      hsnCode: rawMaterial.hsnCode || '',
+      price: rawMaterial.price || '',
+      minStock: rawMaterial.minStock || 0,
+      stock: item.stock || rawMaterial.stock || rawMaterial.quantity || 0,
+      description: rawMaterial.description || '',
+      createdAt: rawMaterial.createdAt,
+      updatedAt: rawMaterial.updatedAt,
+      lastUpdated: rawMaterial.lastUpdated,
+      __raw: rawMaterial, // Keep full raw data
+    };
+    
+    setSelectedMaterialDetail(materialDetails);
+    setMaterialDetailModalVisible(true);
+  }, []);
+
   // === Form Clearing Functions ===
   const clearReceivedForm = useCallback(() => {
     setReceivedForm({
@@ -4243,21 +4270,7 @@ const MaterialsListScreen = ({ project }) => {
     <Swipeable renderRightActions={() => renderRightActions(item)}>
       <TouchableOpacity
         className="mb-2 rounded-xl bg-white p-3 flex-row justify-between items-center"
-        onPress={() => {
-          const materialId = item.__raw?._id || item._id;
-          if (!materialId || materialId.includes('random')) {
-            Alert.alert('Error', 'Invalid material selected');
-            return;
-          }
-
-          navigation.navigate('Materials', {
-            screen: 'MaterialDetailScreen',
-            params: {
-              materialId,
-              item: item.__raw,
-            },
-          });
-        }}
+        onPress={() => showMaterialDetails(item)}
       >
         <View className="flex-row items-center flex-1">
           <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-blue-100">
@@ -4279,12 +4292,12 @@ const MaterialsListScreen = ({ project }) => {
         </View>
       </TouchableOpacity>
     </Swipeable>
-  ), [renderRightActions, openEditModal, apiLoadingStates.inventory, navigation]);
+  ), [renderRightActions, openEditModal, apiLoadingStates.inventory, showMaterialDetails]);
 
   const renderRequestItem = useCallback(({ item }) => (
     <TouchableOpacity
       className="mb-2 rounded-xl bg-white p-3"
-      onPress={() => navigation.navigate('RequestDetailsScreen', { request: item })}
+      onPress={() => {}}
     >
       <View className="flex-row items-center justify-between">
         <View className="flex-1 flex-row items-center">
@@ -4304,7 +4317,7 @@ const MaterialsListScreen = ({ project }) => {
         </View>
       </View>
     </TouchableOpacity>
-  ), [navigation]);
+  ), []);
 
   const renderReceivedItem = useCallback(({ item }) => (
     <View className="mb-2 rounded-xl bg-white p-3">
@@ -4461,6 +4474,265 @@ const MaterialsListScreen = ({ project }) => {
 
     return null;
   }, [activeSubTab, filteredInventory, renderInventoryItem, apiLoadingStates, handleRefresh, requestData, renderRequestItem, receivedData, renderReceivedItem, usedData, renderUsedItem]);
+
+  // === MATERIAL DETAIL MODAL ===
+  const MaterialDetailModal = () => (
+    <Modal
+      visible={materialDetailModalVisible}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={() => setMaterialDetailModalVisible(false)}
+    >
+      <TouchableOpacity
+        className="flex-1 justify-end bg-black/50"
+        activeOpacity={1}
+        onPress={() => setMaterialDetailModalVisible(false)}
+      >
+        <TouchableOpacity
+          activeOpacity={1}
+          className="rounded-t-3xl bg-white"
+          style={{ height: '85%' }}
+          onPress={() => {}}
+        >
+          {/* Drag handle */}
+          <View className="items-center pt-3 pb-1">
+            <View className="h-1.5 w-12 rounded-full bg-gray-300" />
+          </View>
+
+          <View className="flex-1 px-5">
+            <View className="mb-4 flex-row items-center justify-between">
+              <Text className="text-lg font-bold text-gray-900">Material Details</Text>
+              <TouchableOpacity onPress={() => setMaterialDetailModalVisible(false)}>
+                <Ionicons name="close" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              className="flex-1"
+              contentContainerStyle={{ paddingBottom: 20 }}
+            >
+              {selectedMaterialDetail && (
+                <>
+                  {/* Header */}
+                  <View className="mb-6 flex-row items-center p-4 bg-blue-50 rounded-xl">
+                    <View className="h-12 w-12 items-center justify-center rounded-full bg-blue-100 mr-4">
+                      <MaterialCommunityIcons name="cube-outline" size={28} color="#0066FF" />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-xl font-bold text-gray-900">
+                        {selectedMaterialDetail.name}
+                      </Text>
+                      <Text className="text-sm text-gray-500 mt-1">
+                        Category: {selectedMaterialDetail.category || 'N/A'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Details Grid */}
+                  <View className="mb-6">
+                    <Text className="text-base font-semibold text-gray-900 mb-4">Basic Information</Text>
+                    
+                    <View className="bg-gray-50 rounded-xl p-4">
+                      <View className="flex-row justify-between mb-3">
+                        <Text className="text-sm text-gray-500">Current Stock</Text>
+                        <Text className="text-sm font-semibold text-gray-900">
+                          {selectedMaterialDetail.stock} {selectedMaterialDetail.unit}
+                        </Text>
+                      </View>
+                      
+                      <View className="flex-row justify-between mb-3">
+                        <Text className="text-sm text-gray-500">Unit</Text>
+                        <Text className="text-sm font-semibold text-gray-900">
+                          {selectedMaterialDetail.unit || 'N/A'}
+                        </Text>
+                      </View>
+                      
+                      <View className="flex-row justify-between mb-3">
+                        <Text className="text-sm text-gray-500">GST Rate</Text>
+                        <Text className="text-sm font-semibold text-gray-900">
+                          {selectedMaterialDetail.gst || 0}%
+                        </Text>
+                      </View>
+                      
+                      <View className="flex-row justify-between mb-3">
+                        <Text className="text-sm text-gray-500">HSN Code</Text>
+                        <Text className="text-sm font-semibold text-gray-900">
+                          {selectedMaterialDetail.hsnCode || 'N/A'}
+                        </Text>
+                      </View>
+                      
+                      <View className="flex-row justify-between">
+                        <Text className="text-sm text-gray-500">Price</Text>
+                        <Text className="text-sm font-semibold text-gray-900">
+                          {selectedMaterialDetail.price ? `₹ ${selectedMaterialDetail.price}` : 'N/A'}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* Stock Information */}
+                  <View className="mb-6">
+                    <Text className="text-base font-semibold text-gray-900 mb-4">Stock Information</Text>
+                    
+                    <View className="flex-row mb-4">
+                      <View className="flex-1 mr-2 bg-green-50 p-4 rounded-xl">
+                        <Text className="text-xs text-gray-500 mb-1">Minimum Stock</Text>
+                        <Text className="text-lg font-bold text-green-700">
+                          {selectedMaterialDetail.minStock || 0} {selectedMaterialDetail.unit}
+                        </Text>
+                      </View>
+                      
+                      <View className="flex-1 ml-2 bg-blue-50 p-4 rounded-xl">
+                        <Text className="text-xs text-gray-500 mb-1">Current Stock</Text>
+                        <Text className="text-lg font-bold text-blue-700">
+                          {selectedMaterialDetail.stock} {selectedMaterialDetail.unit}
+                        </Text>
+                      </View>
+                    </View>
+                    
+                    {/* Stock Status Indicator */}
+                    <View className="bg-gray-50 p-4 rounded-xl">
+                      <View className="flex-row items-center justify-between mb-2">
+                        <Text className="text-sm text-gray-700">Stock Status</Text>
+                        <View className={`px-3 py-1 rounded-full ${
+                          selectedMaterialDetail.stock <= (selectedMaterialDetail.minStock || 0) 
+                            ? 'bg-red-100' 
+                            : selectedMaterialDetail.stock <= (selectedMaterialDetail.minStock || 0) * 2
+                            ? 'bg-yellow-100'
+                            : 'bg-green-100'
+                        }`}>
+                          <Text className={`text-xs font-medium ${
+                            selectedMaterialDetail.stock <= (selectedMaterialDetail.minStock || 0) 
+                              ? 'text-red-700' 
+                              : selectedMaterialDetail.stock <= (selectedMaterialDetail.minStock || 0) * 2
+                              ? 'text-yellow-700'
+                              : 'text-green-700'
+                          }`}>
+                            {selectedMaterialDetail.stock <= (selectedMaterialDetail.minStock || 0) 
+                              ? 'Low Stock' 
+                              : selectedMaterialDetail.stock <= (selectedMaterialDetail.minStock || 0) * 2
+                              ? 'Moderate'
+                              : 'Good'
+                            }
+                          </Text>
+                        </View>
+                      </View>
+                      
+                      {/* Stock Progress Bar */}
+                      <View className="mt-3">
+                        <View className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <View 
+                            className="h-full bg-green-500"
+                            style={{
+                              width: `${Math.min(
+                                (selectedMaterialDetail.stock / ((selectedMaterialDetail.minStock || 0) * 3 || 1)) * 100,
+                                100
+                              )}%`
+                            }}
+                          />
+                        </View>
+                        <View className="flex-row justify-between mt-2">
+                          <Text className="text-xs text-gray-500">0</Text>
+                          <Text className="text-xs text-gray-500">
+                            Target: {(selectedMaterialDetail.minStock || 0) * 3} {selectedMaterialDetail.unit}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* Recent Activity */}
+                  {selectedMaterialDetail.__raw && (
+                    <View className="mb-6">
+                      <Text className="text-base font-semibold text-gray-900 mb-4">Recent Activity</Text>
+                      
+                      <View className="bg-gray-50 rounded-xl p-4">
+                        {selectedMaterialDetail.__raw.lastUpdated && (
+                          <View className="flex-row justify-between mb-3">
+                            <Text className="text-sm text-gray-500">Last Updated</Text>
+                            <Text className="text-sm font-semibold text-gray-900">
+                              {new Date(selectedMaterialDetail.__raw.lastUpdated).toLocaleDateString()}
+                            </Text>
+                          </View>
+                        )}
+                        
+                        {selectedMaterialDetail.__raw.createdAt && (
+                          <View className="flex-row justify-between mb-3">
+                            <Text className="text-sm text-gray-500">Created On</Text>
+                            <Text className="text-sm font-semibold text-gray-900">
+                              {new Date(selectedMaterialDetail.__raw.createdAt).toLocaleDateString()}
+                            </Text>
+                          </View>
+                        )}
+                        
+                        <View className="flex-row justify-between">
+                          <Text className="text-sm text-gray-500">Material ID</Text>
+                          <Text className="text-sm font-semibold text-gray-900">
+                            {selectedMaterialDetail._id?.substring(0, 8)}...
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  )}
+
+                  {/* Description */}
+                  {selectedMaterialDetail.description && (
+                    <View className="mb-6">
+                      <Text className="text-base font-semibold text-gray-900 mb-4">Description</Text>
+                      <View className="bg-gray-50 rounded-xl p-4">
+                        <Text className="text-sm text-gray-700">
+                          {selectedMaterialDetail.description}
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+
+                  {/* Raw Data (for debugging) - Optional */}
+                  {__DEV__ && (
+                    <View className="mb-6">
+                      <Text className="text-base font-semibold text-gray-900 mb-4">Raw Data</Text>
+                      <View className="bg-gray-100 rounded-xl p-4">
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                          <Text className="text-xs text-gray-500" style={{ fontFamily: 'monospace' }}>
+                            {JSON.stringify(selectedMaterialDetail.__raw || selectedMaterialDetail, null, 2)}
+                          </Text>
+                        </ScrollView>
+                      </View>
+                    </View>
+                  )}
+                </>
+              )}
+            </ScrollView>
+
+            {/* Action Buttons */}
+            <View className="flex-row space-x-3 mb-4">
+              <TouchableOpacity
+                className="flex-1 flex-row items-center justify-center rounded-xl bg-blue-600 py-3.5"
+                onPress={() => {
+                  if (selectedMaterialDetail) {
+                    openEditModal(selectedMaterialDetail);
+                    setMaterialDetailModalVisible(false);
+                  }
+                }}
+              >
+                <Ionicons name="create-outline" size={18} color="white" />
+                <Text className="text-base font-semibold text-white ml-2">Edit</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                className="flex-1 flex-row items-center justify-center rounded-xl bg-gray-100 py-3.5"
+                onPress={() => setMaterialDetailModalVisible(false)}
+              >
+                <Ionicons name="close-outline" size={18} color="#6B7280" />
+                <Text className="text-base font-semibold text-gray-600 ml-2">Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </TouchableOpacity>
+    </Modal>
+  );
 
   return (
     <View className="flex-1 bg-gray-50">
@@ -6241,6 +6513,10 @@ const MaterialsListScreen = ({ project }) => {
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
+
+      {/* === MATERIAL DETAIL MODAL === */}
+      <MaterialDetailModal />
+
     </View>
   );
 };
