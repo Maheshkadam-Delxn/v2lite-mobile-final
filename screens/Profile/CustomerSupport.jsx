@@ -146,7 +146,7 @@ const CustomerSupport = ({ navigation }) => {
 
   return (
     <View className="flex-1 bg-[#F8F9FD]">
-      <StatusBar barStyle="dark-content" backgroundColor="#F8F9FD" />
+      <StatusBar barStyle="light-content" backgroundColor="#F8F9FD" />
 
       <Header title="Customer Support" showBackButton={true} />
 

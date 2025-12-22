@@ -1577,6 +1577,7 @@ export default function App() {
           <Stack.Screen name="AddDocumentScreen" component={AddDocumentScreen} />
          
           <Stack.Screen name="CustomerCreateProposal" component={CustomerCreateProposal} />
+          <Stack.Screen name="CustomerSupport" component={CustomerSupport} />
          
           
           

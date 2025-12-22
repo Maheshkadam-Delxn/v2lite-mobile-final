@@ -15,7 +15,7 @@ import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import Header from '../../../components/Header';
-
+import CustomerSupport from '../../Profile/CustomerSupport';
 //const API_URL = 'https://skystruct-lite-backend.vercel.app/api/users';
 
 const API_URL = `${process.env.BASE_API_URL}/api/users`;
