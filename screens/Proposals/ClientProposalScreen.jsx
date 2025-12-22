@@ -309,6 +309,10 @@ if (
   displayStatus = 'Under Survey';
 }
     return (
+       <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={() => navigation.navigate('ViewProposal', { proposal })}
+            >
       <View
         style={{
           backgroundColor: 'white',
@@ -334,10 +338,10 @@ if (
           }}
         >
           <View style={{ flex: 1 }}>
-            <TouchableOpacity
+            {/* <TouchableOpacity
               activeOpacity={0.9}
               onPress={() => navigation.navigate('ViewProposal', { proposal })}
-            >
+            > */}
               <Text
                 style={{
                   fontFamily: 'Urbanist-Bold',
@@ -348,7 +352,7 @@ if (
               >
                 {proposal.title}
               </Text>
-            </TouchableOpacity>
+            {/* </TouchableOpacity> */}
             <StatusBadge status={displayStatus} />
 
           </View>
@@ -442,6 +446,7 @@ if (
           </View>
         )}
       </View>
+      </TouchableOpacity>
     );
   };
 

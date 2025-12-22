@@ -1,999 +1,9 @@
-// import React, { useState } from 'react';
-// import {
-//   View,
-//   Text,
-//   TextInput,
-//   TouchableOpacity,
-//   SafeAreaView,
-//   FlatList,
-//   Modal,
-//   ScrollView,
-//   Platform,
-// } from 'react-native';
-// import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-// import DateTimePicker from '@react-native-community/datetimepicker';
-// import { useNavigation } from '@react-navigation/native';
-
-// const MaterialsListScreen = () => {
-//   const navigation = useNavigation();
-//   const [activeSubTab, setActiveSubTab] = useState('Inventory');
-//   const [searchQuery, setSearchQuery] = useState('');
-//   const [materialActionModalVisible, setMaterialActionModalVisible] = useState(false);
-//   const [receivedModalVisible, setReceivedModalVisible] = useState(false);
-//   const [materialLibraryModalVisible, setMaterialLibraryModalVisible] = useState(false);
-//   const [createNewMaterialModalVisible, setCreateNewMaterialModalVisible] = useState(false);
-//   const [requestMaterialModalVisible, setRequestMaterialModalVisible] = useState(false);
-//   const [addMaterialPurchaseModalVisible, setAddMaterialPurchaseModalVisible] = useState(false);
-//   const [usedModalVisible, setUsedModalVisible] = useState(false);
-
-//   const [date, setDate] = useState(new Date());
-//   const [purchaseDate, setPurchaseDate] = useState(new Date());
-//   const [showDatePicker, setShowDatePicker] = useState(false);
-//   const [showPurchaseDatePicker, setShowPurchaseDatePicker] = useState(false);
-
-//   const [receivedForm, setReceivedForm] = useState({
-//     partyName: 'XYZ Constructions Ltd.',
-//     materialName: 'Test Material',
-//     quantity: '',
-//     challanNo: '10',
-//     vehicleNo: '₹ 1,900',
-//     notes: ''
-//   });
-
-//   const [newMaterialForm, setNewMaterialForm] = useState({
-//     materialName: '',
-//     unit: 'nos',
-//     gst: '18.0 %',
-//     hsnCode: '',
-//     category: 'Select category',
-//     description: ''
-//   });
-
-//   const [requestForm, setRequestForm] = useState({
-//     mrNumber: 'MR-2',
-//     date: '01-04-2025',
-//     materialName: 'Test Material',
-//     quantity: '',
-//     itemDescription: '',
-//     notes: ''
-//   });
-
-//   const [purchaseForm, setPurchaseForm] = useState({
-//     partyName: '',
-//     quantity: '10 nos',
-//     amount: '₹ 1,900',
-//     billTo: '',
-//     advance: '',
-//     balance: '₹ 0'
-//   });
-
-//   const [usedForm, setUsedForm] = useState({
-//     date: '01-04-25',
-//     material: '',
-//     quantity: '',
-//     notes: ''
-//   });
-
-//   const onDateChange = (event, selectedDate) => {
-//     const currentDate = selectedDate || date;
-//     setShowDatePicker(Platform.OS === 'ios');
-//     setDate(currentDate);
-//   };
-
-//   const onPurchaseDateChange = (event, selectedDate) => {
-//     const currentDate = selectedDate || purchaseDate;
-//     setShowPurchaseDatePicker(Platform.OS === 'ios');
-//     setPurchaseDate(currentDate);
-//   };
-
-//   const formatDate = (date) => {
-//     const options = { day: '2-digit', month: 'long', year: 'numeric' };
-//     return date.toLocaleDateString('en-GB', options).replace(',', '');
-//   };
-
-//   const subTabs = [
-//     { id: 'Inventory', label: 'Inventory' },
-//     { id: 'Request', label: 'Request' },
-//     { id: 'Received', label: 'Received' },
-//     { id: 'Used', label: 'Used' },
-//   ];
-
-//   const inventoryData = [
-//     { id: '1', name: 'Test Material', date: '30 v04', stock: 15 },
-//     { id: '2', name: 'Test2 Material', date: '12 v02', stock: 10 },
-//     { id: '3', name: 'Test2 Material', date: '01 v01', stock: 10 },
-//     { id: '4', name: '1R Material', date: '11 v00', stock: 10 },
-//   ];
-
-//   const requestData = [
-//     { id: '1', date: '03 Apr', name: 'Milk 1 Test', qty: '10 nos', status: 'Requested' },
-//     { id: '2', date: '03 Apr', name: 'Milk 1 Test', qty: '10 nos', status: 'Requested' },
-//   ];
-
-//   const receivedData = [
-//     { id: '1', date: '03 Apr 2025', name: 'Test Material', qty: '+10 nos', party: 'Party ABC' },
-//     { id: '2', date: '03 Apr 2025', name: 'Test Material', qty: '+10 nos', party: 'Party ABC' },
-//   ];
-
-//   const usedData = [
-//     { id: '1', date: '03 Apr 2025', name: 'Test Material', qty: '-5 nos' },
-//     { id: '2', date: '03 Apr 2025', name: 'Test Material', qty: '-5 nos' },
-//   ];
-
-//   const [selectedMaterials, setSelectedMaterials] = useState([]);
-//   const materialLibraryData = [
-//     { id: '1', name: 'Test material', category: 'Cement', unit: 'nos' },
-//     { id: '2', name: 'Test material', category: 'Cement', unit: 'nos' },
-//     { id: '3', name: 'Test material', category: 'Cement', unit: 'nos' },
-//     { id: '4', name: 'Test material', category: 'Cement', unit: 'nos' },
-//   ];
-
-//   const filteredLibrary = materialLibraryData.filter((item) =>
-//     item.name.toLowerCase().includes(searchQuery.toLowerCase())
-//   );
-
-//   const toggleMaterial = (id) => {
-//     setSelectedMaterials((prev) =>
-//       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-//     );
-//   };
-
-//   const renderLibraryItem = ({ item }) => (
-//     <TouchableOpacity
-//       className="flex-row items-center border-b border-gray-200 py-3"
-//       onPress={() => toggleMaterial(item.id)}>
-//       <View className="flex-1">
-//         <Text className="text-base font-medium text-gray-900">{item.name}</Text>
-//         <Text className="mt-0.5 text-xs text-gray-500">Category: {item.category}</Text>
-//       </View>
-//       <Text className="mr-3 text-sm text-gray-600">Unit: {item.unit}</Text>
-//       <View className="h-6 w-6 items-center justify-center rounded-full border-2 border-blue-500">
-//         {selectedMaterials.includes(item.id) && (
-//           <View className="h-3 w-3 rounded-full bg-blue-500" />
-//         )}
-//       </View>
-//     </TouchableOpacity>
-//   );
-
-//   const filteredInventory = inventoryData.filter((item) =>
-//     item.name.toLowerCase().includes(searchQuery.toLowerCase())
-//   );
-
-//   const renderSubTab = ({ item }) => (
-//     <TouchableOpacity
-//       className={`mx-1.5 px-4 py-1.5 ${
-//         activeSubTab === item.id ? 'border-b-2 border-blue-500' : ''
-//       }`}
-//       onPress={() => setActiveSubTab(item.id)}>
-//       <Text
-//         className={`text-sm font-medium ${
-//           activeSubTab === item.id ? 'text-blue-500' : 'text-gray-600'
-//         }`}>
-//         {item.label}
-//       </Text>
-//     </TouchableOpacity>
-//   );
-
-//   const renderInventoryItem = ({ item }) => (
-//     <TouchableOpacity
-//       className="mb-2 rounded-xl bg-white p-3"
-//       onPress={() => navigation.navigate('MaterialDetailScreen', { item })}
-//     >
-//       <View className="flex-row items-center justify-between">
-//         <View className="flex-1 flex-row items-center">
-//           <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-blue-100">
-//             <MaterialCommunityIcons name="cube-outline" size={24} color="#0066FF" />
-//           </View>
-//           <View>
-//             <Text className="text-base font-semibold text-gray-900">{item.name}</Text>
-//             <Text className="mt-0.5 text-sm text-gray-500">{item.date}</Text>
-//           </View>
-//         </View>
-//         <Text className="text-base font-semibold text-gray-900">{item.stock}</Text>
-//       </View>
-//     </TouchableOpacity>
-//   );
-
-//  const renderRequestItem = ({ item }) => (
-//     <TouchableOpacity
-//       className="mb-2 rounded-xl bg-white p-3"
-//       onPress={() => navigation.navigate('RequestDetailsScreen', { request: item })}
-//     >
-//       <View className="flex-row items-center justify-between">
-//         <View className="flex-1 flex-row items-center">
-//           <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-blue-100">
-//             <MaterialCommunityIcons name="cube-outline" size={24} color="#0066FF" />
-//           </View>
-//           <View>
-//             <Text className="text-sm text-gray-500">{item.date}</Text>
-//             <Text className="mt-0.5 text-base font-semibold text-gray-900">{item.name}</Text>
-//           </View>
-//         </View>
-//         <View className="items-end">
-//           <Text className="text-sm font-semibold text-gray-900">{item.qty}</Text>
-//           <View className="mt-1 rounded bg-orange-100 px-2 py-1">
-//             <Text className="text-xs font-medium text-orange-700">{item.status}</Text>
-//           </View>
-//         </View>
-//       </View>
-//     </TouchableOpacity>
-//   );
-
-//   const renderReceivedItem = ({ item }) => (
-//     <View className="mb-2 rounded-xl bg-white p-3">
-//       <View className="flex-row items-center justify-between">
-//         <View className="flex-1 flex-row items-center">
-//           <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-blue-100">
-//             <MaterialCommunityIcons name="cube-outline" size={24} color="#0066FF" />
-//           </View>
-//           <View>
-//             <Text className="text-sm text-gray-500">{item.date}</Text>
-//             <Text className="mt-0.5 text-base font-semibold text-gray-900">{item.name}</Text>
-//             <Text className="mt-1 text-xs text-gray-500">{item.party}</Text>
-//           </View>
-//         </View>
-//         <Text className="text-sm font-medium text-green-600">{item.qty}</Text>
-//       </View>
-//     </View>
-//   );
-
-//   const renderUsedItem = ({ item }) => (
-//     <View className="mb-2 rounded-xl bg-white p-3">
-//       <View className="flex-row items-center justify-between">
-//         <View className="flex-1 flex-row items-center">
-//           <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-blue-100">
-//             <MaterialCommunityIcons name="cube-outline" size={24} color="#0066FF" />
-//           </View>
-//           <View>
-//             <Text className="text-sm text-gray-500">{item.date}</Text>
-//             <Text className="mt-0.5 text-base font-semibold text-gray-900">{item.name}</Text>
-//           </View>
-//         </View>
-//         <Text className="text-sm font-medium text-red-600">{item.qty}</Text>
-//       </View>
-//     </View>
-//   );
-
-//   const renderContent = () => {
-//     if (activeSubTab === 'Inventory') {
-//       return (
-//         <>
-//           <View className="mb-2 mt-4 flex-row justify-between px-4">
-//             <Text className="text-sm font-semibold text-gray-600">Material</Text>
-//             <Text className="text-sm font-semibold text-gray-600">In Stock</Text>
-//           </View>
-//           <FlatList
-//             data={filteredInventory}
-//             renderItem={renderInventoryItem}
-//             keyExtractor={(item) => item.id}
-//             contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
-//             showsVerticalScrollIndicator={false}
-//           />
-//         </>
-//       );
-//     }
-
-//     if (activeSubTab === 'Request') {
-//       return (
-//         <FlatList
-//           data={requestData}
-//           renderItem={renderRequestItem}
-//           keyExtractor={(item) => item.id}
-//           contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 100 }}
-//           showsVerticalScrollIndicator={false}
-//         />
-//       );
-//     }
-
-//     if (activeSubTab === 'Received') {
-//       return (
-//         <FlatList
-//           data={receivedData}
-//           renderItem={renderReceivedItem}
-//           keyExtractor={(item) => item.id}
-//           contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 100 }}
-//           showsVerticalScrollIndicator={false}
-//         />
-//       );
-//     }
-
-//     if (activeSubTab === 'Used') {
-//       return (
-//         <FlatList
-//           data={usedData}
-//           renderItem={renderUsedItem}
-//           keyExtractor={(item) => item.id}
-//           contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 100 }}
-//           showsVerticalScrollIndicator={false}
-//         />
-//       );
-//     }
-
-//     return null;
-//   };
-
-//   return (
-//     <SafeAreaView className="flex-1 bg-gray-50">
-//       <View className="mb-1 mt-3 flex-row px-4">
-//         <FlatList
-//           data={subTabs}
-//           renderItem={renderSubTab}
-//           keyExtractor={(item) => item.id}
-//           horizontal
-//           showsHorizontalScrollIndicator={false}
-//           contentContainerStyle={{ paddingHorizontal: 0 }}
-//         />
-//       </View>
-
-//       <View className="mx-4 mt-1 h-12 flex-row items-center rounded-xl bg-white px-3">
-//         <Ionicons name="search" size={20} color="#9CA3AF" className="mr-2" />
-//         <TextInput
-//           className="flex-1 text-base text-gray-900"
-//           placeholder="Search..."
-//           placeholderTextColor="#9CA3AF"
-//           value={searchQuery}
-//           onChangeText={setSearchQuery}
-//         />
-//       </View>
-
-//       <View className="flex-1">{renderContent()}</View>
-
-//       <View
-//         className="absolute inset-x-0 bottom-16 left-4 right-4 flex-row items-center justify-between px-2"
-//         style={{ zIndex: 10 }}>
-//         <TouchableOpacity 
-//           className="mx-1 flex-1 rounded-xl bg-red-50 px-4 py-2.5"
-//           onPress={() => setUsedModalVisible(true)}
-//         >
-//           <Text className="text-center text-sm font-semibold text-red-500">- Used</Text>
-//         </TouchableOpacity>
-
-//         <TouchableOpacity
-//           className="mx-1 flex-1 rounded-xl bg-blue-100 px-5 py-2.5"
-//           onPress={() => setMaterialActionModalVisible(true)}>
-//           <Text className="text-center text-sm font-semibold text-gray-900">+ Material</Text>
-//         </TouchableOpacity>
-
-//         <TouchableOpacity
-//           className="mx-1 flex-1 rounded-xl bg-amber-100 px-4 py-2.5"
-//           onPress={() => setReceivedModalVisible(true)}>
-//           <Text className="text-center text-sm font-semibold text-gray-900">+ Received</Text>
-//         </TouchableOpacity>
-//       </View>
-
-//       {/* === ACTION MODAL === */}
-//       <Modal
-//         visible={materialActionModalVisible}
-//         transparent={true}
-//         animationType="slide"
-//         onRequestClose={() => setMaterialActionModalVisible(false)}>
-//         <TouchableOpacity
-//           className="flex-1 justify-end bg-black/50"
-//           activeOpacity={1}
-//           onPress={() => setMaterialActionModalVisible(false)}
-//         >
-//           <TouchableOpacity
-//             activeOpacity={1}
-//             className="h-[40%] rounded-t-3xl bg-white p-6 pb-10"
-//             onPress={() => {}}
-//           >
-//             <View className="mb-5 items-center">
-//               <View className="h-1.5 w-12 rounded-full bg-gray-300" />
-//             </View>
-//             <Text className="mb-12 text-center text-xl font-bold text-gray-900">Material</Text>
-//             <View className="space-y-6">
-//               <View className="mb-8 flex-row space-x-6">
-//                 <TouchableOpacity 
-//                   className="flex-1 rounded-2xl bg-blue-50 px-3 py-4"
-//                   onPress={() => {
-//                     setMaterialActionModalVisible(false);
-//                     setRequestMaterialModalVisible(true);
-//                   }}
-//                 >
-//                   <Text className="text-center text-base font-semibold text-blue-600">+ Request</Text>
-//                 </TouchableOpacity>
-//                 <TouchableOpacity
-//                   className="flex-1 rounded-2xl bg-green-50 px-5 py-4"
-//                   onPress={() => {
-//                     setMaterialActionModalVisible(false);
-//                     setReceivedModalVisible(true);
-//                   }}>
-//                   <Text className="text-center text-base font-semibold text-green-600">+ Received</Text>
-//                 </TouchableOpacity>
-//               </View>
-//               <View className="mb-5 flex-row space-x-6">
-//                 <TouchableOpacity 
-//                   className="flex-1 rounded-2xl bg-cyan-50 px-5 py-4"
-//                   onPress={() => {
-//                     setMaterialActionModalVisible(false);
-//                     setAddMaterialPurchaseModalVisible(true);
-//                   }}>
-//                   <Text className="text-center text-base font-semibold text-cyan-600">+ Purchased</Text>
-//                 </TouchableOpacity>
-//                 <TouchableOpacity 
-//                   className="flex-1 rounded-2xl bg-red-50 px-5 py-4"
-//                   onPress={() => {
-//                     setMaterialActionModalVisible(false);
-//                     setUsedModalVisible(true);
-//                   }}>
-//                   <Text className="text-center text-base font-semibold text-red-600">- Used</Text>
-//                 </TouchableOpacity>
-//               </View>
-//             </View>
-//           </TouchableOpacity>
-//         </TouchableOpacity>
-//       </Modal>
-
-//       {/* === MATERIAL LIBRARY MODAL === */}
-//       <Modal
-//         visible={materialLibraryModalVisible}
-//         transparent={true}
-//         animationType="slide"
-//         onRequestClose={() => setMaterialLibraryModalVisible(false)}>
-//         <TouchableOpacity
-//           className="flex-1 justify-end bg-black/50"
-//           activeOpacity={1}
-//           onPress={() => setMaterialLibraryModalVisible(false)}
-//         >
-//           <TouchableOpacity
-//             activeOpacity={1}
-//             className="max-h-[90%] rounded-t-3xl bg-white p-5"
-//             onPress={() => {}}
-//           >
-//             <View className="mb-4 flex-row items-center justify-between">
-//               <Text className="text-lg font-bold text-gray-900">Material Library</Text>
-//               <TouchableOpacity onPress={() => setMaterialLibraryModalVisible(false)}>
-//                 <Ionicons name="close" size={24} color="#6B7280" />
-//               </TouchableOpacity>
-//             </View>
-
-//             <View className="mb-3 h-12 flex-row items-center rounded-xl bg-gray-100 px-3">
-//               <Ionicons name="search" size={20} color="#9CA3AF" />
-//               <TextInput
-//                 className="ml-2 flex-1 text-base text-gray-900"
-//                 placeholder="Search materials..."
-//                 placeholderTextColor="#9CA3AF"
-//                 value={searchQuery}
-//                 onChangeText={setSearchQuery}
-//               />
-//             </View>
-
-//             <FlatList
-//               data={filteredLibrary}
-//               renderItem={renderLibraryItem}
-//               keyExtractor={(item) => item.id}
-//               showsVerticalScrollIndicator={false}
-//               style={{ maxHeight: 400 }}
-//             />
-
-//             <TouchableOpacity
-//               className="mt-4 flex-row items-center justify-center rounded-xl bg-blue-50 py-3"
-//               onPress={() => {
-//                 setMaterialLibraryModalVisible(false);
-//                 setCreateNewMaterialModalVisible(true);
-//               }}
-//             >
-//               <Ionicons name="add" size={20} color="#0066FF" />
-//               <Text className="ml-1 font-medium text-blue-600">Create New Material</Text>
-//             </TouchableOpacity>
-
-//             <TouchableOpacity 
-//               className="mt-3 flex-row items-center justify-center rounded-xl bg-blue-600 py-3.5"
-//               onPress={() => setMaterialLibraryModalVisible(false)}
-//             >
-//               <Text className="text-base font-semibold text-white">Add Selected</Text>
-//               <Ionicons name="checkmark" size={20} color="white" style={{ marginLeft: 6 }} />
-//             </TouchableOpacity>
-//           </TouchableOpacity>
-//         </TouchableOpacity>
-//       </Modal>
-
-//       {/* === CREATE NEW MATERIAL MODAL === */}
-//       <Modal
-//         visible={createNewMaterialModalVisible}
-//         transparent={true}
-//         animationType="slide"
-//         onRequestClose={() => setCreateNewMaterialModalVisible(false)}>
-//         <TouchableOpacity
-//           className="flex-1 justify-end bg-black/50"
-//           activeOpacity={1}
-//           onPress={() => setCreateNewMaterialModalVisible(false)}
-//         >
-//           <TouchableOpacity activeOpacity={1} className="max-h-[90%] rounded-t-3xl bg-white p-5" onPress={() => {}}>
-//             <View className="mb-4 flex-row items-center justify-between">
-//               <Text className="text-lg font-bold text-gray-900">Create New Material</Text>
-//               <TouchableOpacity onPress={() => setCreateNewMaterialModalVisible(false)}>
-//                 <Ionicons name="close" size={24} color="#6B7280" />
-//               </TouchableOpacity>
-//             </View>
-
-//             <ScrollView showsVerticalScrollIndicator={false}>
-//               <View className="mb-4">
-//                 <Text className="mb-1 text-sm font-medium text-gray-700">Material Name</Text>
-//                 <TextInput
-//                   className="text-base text-gray-900"
-//                   placeholder="Enter material name"
-//                   placeholderTextColor="#9CA3AF"
-//                   value={newMaterialForm.materialName}
-//                   onChangeText={(text) => setNewMaterialForm({...newMaterialForm, materialName: text})}
-//                 />
-//                 <View className="mt-1 h-px bg-gray-300" />
-//               </View>
-
-//               <View className="mb-4">
-//                 <Text className="mb-1 text-sm font-medium text-gray-700">Unit</Text>
-//                 <View className="flex-row items-center justify-between">
-//                   <Text className="text-base text-gray-900">{newMaterialForm.unit}</Text>
-//                   <Ionicons name="chevron-down" size={20} color="#9CA3AF" />
-//                 </View>
-//                 <View className="mt-1 h-px bg-gray-300" />
-//               </View>
-
-//               <View className="mb-4">
-//                 <Text className="mb-1 text-sm font-medium text-gray-700">GST %</Text>
-//                 <View className="flex-row items-center justify-between">
-//                   <Text className="text-base text-gray-900">{newMaterialForm.gst}</Text>
-//                   <Ionicons name="chevron-down" size={20} color="#9CA3AF" />
-//                 </View>
-//                 <View className="mt-1 h-px bg-gray-300" />
-//               </View>
-
-//               <View className="mb-4">
-//                 <Text className="mb-1 text-sm font-medium text-gray-700">HSN Code</Text>
-//                 <TextInput
-//                   className="text-base text-gray-900"
-//                   placeholder="Enter HSN code"
-//                   placeholderTextColor="#9CA3AF"
-//                   value={newMaterialForm.hsnCode}
-//                   onChangeText={(text) => setNewMaterialForm({...newMaterialForm, hsnCode: text})}
-//                 />
-//                 <View className="mt-1 h-px bg-gray-300" />
-//               </View>
-
-//               <View className="mb-4">
-//                 <Text className="mb-1 text-sm font-medium text-gray-700">Category</Text>
-//                 <View className="flex-row items-center justify-between">
-//                   <Text className="text-base text-gray-400">{newMaterialForm.category}</Text>
-//                   <Ionicons name="chevron-down" size={20} color="#9CA3AF" />
-//                 </View>
-//                 <View className="mt-1 h-px bg-gray-300" />
-//               </View>
-
-//               <View className="mb-6">
-//                 <Text className="mb-1 text-sm font-medium text-gray-700">Description</Text>
-//                 <TextInput
-//                   className="h-20 text-base text-gray-900"
-//                   placeholder="Enter description..."
-//                   placeholderTextColor="#9CA3AF"
-//                   value={newMaterialForm.description}
-//                   onChangeText={(text) => setNewMaterialForm({...newMaterialForm, description: text})}
-//                   multiline
-//                 />
-//               </View>
-//             </ScrollView>
-
-//             <TouchableOpacity className="flex-row items-center justify-center rounded-xl bg-blue-600 py-3.5">
-//               <Text className="text-base font-semibold text-white">Create Material</Text>
-//               <Ionicons name="checkmark" size={20} color="white" style={{ marginLeft: 6 }} />
-//             </TouchableOpacity>
-//           </TouchableOpacity>
-//         </TouchableOpacity>
-//       </Modal>
-
-//       {/* === REQUEST MATERIAL MODAL === */}
-//       <Modal
-//         visible={requestMaterialModalVisible}
-//         transparent={true}
-//         animationType="slide"
-//         onRequestClose={() => setRequestMaterialModalVisible(false)}>
-//         <TouchableOpacity
-//           className="flex-1 justify-end bg-black/50"
-//           activeOpacity={1}
-//           onPress={() => setRequestMaterialModalVisible(false)}
-//         >
-//           <TouchableOpacity activeOpacity={1} className="max-h-[90%] rounded-t-3xl bg-white p-5" onPress={() => {}}>
-//             <View className="mb-4 flex-row items-center justify-between">
-//               <Text className="text-lg font-bold text-gray-900">Material Request</Text>
-//               <TouchableOpacity onPress={() => setRequestMaterialModalVisible(false)}>
-//                 <Ionicons name="close" size={24} color="#6B7280" />
-//               </TouchableOpacity>
-//             </View>
-            
-//             <ScrollView showsVerticalScrollIndicator={false}>
-//               <View className="mb-4">
-//                 <Text className="mb-1 text-sm font-medium text-gray-700">MR Number</Text>
-//                 <TextInput
-//                   className="text-base text-gray-900"
-//                   value={requestForm.mrNumber}
-//                   onChangeText={(text) => setRequestForm({...requestForm, mrNumber: text})}
-//                 />
-//                 <View className="mt-1 h-px bg-gray-300" />
-//               </View>
-
-//               <View className="mb-4">
-//                 <Text className="mb-1 text-sm font-medium text-gray-700">Date</Text>
-//                 <View className="flex-row items-center justify-between">
-//                   <Text className="text-base text-gray-900">{requestForm.date}</Text>
-//                   <TouchableOpacity onPress={() => setShowDatePicker(true)}>
-//                     <Ionicons name="calendar-outline" size={20} color="#0066FF" />
-//                   </TouchableOpacity>
-//                 </View>
-//                 <View className="mt-1 h-px bg-gray-300" />
-//               </View>
-
-//               <TouchableOpacity
-//                 className="mb-4 flex-row items-center justify-center rounded-xl bg-blue-50 py-3"
-//                 onPress={() => {
-//                   setRequestMaterialModalVisible(false);
-//                   setMaterialLibraryModalVisible(true);
-//                 }}>
-//                 <Ionicons name="add" size={20} color="#0066FF" />
-//                 <Text className="ml-1 font-medium text-blue-600">+ Add Material</Text>
-//               </TouchableOpacity>
-
-//               <View className="mb-4">
-//                 <Text className="mb-1 text-sm font-medium text-gray-700">Material Name</Text>
-//                 <TextInput
-//                   className="text-base text-gray-900"
-//                   value={requestForm.materialName}
-//                   onChangeText={(text) => setRequestForm({...requestForm, materialName: text})}
-//                 />
-//                 <View className="mt-1 h-px bg-gray-300" />
-//               </View>
-
-//               <View className="mb-4">
-//                 <Text className="mb-1 text-sm text-gray-500">Enter Quantity</Text>
-//                 <TextInput
-//                   className="text-base text-gray-900"
-//                   placeholder="Enter quantity"
-//                   placeholderTextColor="#9CA3AF"
-//                   value={requestForm.quantity}
-//                   onChangeText={(text) => setRequestForm({...requestForm, quantity: text})}
-//                   keyboardType="numeric"
-//                 />
-//                 <View className="mt-1 h-px bg-gray-300" />
-//               </View>
-
-//               <View className="mb-4">
-//                 <Text className="mb-1 text-sm font-medium text-gray-700">Item Description</Text>
-//                 <TextInput
-//                   className="text-base text-gray-900"
-//                   placeholder="Enter description"
-//                   placeholderTextColor="#9CA3AF"
-//                   value={requestForm.itemDescription}
-//                   onChangeText={(text) => setRequestForm({...requestForm, itemDescription: text})}
-//                 />
-//                 <View className="mt-1 h-px bg-gray-300" />
-//               </View>
-
-//               <View className="mb-6">
-//                 <Text className="mb-1 text-sm font-medium text-gray-700">Notes</Text>
-//                 <TextInput
-//                   className="h-20 text-sm text-gray-900"
-//                   placeholder="Enter notes..."
-//                   placeholderTextColor="#9CA3AF"
-//                   value={requestForm.notes}
-//                   onChangeText={(text) => setRequestForm({...requestForm, notes: text})}
-//                   multiline
-//                   numberOfLines={4}
-//                 />
-//               </View>
-//             </ScrollView>
-
-//             <TouchableOpacity className="flex-row items-center justify-center rounded-xl bg-blue-600 py-3.5">
-//               <Text className="text-base font-semibold text-white">Save</Text>
-//               <Ionicons name="checkmark" size={20} color="white" style={{ marginLeft: 6 }} />
-//             </TouchableOpacity>
-//           </TouchableOpacity>
-//         </TouchableOpacity>
-//       </Modal>
-
-//       {/* === PURCHASED MODAL === */}
-//       <Modal
-//         visible={addMaterialPurchaseModalVisible}
-//         transparent={true}
-//         animationType="slide"
-//         onRequestClose={() => setAddMaterialPurchaseModalVisible(false)}>
-//         <TouchableOpacity
-//           className="flex-1 justify-end bg-black/50"
-//           activeOpacity={1}
-//           onPress={() => setAddMaterialPurchaseModalVisible(false)}
-//         >
-//           <TouchableOpacity activeOpacity={1} className="max-h-[90%] rounded-t-3xl bg-white p-5" onPress={() => {}}>
-//             <View className="mb-4 flex-row items-center justify-between">
-//               <Text className="text-lg font-bold text-gray-900">Material Purchase</Text>
-//               <TouchableOpacity onPress={() => setAddMaterialPurchaseModalVisible(false)}>
-//                 <Ionicons name="close" size={24} color="#6B7280" />
-//               </TouchableOpacity>
-//             </View>
-            
-//             <View className="mb-4 flex-row items-center justify-between">
-//               <Text className="text-sm text-gray-600">{formatDate(purchaseDate)}</Text>
-//               <TouchableOpacity onPress={() => setShowPurchaseDatePicker(true)}>
-//                 <Ionicons name="calendar-outline" size={20} color="#0066FF" />
-//               </TouchableOpacity>
-//             </View>
-//             {showPurchaseDatePicker && (
-//               <DateTimePicker 
-//                 value={purchaseDate} 
-//                 mode="date" 
-//                 display={Platform.OS === 'ios' ? 'spinner' : 'default'} 
-//                 onChange={onPurchaseDateChange} 
-//               />
-//             )}
-
-//             <ScrollView showsVerticalScrollIndicator={false}>
-//               <View className="mb-4">
-//                 <Text className="mb-1 text-sm font-medium text-gray-700">Party Name</Text>
-//                 <TextInput
-//                   className="text-base text-gray-900"
-//                   placeholder="Enter party name"
-//                   placeholderTextColor="#9CA3AF"
-//                   value={purchaseForm.partyName}
-//                   onChangeText={(text) => setPurchaseForm({...purchaseForm, partyName: text})}
-//                 />
-//                 <View className="mt-1 h-px bg-gray-300" />
-//               </View>
-
-//               <TouchableOpacity
-//                 className="mb-4 flex-row items-center justify-center rounded-xl bg-blue-50 py-3"
-//                 onPress={() => {
-//                   setAddMaterialPurchaseModalVisible(false);
-//                   setMaterialLibraryModalVisible(true);
-//                 }}>
-//                 <Ionicons name="add" size={20} color="#0066FF" />
-//                 <Text className="ml-1 font-medium text-blue-600">+ Add Material</Text>
-//               </TouchableOpacity>
-
-//               <View className="mb-4">
-//                 <Text className="mb-1 text-sm font-medium text-gray-700">Quantity</Text>
-//                 <TextInput
-//                   className="text-base text-gray-900"
-//                   value={purchaseForm.quantity}
-//                   onChangeText={(text) => setPurchaseForm({...purchaseForm, quantity: text})}
-//                 />
-//                 <View className="mt-1 h-px bg-gray-300" />
-//               </View>
-
-//               <View className="mb-4">
-//                 <Text className="mb-1 text-sm font-medium text-gray-700">Amount</Text>
-//                 <TextInput
-//                   className="text-base text-gray-900"
-//                   value={purchaseForm.amount}
-//                   onChangeText={(text) => setPurchaseForm({...purchaseForm, amount: text})}
-//                   keyboardType="numeric"
-//                 />
-//                 <View className="mt-1 h-px bg-gray-300" />
-//               </View>
-
-//               <View className="mb-4">
-//                 <Text className="mb-1 text-sm font-medium text-gray-700">Bill To</Text>
-//                 <TextInput
-//                   className="text-base text-gray-900"
-//                   placeholder="Enter bill to"
-//                   placeholderTextColor="#9CA3AF"
-//                   value={purchaseForm.billTo}
-//                   onChangeText={(text) => setPurchaseForm({...purchaseForm, billTo: text})}
-//                 />
-//                 <View className="mt-1 h-px bg-gray-300" />
-//               </View>
-
-//               <View className="mb-4">
-//                 <Text className="mb-1 text-sm font-medium text-gray-700">Advance</Text>
-//                 <TextInput
-//                   className="text-base text-gray-900"
-//                   placeholder="Enter advance amount"
-//                   placeholderTextColor="#9CA3AF"
-//                   value={purchaseForm.advance}
-//                   onChangeText={(text) => setPurchaseForm({...purchaseForm, advance: text})}
-//                   keyboardType="numeric"
-//                 />
-//                 <View className="mt-1 h-px bg-gray-300" />
-//               </View>
-
-//               <View className="mb-6">
-//                 <Text className="mb-1 text-sm font-medium text-gray-700">Balance</Text>
-//                 <TextInput
-//                   className="text-base text-gray-900"
-//                   value={purchaseForm.balance}
-//                   onChangeText={(text) => setPurchaseForm({...purchaseForm, balance: text})}
-//                   keyboardType="numeric"
-//                 />
-//                 <View className="mt-1 h-px bg-gray-300" />
-//               </View>
-//             </ScrollView>
-
-//             <TouchableOpacity className="flex-row items-center justify-center rounded-xl bg-blue-600 py-3.5">
-//               <Text className="text-base font-semibold text-white">Save</Text>
-//               <Ionicons name="checkmark" size={20} color="white" style={{ marginLeft: 6 }} />
-//             </TouchableOpacity>
-//           </TouchableOpacity>
-//         </TouchableOpacity>
-//       </Modal>
-
-//       {/* === RECEIVED MODAL === */}
-//       <Modal
-//         visible={receivedModalVisible}
-//         transparent={true}
-//         animationType="slide"
-//         onRequestClose={() => setReceivedModalVisible(false)}>
-//         <TouchableOpacity
-//           className="flex-1 justify-end bg-black/50"
-//           activeOpacity={1}
-//           onPress={() => setReceivedModalVisible(false)}
-//         >
-//           <TouchableOpacity activeOpacity={1} className="max-h-[90%] rounded-t-3xl bg-white p-5" onPress={() => {}}>
-//             <View className="mb-4 flex-row items-center justify-between">
-//               <Text className="text-lg font-bold text-gray-900">Material Received</Text>
-//               <TouchableOpacity onPress={() => setReceivedModalVisible(false)}>
-//                 <Ionicons name="close" size={24} color="#6B7280" />
-//               </TouchableOpacity>
-//             </View>
-//             <View className="mb-4 flex-row items-center justify-between">
-//               <Text className="text-sm text-gray-600">{formatDate(date)}</Text>
-//               <TouchableOpacity onPress={() => setShowDatePicker(true)}>
-//                 <Ionicons name="calendar-outline" size={20} color="#0066FF" />
-//               </TouchableOpacity>
-//             </View>
-//             {showDatePicker && (
-//               <DateTimePicker value={date} mode="date" display={Platform.OS === 'ios' ? 'spinner' : 'default'} onChange={onDateChange} />
-//             )}
-//             <ScrollView showsVerticalScrollIndicator={false}>
-//               <View className="mb-4">
-//                 <Text className="mb-1 text-sm font-medium text-gray-700">Party Name</Text>
-//                 <TextInput
-//                   className="text-base text-gray-900"
-//                   value={receivedForm.partyName}
-//                   onChangeText={(text) => setReceivedForm({...receivedForm, partyName: text})}
-//                 />
-//                 <View className="mt-1 h-px bg-gray-300" />
-//               </View>
-//               <TouchableOpacity
-//                 className="mb-4 flex-row items-center justify-center rounded-xl bg-blue-50 py-3"
-//                 onPress={() => {
-//                   setReceivedModalVisible(false);
-//                   setMaterialLibraryModalVisible(true);
-//                 }}>
-//                 <Ionicons name="add" size={20} color="#0066FF" />
-//                 <Text className="ml-1 font-medium text-blue-600">+ Add Material</Text>
-//               </TouchableOpacity>
-//               <View className="mb-4">
-//                 <Text className="mb-1 text-sm font-medium text-gray-700">Test Material</Text>
-//                 <TextInput
-//                   className="text-base text-gray-900"
-//                   value={receivedForm.materialName}
-//                   onChangeText={(text) => setReceivedForm({...receivedForm, materialName: text})}
-//                 />
-//                 <View className="mt-1 h-px bg-gray-300" />
-//               </View>
-//               <View className="mb-4">
-//                 <Text className="mb-1 text-sm text-gray-500">Enter Quantity</Text>
-//                 <TextInput
-//                   className="text-base text-gray-900"
-//                   placeholder="Enter quantity"
-//                   placeholderTextColor="#9CA3AF"
-//                   value={receivedForm.quantity}
-//                   onChangeText={(text) => setReceivedForm({...receivedForm, quantity: text})}
-//                   keyboardType="numeric"
-//                 />
-//                 <View className="mt-1 h-px bg-gray-300" />
-//               </View>
-//               <View className="mb-4">
-//                 <Text className="mb-1 text-sm font-medium text-gray-700">Challan No.</Text>
-//                 <TextInput
-//                   className="text-base text-gray-900"
-//                   value={receivedForm.challanNo}
-//                   onChangeText={(text) => setReceivedForm({...receivedForm, challanNo: text})}
-//                   keyboardType="numeric"
-//                 />
-//                 <View className="mt-1 h-px bg-gray-300" />
-//               </View>
-//               <View className="mb-4">
-//                 <Text className="mb-1 text-sm font-medium text-gray-700">Vehicle No.</Text>
-//                 <TextInput
-//                   className="text-base text-gray-900"
-//                   value={receivedForm.vehicleNo}
-//                   onChangeText={(text) => setReceivedForm({...receivedForm, vehicleNo: text})}
-//                 />
-//                 <View className="mt-1 h-px bg-gray-300" />
-//               </View>
-//               <View className="mb-6">
-//                 <Text className="mb-1 text-sm font-medium text-gray-700">Notes</Text>
-//                 <TextInput
-//                   className="h-20 text-sm text-gray-900"
-//                   placeholder="Enter notes..."
-//                   placeholderTextColor="#9CA3AF"
-//                   value={receivedForm.notes}
-//                   onChangeText={(text) => setReceivedForm({...receivedForm, notes: text})}
-//                   multiline
-//                   numberOfLines={4}
-//                 />
-//               </View>
-//             </ScrollView>
-//             <TouchableOpacity className="flex-row items-center justify-center rounded-xl bg-blue-600 py-3.5">
-//               <Text className="text-base font-semibold text-white">Save</Text>
-//               <Ionicons name="checkmark" size={20} color="white" style={{ marginLeft: 6 }} />
-//             </TouchableOpacity>
-//           </TouchableOpacity>
-//         </TouchableOpacity>
-//       </Modal>
-
-//       {/* === USED MODAL === */}
-//       <Modal
-//         visible={usedModalVisible}
-//         transparent={true}
-//         animationType="slide"
-//         onRequestClose={() => setUsedModalVisible(false)}>
-//         <TouchableOpacity
-//           className="flex-1 justify-end bg-black/50"
-//           activeOpacity={1}
-//           onPress={() => setUsedModalVisible(false)}
-//         >
-//           <TouchableOpacity activeOpacity={1} className="bg-white rounded-t-3xl p-5" onPress={() => {}}>
-//             <View className="items-center pt-3 pb-2">
-//               <View className="h-1 w-10 bg-gray-300 rounded-full" />
-//             </View>
-//             <Text className="text-lg font-bold text-gray-900 mb-4">Material Used</Text>
-//             <View className="flex-row items-center justify-between mb-4">
-//               <Text className="text-sm text-gray-600">01-04-25</Text>
-//               <Ionicons name="chevron-down" size={20} color="#9CA3AF" />
-//             </View>
-//             <View className="h-px bg-gray-300 mb-4" />
-//             <View className="mb-4">
-//               <Text className="text-sm font-medium text-gray-700 mb-1">Material</Text>
-//               <View className="flex-row items-center justify-between">
-//                 <Text className="text-base text-gray-900"></Text>
-//                 <Ionicons name="chevron-down" size={20} color="#9CA3AF" />
-//               </View>
-//               <View className="h-px bg-gray-300 mt-1" />
-//             </View>
-//             <View className="mb-4">
-//               <Text className="text-sm text-gray-500 mb-1">Quantity in numbers</Text>
-//               <TextInput
-//                 className="text-base text-gray-900"
-//                 placeholder="0"
-//                 placeholderTextColor="#9CA3AF"
-//                 keyboardType="numeric"
-//                 value={usedForm.quantity}
-//                 onChangeText={(text) => setUsedForm({...usedForm, quantity: text})}
-//               />
-//               <View className="h-px bg-gray-300 mt-1" />
-//             </View>
-//             <View className="mb-6">
-//               <Text className="text-sm font-medium text-gray-700 mb-1">Notes</Text>
-//               <TextInput
-//                 className="h-20 text-base text-gray-900"
-//                 placeholder="Enter notes..."
-//                 placeholderTextColor="#9CA3AF"
-//                 multiline
-//                 value={usedForm.notes}
-//                 onChangeText={(text) => setUsedForm({...usedForm, notes: text})}
-//               />
-//             </View>
-//             <TouchableOpacity className="bg-blue-600 rounded-xl py-3.5 flex-row items-center justify-center">
-//               <Text className="text-white font-semibold text-base mr-2">Save</Text>
-//               <Ionicons name="checkmark" size={20} color="white" />
-//             </TouchableOpacity>
-//           </TouchableOpacity>
-//         </TouchableOpacity>
-//       </Modal>
-
-//     </SafeAreaView>
-//   );
-// };
-
-// export default MaterialsListScreen;
-
-
-
-
 import React from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  SafeAreaView,
   FlatList,
   Modal,
   ScrollView,
@@ -1051,7 +61,7 @@ const units = [
 
 const gstRates = ['0', '5.0', '12.0', '18.0', '28.0'];
 
-const MaterialsListScreen = () => {
+const MaterialsListScreen = ({ project }) => {
   const navigation = useNavigation();
   const [activeSubTab, setActiveSubTab] = useState('Inventory');
   const [searchQuery, setSearchQuery] = useState('');
@@ -1079,7 +89,53 @@ const MaterialsListScreen = () => {
   const [purchaseDate, setPurchaseDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showPurchaseDatePicker, setShowPurchaseDatePicker] = useState(false);
+  const [showMaterialListInReceived, setShowMaterialListInReceived] = useState(false);
+  const [selectedReceivedMaterial, setSelectedReceivedMaterial] = useState(null);
+  const clearReceivedForm = () => {
+    setReceivedForm({
+      partyName: '',
+      materialName: '',
+      quantity: '',
+      challanNo: '10',
+      vehicleNo: '₹ 1,900',
+      notes: ''
+    });
+    setSelectedReceivedMaterial(null);
+    setShowMaterialListInReceived(false);
+  };
 
+
+  // For Used Modal
+
+  const [showMaterialListInUsed, setShowMaterialListInUsed] = useState(false);
+  const [selectedUsedMaterial, setSelectedUsedMaterial] = useState(null);
+
+  // Used Form
+  const [usedForm, setUsedForm] = useState({
+    date: new Date().toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).split('/').join('-'),
+    quantity: '',
+    notes: ''
+  });
+
+  // Clear form function
+  const clearUsedForm = () => {
+    setUsedForm({
+      date: new Date().toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      }).split('/').join('-'),
+      quantity: '',
+      notes: ''
+    });
+    setSelectedUsedMaterial(null);
+    setShowMaterialListInUsed(false);
+    setSelectedMaterials([]); // Clear selected material IDs
+  };
   // === Forms ===
   const [receivedForm, setReceivedForm] = useState({
     partyName: 'XYZ Constructions Ltd.',
@@ -1119,8 +175,12 @@ const MaterialsListScreen = () => {
 
   const [requestForm, setRequestForm] = useState({
     mrNumber: 'MR-2',
-    date: '01-04-2025',
-    materialName: 'Test Material',
+    date: new Date().toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).split('/').join('-'),
+    materialName: '',
     quantity: '',
     itemDescription: '',
     notes: ''
@@ -1128,19 +188,35 @@ const MaterialsListScreen = () => {
 
   const [purchaseForm, setPurchaseForm] = useState({
     partyName: '',
-    quantity: '10 nos',
-    amount: '₹ 1,900',
-    billTo: '',
+    quantity: '',
+    rate: '',          // NEW: Rate per unit
+    totalAmount: '',   // Auto-calculated
     advance: '',
-    balance: '₹ 0'
+    balance: '',       // Auto-calculated
+    billTo: '',
   });
 
-  const [usedForm, setUsedForm] = useState({
-    date: '01-04-25',
-    material: '',
-    quantity: '',
-    notes: ''
-  });
+
+  useEffect(() => {
+    const qty = parseFloat(purchaseForm.quantity) || 0;
+    const rate = parseFloat(purchaseForm.rate) || 0;
+    const advance = parseFloat(purchaseForm.advance) || 0;
+
+    const total = qty * rate;
+    const balance = total - advance;
+
+    setPurchaseForm(prev => ({
+      ...prev,
+      totalAmount: isNaN(total) ? '' : total.toFixed(2),
+      balance: isNaN(balance) ? '' : balance.toFixed(2),
+    }));
+  }, [purchaseForm.quantity, purchaseForm.rate, purchaseForm.advance]);
+
+  useEffect(() => {
+    if (!usedModalVisible) {
+      clearUsedForm();
+    }
+  }, [usedModalVisible]);
 
   // === API State ===
   const [inventoryApi, setInventoryApi] = useState([]);
@@ -1149,32 +225,120 @@ const MaterialsListScreen = () => {
   const [updatingMaterial, setUpdatingMaterial] = useState(false);
 
   // === Static data for non-Inventory tabs ===
-  const requestData = [
-    { id: '1', date: '03 Apr', name: 'Milk 1 Test', qty: '10 nos', status: 'Requested' },
-    { id: '2', date: '03 Apr', name: 'Milk 1 Test', qty: '10 nos', status: 'Requested' },
-  ];
-  const receivedData = [
-    { id: '1', date: '03 Apr 2025', name: 'Test Material', qty: '+10 nos', party: 'Party ABC' },
-    { id: '2', date: '03 Apr 2025', name: 'Test Material', qty: '+10 nos', party: 'Party ABC' },
-  ];
-  const usedData = [
+  const [requestData, setRequestData] = useState([
+
+  ]);
+  const [receivedData, setReceivedData] = useState([
+
+  ]);
+  const [usedData, setUsedData] = useState([
     { id: '1', date: '03 Apr 2025', name: 'Test Material', qty: '-5 nos' },
     { id: '2', date: '03 Apr 2025', name: 'Test Material', qty: '-5 nos' },
-  ];
+  ]);
 
   const [selectedMaterials, setSelectedMaterials] = useState([]);
-  const materialLibraryData = [
-    { id: '1', name: 'Test material', category: 'Cement', unit: 'nos' },
-    { id: '2', name: 'Test material', category: 'Cement', unit: 'nos' },
-    { id: '3', name: 'Test material', category: 'Cement', unit: 'nos' },
-    { id: '4', name: 'Test material', category: 'Cement', unit: 'nos' },
-  ];
+  const [materialLibraryData, setMaterialLibraryData] = useState([]);
+  const [selectedRequestMaterial, setSelectedRequestMaterial] = useState(null);
 
+  // NEW STATE: Control whether to show material list in request modal
+  const [showMaterialListInRequest, setShowMaterialListInRequest] = useState(false);
+  const handleSaveReceived = async () => {
+    // Validation
+    if (!selectedReceivedMaterial) {
+      Alert.alert('Error', 'Please select a material');
+      return;
+    }
+
+    if (!receivedForm.quantity.trim()) {
+      Alert.alert('Error', 'Please enter quantity');
+      return;
+    }
+
+    if (!receivedForm.partyName.trim()) {
+      Alert.alert('Error', 'Please enter party name');
+      return;
+    }
+
+    // Get the selected material ID
+    const selectedMaterialId = selectedMaterials[0];
+
+    // Prepare received data
+
+
+    const existingVendor = vendors.find(v => v.name === receivedForm.partyName);
+    const receivedData = {
+      date: date.toISOString(),
+      vendorId: existingVendor.id,
+      materialId: selectedMaterialId,
+      quantity: receivedForm.quantity,
+      challanNo: receivedForm.challanNo,
+      vehicleNo: receivedForm.vehicleNo,
+      notes: receivedForm.notes,
+      projectId: project._id,
+    };
+
+    const token = await AsyncStorage.getItem("userToken");
+
+    const res = await fetch(`${BASE_URL}/api/materials/materialReceived`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(receivedData),
+    });
+
+    const json = await res.json();
+
+    if (!res.ok) {
+      throw new Error(json?.message || "Failed to save purchase");
+    }
+
+    Alert.alert(
+      'Received Data Logged',
+      `Material: ${receivedData.materialName}\nQuantity: ${receivedData.quantity}\nParty: ${receivedData.partyName}`,
+      [
+        {
+          text: 'OK',
+          onPress: () => {
+            setReceivedModalVisible(false);
+            // Clear selection
+            setSelectedMaterials([]);
+            setSelectedReceivedMaterial(null);
+            setShowMaterialListInReceived(false);
+          }
+        }
+      ]
+    );
+
+    fetchMaterialReceived();
+    fetchMaterials();
+  };
+
+  useEffect(() => {
+    if (!receivedModalVisible) {
+      clearReceivedForm();
+    }
+  }, [receivedModalVisible]);
   // === Date Handlers ===
   const onDateChange = (event, selectedDate) => {
     const currentDate = selectedDate || date;
     setShowDatePicker(Platform.OS === 'ios');
     setDate(currentDate);
+
+    // Update request form date when date picker changes
+    if (requestMaterialModalVisible) {
+      const formattedDate = currentDate.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      }).split('/').join('-');
+
+      setRequestForm(prev => ({
+        ...prev,
+        date: formattedDate
+      }));
+    }
   };
 
   const onPurchaseDateChange = (event, selectedDate) => {
@@ -1187,14 +351,13 @@ const MaterialsListScreen = () => {
     const options = { day: '2-digit', month: 'long', year: 'numeric' };
     return date.toLocaleDateString('en-GB', options).replace(',', '');
   };
-
-  // === API Functions ===
   const fetchMaterials = async () => {
     try {
       setLoadingInventory(true);
       const token = await AsyncStorage.getItem(TOKEN_KEY);
+      
 
-      const res = await fetch(MATERIALS_API, {
+      const res = await fetch(`${MATERIALS_API}/project/${project._id}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -1206,8 +369,7 @@ const MaterialsListScreen = () => {
       let json;
       try { json = JSON.parse(text); } catch { json = text; }
 
-      console.log('[Materials] GET status:', res.status);
-      console.log('[Materials] GET body:', json);
+      
 
       if (!res.ok) {
         throw new Error(typeof json === 'object' && json?.message ? json.message : `Failed with ${res.status}`);
@@ -1215,6 +377,104 @@ const MaterialsListScreen = () => {
 
       const list = Array.isArray(json) ? json : Array.isArray(json?.data) ? json.data : [];
       setInventoryApi(list);
+
+      // Update material library data with the same API data
+      const libraryList = list.map((item, index) => ({
+        id: item._id || item.id || `lib-${index}`,
+        name: item.materialName || item.name || 'Unknown Material',
+        category: item.category || 'Other',
+        unit: item.unit || 'nos',
+        __raw: item, // Keep reference to original data
+      }));
+      setMaterialLibraryData(libraryList);
+
+    } catch (err) {
+      console.error('[Materials] GET error:', err);
+      Alert.alert('Error', 'Failed to fetch materials');
+    } finally {
+      setLoadingInventory(false);
+    }
+  };
+  const fetchMaterialRequests = async () => {
+    try {
+      setLoadingInventory(true);
+      const token = await AsyncStorage.getItem(TOKEN_KEY);
+      const res = await fetch(`${MATERIALS_API}/materialRequest/${project._id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      const text = await res.text();
+      let json;
+      try { json = JSON.parse(text); } catch { json = text; }
+      if (!res.ok) {
+        throw new Error(typeof json === 'object' && json?.message ? json.message : `Failed with ${res.status}`);
+      }
+
+    
+      const list = Array.isArray(json) ? json : Array.isArray(json?.data?.materialrequest) ? json.data.materialrequest : [];
+      // Update material library data with the same API data
+      const libraryList = list.map((item, index) => ({
+        id: item._id || item.id || `lib-${index}`,
+        name: item.materialId.materialName || item.name || 'Unknown Material',
+        qty: item.quantity || 0,
+        date: item.date || '',
+        status: item.status || 'Requested',
+
+        unit: item.materialId.unit || 'nos',
+
+      }));
+      setRequestData(libraryList);
+
+    } catch (err) {
+      console.error('[Materials] GET error:', err);
+      Alert.alert('Error', 'Failed to fetch materials');
+    } finally {
+      setLoadingInventory(false);
+    }
+  };
+  const fetchMaterialReceived = async () => {
+    try {
+      setLoadingInventory(true);
+      const token = await AsyncStorage.getItem(TOKEN_KEY);
+
+      const res = await fetch(`${MATERIALS_API}/materialReceived/${project._id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      const text = await res.text();
+      let json;
+      try { json = JSON.parse(text); } catch { json = text; }
+
+
+      if (!res.ok) {
+        throw new Error(typeof json === 'object' && json?.message ? json.message : `Failed with ${res.status}`);
+      }
+
+      const list = Array.isArray(json) ? json : Array.isArray(json?.data?.materialreceived) ? json.data.materialreceived : [];
+
+      const libraryList = list.map((item, index) => ({
+        id: item._id || item.id || `lib-${index}`,
+        name: item.materialId.materialName || item.name || 'Unknown Material',
+        qty: item.quantity || 0,
+        date: item.date || '',
+        status: item.status || 'Received',
+        party: item.vendorId?.name || 'Unknown Party',
+
+        unit: item.materialId.unit || 'nos',
+
+      }));
+      setReceivedData(libraryList);
+
+
+
     } catch (err) {
       console.error('[Materials] GET error:', err);
       Alert.alert('Error', 'Failed to fetch materials');
@@ -1223,71 +483,112 @@ const MaterialsListScreen = () => {
     }
   };
 
-  // === CREATE NEW MATERIAL API ===
-  const createNewMaterial = async () => {
+
+  const fetchMaterialUsed = async () => {
     try {
-      if (!newMaterialForm.materialName.trim()) {
-        Alert.alert('Error', 'Please enter material name');
-        return;
-      }
-
-      if (!newMaterialForm.category.trim()) {
-        Alert.alert('Error', 'Please select a category');
-        return;
-      }
-
-      setCreatingMaterial(true);
-
+      setLoadingInventory(true);
       const token = await AsyncStorage.getItem(TOKEN_KEY);
-      let projectId = await AsyncStorage.getItem("activeProjectId");
 
-      if (!projectId) {
-        projectId = "691189346522d6945d920bac";
-        await AsyncStorage.setItem("activeProjectId", projectId);
-        console.log("[Create Material] ⚙️ Using fallback projectId:", projectId);
-      }
-
-      const materialData = {
-        name: newMaterialForm.materialName.trim(),
-        unit: newMaterialForm.unit,
-        gst: parseFloat(newMaterialForm.gst) || 0,
-        hsnCode: newMaterialForm.hsnCode.trim(),
-        category: newMaterialForm.category,
-        description: newMaterialForm.description.trim(),
-        quantity: parseFloat(newMaterialForm.quantity) || 0,
-        stock: parseFloat(newMaterialForm.stock) || parseFloat(newMaterialForm.quantity) || 0,
-        price: parseFloat(newMaterialForm.price) || 0,
-        minStock: parseFloat(newMaterialForm.minStock) || 0,
-        projectId
-      };
-
-      console.log("[Create Material] 🚀 Sending data:", materialData);
-
-      const res = await fetch(`${BASE_URL}/api/materials`, {
-        method: "POST",
+      const res = await fetch(`${MATERIALS_API}/materialUsed/${project._id}`, {
+        method: 'GET',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify(materialData),
       });
 
       const text = await res.text();
       let json;
       try { json = JSON.parse(text); } catch { json = text; }
 
-      console.log("[Create Material] POST status:", res.status);
-      console.log("[Create Material] Response:", json);
 
       if (!res.ok) {
-        throw new Error(
-          typeof json === "object" && json?.message
-            ? json.message
-            : `Request failed with ${res.status}`
-        );
+        throw new Error(typeof json === 'object' && json?.message ? json.message : `Failed with ${res.status}`);
+      }
+      const list = Array.isArray(json) ? json : Array.isArray(json?.data?.materialused) ? json.data.materialused : [];
+    
+      // Update material library data with the same API data
+      const libraryList = list.map((item, index) => ({
+        id: item._id || item.id || `lib-${index}`,
+        name: item.materialId.materialName || item.name || 'Unknown Material',
+        qty: item.quantity || 0,
+        date: item.date || '',
+        status: item.status || 'Used',
+
+
+        unit: item.materialId.unit || 'nos',
+
+      }));
+     
+      setUsedData(libraryList);
+
+
+
+    } catch (err) {
+      console.error('[Materials] GET error:', err);
+      Alert.alert('Error', 'Failed to fetch materials');
+    } finally {
+      setLoadingInventory(false);
+    }
+  };
+
+
+
+
+
+  const createNewMaterial = async () => {
+    try {
+      if (!newMaterialForm.materialName.trim()) {
+        Alert.alert("Error", "Please enter material name");
+        return;
+      }
+
+      if (!newMaterialForm.category.trim()) {
+        Alert.alert("Error", "Please select a category");
+        return;
+      }
+
+      setCreatingMaterial(true);
+
+      const token = await AsyncStorage.getItem(TOKEN_KEY);
+
+      if (!project?._id) {
+        Alert.alert("Error", "Project ID is missing");
+        return;
+      }
+
+      const materialData = {
+        materialName: newMaterialForm.materialName.trim(),
+        unit: newMaterialForm.unit,
+        gst: parseFloat(newMaterialForm.gst) || 0,
+        hsnCode: newMaterialForm.hsnCode.trim(),
+        category: newMaterialForm.category,
+        description: newMaterialForm.description.trim(),
+        quantity: 0,
+        projectId: project._id,
+      };
+
+
+      const response = await fetch(
+        `${BASE_URL}/api/materials`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(materialData),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to create material");
       }
 
       Alert.alert("Success", "Material created successfully!");
+
       setCreateNewMaterialModalVisible(false);
 
       setNewMaterialForm({
@@ -1296,10 +597,6 @@ const MaterialsListScreen = () => {
         gst: "18.0",
         hsnCode: "",
         category: "",
-        quantity: "",
-        stock: "",
-        price: "",
-        minStock: "",
         description: "",
       });
 
@@ -1338,7 +635,6 @@ const MaterialsListScreen = () => {
               let json;
               try { json = JSON.parse(text); } catch { json = text; }
 
-              console.log('[Delete Material] 🗑️ Status:', res.status, json);
 
               if (!res.ok) throw new Error(json?.message || 'Failed to delete');
 
@@ -1349,41 +645,94 @@ const MaterialsListScreen = () => {
         ]
       );
     } catch (err) {
-      console.error('[Delete Material] ❌', err);
       Alert.alert('Error', err.message || 'Failed to delete material');
     }
   };
+  // Add with your other state variables
+  const [showPartyDropdown, setShowPartyDropdown] = useState(false);
+  const [partySearch, setPartySearch] = useState('');
+  const [vendors, setVendors] = useState([]); // Add this if not already there
 
-  // === UPDATE MATERIAL API ===
-  const updateMaterial = async (id, updatedData) => {
-    try {
-      const token = await AsyncStorage.getItem(TOKEN_KEY);
-      const res = await fetch(`${BASE_URL}/api/materials/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(updatedData),
-      });
+  useEffect(() => {
+    const loadVendors = async () => {
+      try {
 
-      const text = await res.text();
-      let json;
-      try { json = JSON.parse(text); } catch { json = text; }
+        const token = await AsyncStorage.getItem(TOKEN_KEY);
+      
 
-      console.log('[Update Material] ✏️ Status:', res.status, json);
+        const response = await fetch(`${process.env.BASE_API_URL}/api/vendor`, {
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          }
+        });
 
-      if (!res.ok) throw new Error(json?.message || 'Failed to update material');
 
-      Alert.alert('Updated', 'Material updated successfully.');
-      fetchMaterials();
-    } catch (err) {
-      console.error('[Update Material] ❌', err);
-      Alert.alert('Error', err.message || 'Failed to update material');
+
+        if (!response.ok) {
+          const txt = await response.text().catch(() => '');
+          console.error('Vendors fetch failed:', response.status, response.statusText, txt);
+
+
+          throw new Error(`Failed to fetch vendors: ${response.status}`);
+        }
+
+        const vendorsRes = await response.json();
+
+
+
+        const mappedVendors = (vendorsRes.data || vendorsRes || []).map(vendor => ({
+          id: vendor._id || vendor.id,
+          name: vendor.name || vendor.name || 'Unknown Vendor',
+          email: vendor.email || '',
+          vendorcode: vendor.vendorcode || vendor.code || '',
+          taxNo: vendor.taxNo || vendor.taxNumber || '',
+          gstinno: vendor.gstinno || vendor.gstin || '',
+          vendorType: vendor.vendorType || vendor.type || 'General Contractor',
+          address: vendor.address || '',
+          status: vendor.status === 'active' ? 'Active' : (vendor.status || 'Active')
+        }));
+
+        setVendors(mappedVendors);
+      } catch (error) {
+        console.error('Error loading vendors:', error);
+        Alert.alert('Error', `Failed to load vendors: ${error.message}`);
+      }
+    };
+
+    loadVendors();
+  }, []);
+  const selectParty = (vendor, context = 'purchase') => {
+
+    if (context === 'purchase') {
+      setPurchaseForm(prev => ({ ...prev, partyName: vendor.name }));
+    } else if (context === 'received') {
+      setReceivedForm(prev => ({ ...prev, partyName: vendor.name }));
+    }
+
+    setShowPartyDropdown(false);
+    setPartySearch('');
+
+    // Also update the search field if it's open
+    if (context === 'purchase') {
+      setPartySearch(vendor.name);
+    } else if (context === 'received') {
+      // For received form, we need to update the text input
+      setTimeout(() => {
+        setReceivedForm(prev => ({ ...prev, partyName: vendor.name }));
+      }, 100);
     }
   };
 
-  // === EDIT MATERIAL FUNCTIONS ===
+  const filteredParties = useMemo(() => {
+    const searchTerm = partySearch.trim().toLowerCase();
+    if (!searchTerm) return vendors.slice(0, 5);
+
+    return vendors.filter(vendor =>
+      (vendor.name || '').toLowerCase().includes(searchTerm) ||
+      (vendor.vendorcode || '').toLowerCase().includes(searchTerm)
+    ).slice(0, 5);
+  }, [vendors, partySearch]);
   const openEditModal = (material) => {
     const rawMaterial = material.__raw || material;
     setEditMaterialForm({
@@ -1438,7 +787,6 @@ const MaterialsListScreen = () => {
         projectId
       };
 
-      console.log("[Edit Material] 🚀 Sending data:", materialData);
 
       const res = await fetch(`${BASE_URL}/api/materials/${editMaterialForm.id}`, {
         method: "PUT",
@@ -1453,8 +801,6 @@ const MaterialsListScreen = () => {
       let json;
       try { json = JSON.parse(text); } catch { json = text; }
 
-      console.log("[Edit Material] PUT status:", res.status);
-      console.log("[Edit Material] Response:", json);
 
       if (!res.ok) {
         throw new Error(
@@ -1475,24 +821,298 @@ const MaterialsListScreen = () => {
     }
   };
 
+  // === SELECTION HANDLERS ===
   const selectEditCategory = (category) => {
-    setEditMaterialForm({...editMaterialForm, category});
+    setEditMaterialForm({ ...editMaterialForm, category });
     setShowEditCategoryModal(false);
   };
 
   const selectEditUnit = (unit) => {
-    setEditMaterialForm({...editMaterialForm, unit});
+    setEditMaterialForm({ ...editMaterialForm, unit });
     setShowEditUnitModal(false);
   };
 
   const selectEditGst = (gst) => {
-    setEditMaterialForm({...editMaterialForm, gst});
+    setEditMaterialForm({ ...editMaterialForm, gst });
     setShowEditGstModal(false);
+  };
+
+  const selectCategory = (category) => {
+    setNewMaterialForm({ ...newMaterialForm, category });
+    setShowCategoryModal(false);
+  };
+
+  const selectUnit = (unit) => {
+    setNewMaterialForm({ ...newMaterialForm, unit });
+    setShowUnitModal(false);
+  };
+
+  const selectGst = (gst) => {
+    setNewMaterialForm({ ...newMaterialForm, gst });
+    setShowGstModal(false);
+  };
+
+  // === MATERIAL SELECTION HANDLERS ===
+  const toggleMaterial = (id) => {
+    setSelectedMaterials([id]); // Single selection only
+
+    const material = materialLibraryData.find(item => item.id === id);
+    if (!material) return;
+
+    if (showMaterialListInRequest) {
+      setSelectedRequestMaterial(material);
+      setRequestForm(prev => ({ ...prev, materialName: material.name }));
+      setShowMaterialListInRequest(false);
+    } else if (showMaterialListInPurchase) {
+      setSelectedPurchaseMaterial(material);
+      setShowMaterialListInPurchase(false);
+    } else if (showMaterialListInReceived) {
+      setSelectedReceivedMaterial(material);
+      setReceivedForm(prev => ({ ...prev, materialName: material.name }));
+      setShowMaterialListInReceived(false);
+    } else if (showMaterialListInUsed) {
+      setSelectedUsedMaterial(material);
+      setShowMaterialListInUsed(false);
+    }
+  };
+  // === Add these state variables ===
+  const [showMaterialListInPurchase, setShowMaterialListInPurchase] = useState(false);
+  const [selectedPurchaseMaterial, setSelectedPurchaseMaterial] = useState(null);
+
+  // === Add this function to clear purchase form ===
+  const clearPurchaseForm = () => {
+    setPurchaseForm({
+      partyName: '',
+      quantity: '',
+      amount: '',
+      billTo: '',
+      advance: '',
+      balance: ''
+    });
+    setSelectedPurchaseMaterial(null);
+    setShowMaterialListInPurchase(false);
+  };
+
+
+  const handleSaveUsed = async () => {
+    if (!selectedUsedMaterial) {
+      Alert.alert('Error', 'Please select a material');
+      return;
+    }
+    if (!usedForm.quantity.trim()) {
+      Alert.alert('Error', 'Please enter quantity');
+      return;
+    }
+
+    const selectedMaterialId = selectedMaterials[0];
+
+    const usedData = {
+      date: usedForm.date,
+      materialId: selectedMaterialId,
+      quantity: parseFloat(usedForm.quantity),
+      notes: usedForm.notes,
+      projectId: project._id,
+    };
+
+   
+
+    try {
+      const token = await AsyncStorage.getItem(TOKEN_KEY);
+      const response = await fetch(`${BASE_URL}/api/materials/materialUsed`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(usedData),
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to record material used');
+      }
+
+      Alert.alert('Success', 'Material usage recorded successfully!');
+
+      // Close modal and clear form
+      setUsedModalVisible(false);
+      fetchMaterialUsed();
+      fetchMaterials();
+      clearUsedForm();
+    } catch (err) {
+      console.error('[Material Used] Error:', err);
+      Alert.alert('Error', err.message || 'Failed to record usage');
+    }
+  };
+
+  const handleSavePurchase = async () => {
+    if (!selectedPurchaseMaterial) {
+      Alert.alert('Error', 'Please select a material');
+      return;
+    }
+    if (!purchaseForm.quantity.trim() || !purchaseForm.rate.trim()) {
+      Alert.alert('Error', 'Please enter quantity and rate');
+      return;
+    }
+    if (!purchaseForm.partyName.trim()) {
+      Alert.alert('Error', 'Please enter party name');
+      return;
+    }
+    const existingVendor = vendors.find(v => v.name === purchaseForm.partyName);
+  
+    const purchaseData = {
+      date: purchaseDate.toISOString(),
+      vendorId: existingVendor.id,
+      materialId: selectedMaterials[0],
+      quantity: parseFloat(purchaseForm.quantity),
+      rate: parseFloat(purchaseForm.rate),
+      totalAmount: parseFloat(purchaseForm.totalAmount),
+      advance: parseFloat(purchaseForm.advance) || 0,
+      balance: parseFloat(purchaseForm.balance) || 0,
+
+      projectId: project._id,
+    };
+
+
+
+
+    const token = await AsyncStorage.getItem("userToken");
+
+    const res = await fetch(`${BASE_URL}/api/materials/materialPurchase`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(purchaseData),
+    });
+
+    const json = await res.json();
+
+
+    if (!res.ok) {
+      throw new Error(json?.message || "Failed to save purchase");
+    }
+
+    Alert.alert("Success", "Purchase saved successfully!");
+
+    // ✅ Clear form / close modal
+    setPurchaseForm({
+      quantity: "",
+      rate: "",
+      totalAmount: "",
+      advance: "",
+      balance: "",
+      partyName: "",
+    });
+
+    setAddMaterialPurchaseModalVisible(false);
+
+  };
+  // === REQUEST FORM HANDLER (Logs only Material ID) ===
+  const handleSaveRequest = async () => {
+    // Validation
+    if (selectedMaterials.length === 0) {
+      Alert.alert('Error', 'Please select a material');
+      return;
+    }
+
+    if (!requestForm.quantity.trim()) {
+      Alert.alert('Error', 'Please enter quantity');
+      return;
+    }
+    const selectedMaterialId = selectedMaterials[0];
+
+    // Prepare request data with only the ID
+    const requestData = {
+
+      date: requestForm.date,
+      materialId: selectedMaterialId, // Only storing the ID
+      quantity: requestForm.quantity,
+      itemDescription: requestForm.itemDescription,
+      notes: requestForm.notes,
+      projectId: project._id,
+
+    };
+
+    const token = await AsyncStorage.getItem("userToken");
+
+    const response = await fetch(
+      `${process.env.BASE_API_URL}/api/materials/materialRequest`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(requestData)
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || "Failed to create request");
+    }
+
+
+    // Show alert with ID
+    Alert.alert(
+      'Request Data Logged',
+      `Material ID: ${requestData.materialId}\nQuantity: ${requestData.quantity}`,
+      [
+        {
+          text: 'OK',
+          onPress: () => {
+            setRequestMaterialModalVisible(false);
+            // Clear selection
+            setSelectedMaterials([]);
+            setSelectedRequestMaterial(null);
+            setShowMaterialListInRequest(false);
+          }
+        }
+      ]
+    );
+    fetchMaterialRequests();
+  };
+
+  // === CLEAR REQUEST FORM ===
+  const clearRequestForm = () => {
+    setRequestForm({
+      mrNumber: 'MR-' + (Math.floor(Math.random() * 100) + 1),
+      date: new Date().toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      }).split('/').join('-'),
+      materialName: '',
+      quantity: '',
+      itemDescription: '',
+      notes: ''
+    });
+    setSelectedRequestMaterial(null);
+    setSelectedMaterials([]);
+    setShowMaterialListInRequest(false);
   };
 
   useEffect(() => {
     fetchMaterials();
+    fetchMaterialRequests();
+    fetchMaterialReceived();
+    fetchMaterialUsed();
   }, []);
+  useEffect(() => {
+    if (!addMaterialPurchaseModalVisible) {
+      setShowPartyDropdown(false);
+      setPartySearch('');
+    }
+  }, [addMaterialPurchaseModalVisible]);
+  // Clear form when modal closes
+  useEffect(() => {
+    if (!requestMaterialModalVisible) {
+      clearRequestForm();
+    }
+  }, [requestMaterialModalVisible]);
 
   const formatItemDate = (d) => {
     if (!d) return '';
@@ -1506,10 +1126,10 @@ const MaterialsListScreen = () => {
       const id = m._id || m.id || String(Math.random());
       return {
         _id: id,
-        name: m.name || m.title || 'Unknown Material',
+        name: m.materialName || m.name || 'Unknown Material',
         date: formatItemDate(m.createdAt || m.updatedAt || new Date()),
-        stock: typeof m.stock === 'number' 
-          ? m.stock 
+        stock: typeof m.stock === 'number'
+          ? m.stock
           : (typeof m.quantity === 'number' ? m.quantity : 0),
         unit: m.unit || 'nos',
         __raw: m,
@@ -1523,47 +1143,28 @@ const MaterialsListScreen = () => {
     return mappedInventory.filter((item) => item.name.toLowerCase().includes(q));
   }, [mappedInventory, searchQuery]);
 
-  const filteredLibrary = materialLibraryData.filter((item) =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const selectCategory = (category) => {
-    setNewMaterialForm({...newMaterialForm, category});
-    setShowCategoryModal(false);
-  };
-
-  const selectUnit = (unit) => {
-    setNewMaterialForm({...newMaterialForm, unit});
-    setShowUnitModal(false);
-  };
-
-  const selectGst = (gst) => {
-    setNewMaterialForm({...newMaterialForm, gst});
-    setShowGstModal(false);
-  };
-
-  const toggleMaterial = (id) => {
-    setSelectedMaterials((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+  const filteredLibrary = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return materialLibraryData;
+    return materialLibraryData.filter((item) =>
+      (item.name || '').toLowerCase().includes(q)
     );
-  };
+  }, [materialLibraryData, searchQuery]);
 
+  // === RENDER FUNCTIONS ===
   const renderSubTab = ({ item }) => (
     <TouchableOpacity
-      className={`mx-1.5 px-4 py-1.5 ${
-        activeSubTab === item.id ? 'border-b-2 border-blue-500' : ''
-      }`}
+      className={`mx-1.5 px-4 py-1.5 ${activeSubTab === item.id ? 'border-b-2 border-blue-500' : ''
+        }`}
       onPress={() => setActiveSubTab(item.id)}>
       <Text
-        className={`text-sm font-medium ${
-          activeSubTab === item.id ? 'text-blue-500' : 'text-gray-600'
-        }`}>
+        className={`text-sm font-medium ${activeSubTab === item.id ? 'text-blue-500' : 'text-gray-600'
+          }`}>
         {item.label}
       </Text>
     </TouchableOpacity>
   );
 
-  // === Swipeable Right Actions (Delete) ===
   const renderRightActions = (item) => (
     <View className="bg-red-500 justify-center items-center w-[80px] rounded-r-xl mb-2">
       <TouchableOpacity
@@ -1576,7 +1177,6 @@ const MaterialsListScreen = () => {
     </View>
   );
 
-  // === Inventory Item Renderer ===
   const renderInventoryItem = ({ item }) => (
     <Swipeable renderRightActions={() => renderRightActions(item)}>
       <TouchableOpacity
@@ -1588,13 +1188,13 @@ const MaterialsListScreen = () => {
             return;
           }
 
-         navigation.navigate('Materials', {
-  screen: 'MaterialDetailScreen',
-  params: {
-    materialId,
-    item: item.__raw,
-  },
-});
+          navigation.navigate('Materials', {
+            screen: 'MaterialDetailScreen',
+            params: {
+              materialId,
+              item: item.__raw,
+            },
+          });
         }}
       >
         <View className="flex-row items-center flex-1">
@@ -1637,7 +1237,7 @@ const MaterialsListScreen = () => {
           </View>
         </View>
         <View className="items-end">
-          <Text className="text-sm font-semibold text-gray-900">{item.qty}</Text>
+          <Text className="text-sm font-semibold text-gray-900">{item.qty} {item.unit}</Text>
           <View className="mt-1 rounded bg-orange-100 px-2 py-1">
             <Text className="text-xs font-medium text-orange-700">{item.status}</Text>
           </View>
@@ -1654,12 +1254,19 @@ const MaterialsListScreen = () => {
             <MaterialCommunityIcons name="cube-outline" size={24} color="#0066FF" />
           </View>
           <View>
-            <Text className="text-sm text-gray-500">{item.date}</Text>
+            <Text className="text-sm text-gray-500">
+              {new Date(item.date).toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })}
+            </Text>
+
             <Text className="mt-0.5 text-base font-semibold text-gray-900">{item.name}</Text>
             <Text className="mt-1 text-xs text-gray-500">{item.party}</Text>
           </View>
         </View>
-        <Text className="text-sm font-medium text-green-600">{item.qty}</Text>
+        <Text className="text-sm font-medium text-green-600">{item.qty} {item.unit}</Text>
       </View>
     </View>
   );
@@ -1676,7 +1283,7 @@ const MaterialsListScreen = () => {
             <Text className="mt-0.5 text-base font-semibold text-gray-900">{item.name}</Text>
           </View>
         </View>
-        <Text className="text-sm font-medium text-red-600">{item.qty}</Text>
+        <Text className="text-sm font-medium text-red-600">-{item.qty} {item.unit}</Text>
       </View>
     </View>
   );
@@ -1688,6 +1295,7 @@ const MaterialsListScreen = () => {
       <View className="flex-1">
         <Text className="text-base font-medium text-gray-900">{item.name}</Text>
         <Text className="mt-0.5 text-xs text-gray-500">Category: {item.category}</Text>
+        <Text className="text-xs text-gray-500">ID: {item.id}</Text>
       </View>
       <Text className="mr-3 text-sm text-gray-600">Unit: {item.unit}</Text>
       <View className="h-6 w-6 items-center justify-center rounded-full border-2 border-blue-500">
@@ -1697,7 +1305,6 @@ const MaterialsListScreen = () => {
       </View>
     </TouchableOpacity>
   );
-
   const renderContent = () => {
     if (activeSubTab === 'Inventory') {
       return (
@@ -1758,9 +1365,11 @@ const MaterialsListScreen = () => {
     return null;
   };
 
+
+
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      {/* === Sub Tabs (UNCHANGED) === */}
+    <View className="flex-1 bg-gray-50">
+      {/* === Sub Tabs === */}
       <View className="mb-1 mt-3 flex-row px-4">
         <FlatList
           data={subTabs}
@@ -1791,7 +1400,7 @@ const MaterialsListScreen = () => {
       <View
         className="absolute inset-x-0 bottom-16 left-4 right-4 flex-row items-center justify-between px-2"
         style={{ zIndex: 10 }}>
-        <TouchableOpacity 
+        <TouchableOpacity
           className="mx-1 flex-1 rounded-xl bg-red-50 px-4 py-2.5"
           onPress={() => setUsedModalVisible(true)}
         >
@@ -1825,7 +1434,7 @@ const MaterialsListScreen = () => {
           <TouchableOpacity
             activeOpacity={1}
             className="h-[40%] rounded-t-3xl bg-white p-6 pb-10"
-            onPress={() => {}}
+            onPress={() => { }}
           >
             <View className="mb-5 items-center">
               <View className="h-1.5 w-12 rounded-full bg-gray-300" />
@@ -1833,7 +1442,7 @@ const MaterialsListScreen = () => {
             <Text className="mb-12 text-center text-xl font-bold text-gray-900">Material</Text>
             <View className="space-y-6">
               <View className="mb-8 flex-row space-x-6">
-                <TouchableOpacity 
+                <TouchableOpacity
                   className="flex-1 rounded-2xl bg-blue-50 px-3 py-4"
                   onPress={() => {
                     setMaterialActionModalVisible(false);
@@ -1852,7 +1461,7 @@ const MaterialsListScreen = () => {
                 </TouchableOpacity>
               </View>
               <View className="mb-5 flex-row space-x-6">
-                <TouchableOpacity 
+                <TouchableOpacity
                   className="flex-1 rounded-2xl bg-cyan-50 px-5 py-4"
                   onPress={() => {
                     setMaterialActionModalVisible(false);
@@ -1860,7 +1469,7 @@ const MaterialsListScreen = () => {
                   }}>
                   <Text className="text-center text-base font-semibold text-cyan-600">+ Purchased</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
+                <TouchableOpacity
                   className="flex-1 rounded-2xl bg-red-50 px-5 py-4"
                   onPress={() => {
                     setMaterialActionModalVisible(false);
@@ -1874,70 +1483,214 @@ const MaterialsListScreen = () => {
         </TouchableOpacity>
       </Modal>
 
-      {/* === MATERIAL LIBRARY MODAL === */}
+
+      {/* {/* === REQUEST MATERIAL MODAL (UPDATED) === */}
       <Modal
-        visible={materialLibraryModalVisible}
+        visible={requestMaterialModalVisible}
         transparent={true}
         animationType="slide"
-        onRequestClose={() => setMaterialLibraryModalVisible(false)}>
+        onRequestClose={() => {
+          setRequestMaterialModalVisible(false);
+          setShowMaterialListInRequest(false);
+          clearRequestForm();
+        }}>
         <TouchableOpacity
           className="flex-1 justify-end bg-black/50"
           activeOpacity={1}
-          onPress={() => setMaterialLibraryModalVisible(false)}
+          onPress={() => {
+            setRequestMaterialModalVisible(false);
+            setShowMaterialListInRequest(false);
+            clearRequestForm();
+          }}
         >
           <TouchableOpacity
             activeOpacity={1}
-            className="max-h-[90%] rounded-t-3xl bg-white p-5"
-            onPress={() => {}}
+            className="rounded-t-3xl bg-white"
+            onPress={() => { }}
+            style={{
+              height: showMaterialListInRequest ? '85%' : '75%', // Increased height
+              maxHeight: '90%',
+            }}
           >
-            <View className="mb-4 flex-row items-center justify-between">
-              <Text className="text-lg font-bold text-gray-900">Material Library</Text>
-              <TouchableOpacity onPress={() => setMaterialLibraryModalVisible(false)}>
-                <Ionicons name="close" size={24} color="#6B7280" />
-              </TouchableOpacity>
+            {/* Drag handle */}
+            <View className="items-center pt-3 pb-1">
+              <View className="h-1.5 w-12 rounded-full bg-gray-300" />
             </View>
 
-            <View className="mb-3 h-12 flex-row items-center rounded-xl bg-gray-100 px-3">
-              <Ionicons name="search" size={20} color="#9CA3AF" />
-              <TextInput
-                className="ml-2 flex-1 text-base text-gray-900"
-                placeholder="Search materials..."
-                placeholderTextColor="#9CA3AF"
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-              />
-            </View>
+            {/* Render either material list OR request form */}
+            {showMaterialListInRequest ? (
+              // === MATERIAL LIST VIEW ===
+              <View className="flex-1 px-5">
+                <View className="flex-row items-center justify-between mb-4">
+                  <TouchableOpacity
+                    onPress={() => setShowMaterialListInRequest(false)}
+                    className="p-2"
+                  >
+                    <Ionicons name="arrow-back" size={24} color="#6B7280" />
+                  </TouchableOpacity>
+                  <Text className="text-lg font-bold text-gray-900">Select Material</Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setRequestMaterialModalVisible(false);
+                      setShowMaterialListInRequest(false);
+                      clearRequestForm();
+                    }}
+                    className="p-2"
+                  >
+                    <Ionicons name="close" size={24} color="#6B7280" />
+                  </TouchableOpacity>
+                </View>
 
-            <FlatList
-              data={filteredLibrary}
-              renderItem={renderLibraryItem}
-              keyExtractor={(item) => item.id}
-              showsVerticalScrollIndicator={false}
-              style={{ maxHeight: 400 }}
-            />
+                {/* Search in material list */}
+                <View className="mb-3 h-12 flex-row items-center rounded-xl bg-gray-100 px-3">
+                  <Ionicons name="search" size={20} color="#9CA3AF" />
+                  <TextInput
+                    className="ml-2 flex-1 text-base text-gray-900"
+                    placeholder="Search materials..."
+                    placeholderTextColor="#9CA3AF"
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                  />
+                </View>
 
-            <TouchableOpacity
-              className="mt-4 flex-row items-center justify-center rounded-xl bg-blue-50 py-3"
-              onPress={() => {
-                setMaterialLibraryModalVisible(false);
-                setCreateNewMaterialModalVisible(true);
-              }}
-            >
-              <Ionicons name="add" size={20} color="#0066FF" />
-              <Text className="ml-1 font-medium text-blue-600">Create New Material</Text>
-            </TouchableOpacity>
+                {/* Material List */}
+                <FlatList
+                  data={filteredLibrary}
+                  renderItem={renderLibraryItem}
+                  keyExtractor={(item) => item.id}
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={{ paddingBottom: 20 }}
+                  ListEmptyComponent={
+                    <View className="py-8 items-center">
+                      <Text className="text-gray-500">No materials found</Text>
+                      <TouchableOpacity
+                        onPress={fetchMaterials}
+                        className="mt-2 px-4 py-2 bg-blue-100 rounded-lg"
+                      >
+                        <Text className="text-blue-600">Refresh</Text>
+                      </TouchableOpacity>
+                    </View>
+                  }
+                />
+              </View>
+            ) : (
+              // === REQUEST FORM VIEW ===
+              <View className="flex-1 px-5">
+                <View className="mb-4 flex-row items-center justify-between">
+                  <Text className="text-lg font-bold text-gray-900">Material Request</Text>
+                  <TouchableOpacity onPress={() => {
+                    setRequestMaterialModalVisible(false);
+                    setShowMaterialListInRequest(false);
+                    clearRequestForm();
+                  }}>
+                    <Ionicons name="close" size={24} color="#6B7280" />
+                  </TouchableOpacity>
+                </View>
 
-            <TouchableOpacity 
-              className="mt-3 flex-row items-center justify-center rounded-xl bg-blue-600 py-3.5"
-              onPress={() => setMaterialLibraryModalVisible(false)}
-            >
-              <Text className="text-base font-semibold text-white">Add Selected</Text>
-              <Ionicons name="checkmark" size={20} color="white" style={{ marginLeft: 6 }} />
-            </TouchableOpacity>
+                <ScrollView
+                  showsVerticalScrollIndicator={false}
+                  className="flex-1"
+                  contentContainerStyle={{ paddingBottom: 20 }}
+                >
+                  {/* Date Field */}
+                  <View className="mb-4">
+                    <Text className="mb-1 text-sm font-medium text-gray-700">Date</Text>
+                    <View className="flex-row items-center justify-between">
+                      <Text className="text-base text-gray-900">{requestForm.date}</Text>
+                      <TouchableOpacity onPress={() => setShowDatePicker(true)}>
+                        <Ionicons name="calendar-outline" size={20} color="#0066FF" />
+                      </TouchableOpacity>
+                    </View>
+                    <View className="mt-1 h-px bg-gray-300" />
+                  </View>
+
+                  {/* Material Selection - Show button or selected material */}
+                  {selectedRequestMaterial ? (
+                    <View className="mb-4">
+                      <View className="flex-row items-center justify-between mb-2">
+                        <Text className="text-sm font-medium text-gray-700">Selected Material</Text>
+                        <TouchableOpacity
+                          onPress={() => setShowMaterialListInRequest(true)}
+                          className="p-1"
+                        >
+                          <Text className="text-blue-600 text-sm">Change</Text>
+                        </TouchableOpacity>
+                      </View>
+                      <View className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <Text className="text-base font-medium text-gray-900">{selectedRequestMaterial.name}</Text>
+                        <View className="flex-row mt-1">
+                          <Text className="text-xs text-gray-500 mr-3">Category: {selectedRequestMaterial.category}</Text>
+                          <Text className="text-xs text-gray-500">Unit: {selectedRequestMaterial.unit}</Text>
+                        </View>
+                        <Text className="text-xs text-gray-500 mt-1">ID: {selectedRequestMaterial.id}</Text>
+                      </View>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      className="mb-4 flex-row items-center justify-center rounded-xl bg-blue-50 py-3"
+                      onPress={() => setShowMaterialListInRequest(true)}
+                    >
+                      <Ionicons name="add" size={20} color="#0066FF" />
+                      <Text className="ml-1 font-medium text-blue-600">+ Add Material</Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {/* Quantity Field */}
+                  <View className="mb-4">
+                    <Text className="mb-1 text-sm text-gray-500">Enter Quantity</Text>
+                    <TextInput
+                      className="text-base text-gray-900"
+                      placeholder="Enter quantity"
+                      placeholderTextColor="#9CA3AF"
+                      value={requestForm.quantity}
+                      onChangeText={(text) => setRequestForm({ ...requestForm, quantity: text })}
+                      keyboardType="numeric"
+                    />
+                    <View className="mt-1 h-px bg-gray-300" />
+                  </View>
+
+                  {/* Item Description Field */}
+                  <View className="mb-4">
+                    <Text className="mb-1 text-sm font-medium text-gray-700">Item Description</Text>
+                    <TextInput
+                      className="text-base text-gray-900"
+                      placeholder="Enter description"
+                      placeholderTextColor="#9CA3AF"
+                      value={requestForm.itemDescription}
+                      onChangeText={(text) => setRequestForm({ ...requestForm, itemDescription: text })}
+                    />
+                    <View className="mt-1 h-px bg-gray-300" />
+                  </View>
+
+                  {/* Notes Field */}
+                  <View className="mb-6">
+                    <Text className="mb-1 text-sm font-medium text-gray-700">Notes</Text>
+                    <TextInput
+                      className="h-24 text-sm text-gray-900"
+                      placeholder="Enter notes..."
+                      placeholderTextColor="#9CA3AF"
+                      value={requestForm.notes}
+                      onChangeText={(text) => setRequestForm({ ...requestForm, notes: text })}
+                      multiline
+                      numberOfLines={4}
+                      textAlignVertical="top"
+                    />
+                  </View>
+                </ScrollView>
+
+                {/* Save Button - Moved outside ScrollView */}
+                <TouchableOpacity
+                  className="flex-row items-center justify-center rounded-xl bg-blue-600 py-3.5 mb-4"
+                  onPress={handleSaveRequest}
+                >
+                  <Text className="text-base font-semibold text-white">Save & Log ID</Text>
+                  <Ionicons name="checkmark" size={20} color="white" style={{ marginLeft: 6 }} />
+                </TouchableOpacity>
+              </View>
+            )}
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
-
       {/* === CREATE NEW MATERIAL MODAL === */}
       <Modal
         visible={createNewMaterialModalVisible}
@@ -1949,14 +1702,14 @@ const MaterialsListScreen = () => {
           activeOpacity={1}
           onPress={() => !creatingMaterial && setCreateNewMaterialModalVisible(false)}
         >
-          <TouchableOpacity 
-            activeOpacity={1} 
-            className="h-[85%] rounded-t-3xl bg-white p-5" 
-            onPress={() => {}}
+          <TouchableOpacity
+            activeOpacity={1}
+            className="h-[85%] rounded-t-3xl bg-white p-5"
+            onPress={() => { }}
           >
             <View className="mb-4 flex-row items-center justify-between">
               <Text className="text-lg font-bold text-gray-900">Create New Material</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => !creatingMaterial && setCreateNewMaterialModalVisible(false)}
                 disabled={creatingMaterial}
               >
@@ -1973,7 +1726,7 @@ const MaterialsListScreen = () => {
                   placeholder="Enter material name"
                   placeholderTextColor="#9CA3AF"
                   value={newMaterialForm.materialName}
-                  onChangeText={(text) => setNewMaterialForm({...newMaterialForm, materialName: text})}
+                  onChangeText={(text) => setNewMaterialForm({ ...newMaterialForm, materialName: text })}
                   editable={!creatingMaterial}
                 />
               </View>
@@ -1981,7 +1734,7 @@ const MaterialsListScreen = () => {
               {/* Unit Field */}
               <View className="mb-4">
                 <Text className="mb-2 text-sm font-medium text-gray-700">Unit *</Text>
-                <TouchableOpacity 
+                <TouchableOpacity
                   className="flex-row items-center justify-between p-4 border border-gray-300 rounded-xl"
                   onPress={() => !creatingMaterial && setShowUnitModal(true)}
                   disabled={creatingMaterial}
@@ -1996,7 +1749,7 @@ const MaterialsListScreen = () => {
               {/* GST Field */}
               <View className="mb-4">
                 <Text className="mb-2 text-sm font-medium text-gray-700">GST % *</Text>
-                <TouchableOpacity 
+                <TouchableOpacity
                   className="flex-row items-center justify-between p-4 border border-gray-300 rounded-xl"
                   onPress={() => !creatingMaterial && setShowGstModal(true)}
                   disabled={creatingMaterial}
@@ -2014,7 +1767,7 @@ const MaterialsListScreen = () => {
                   placeholder="Enter HSN/SAC code"
                   placeholderTextColor="#9CA3AF"
                   value={newMaterialForm.hsnCode}
-                  onChangeText={(text) => setNewMaterialForm({...newMaterialForm, hsnCode: text})}
+                  onChangeText={(text) => setNewMaterialForm({ ...newMaterialForm, hsnCode: text })}
                   editable={!creatingMaterial}
                   keyboardType="numeric"
                 />
@@ -2023,7 +1776,7 @@ const MaterialsListScreen = () => {
               {/* Category Field */}
               <View className="mb-4">
                 <Text className="mb-2 text-sm font-medium text-gray-700">Category *</Text>
-                <TouchableOpacity 
+                <TouchableOpacity
                   className="flex-row items-center justify-between p-4 border border-gray-300 rounded-xl"
                   onPress={() => !creatingMaterial && setShowCategoryModal(true)}
                   disabled={creatingMaterial}
@@ -2035,62 +1788,6 @@ const MaterialsListScreen = () => {
                 </TouchableOpacity>
               </View>
 
-              {/* Quantity Field */}
-              <View className="mb-4">
-                <Text className="mb-2 text-sm font-medium text-gray-700">Quantity *</Text>
-                <TextInput
-                  className="text-base text-gray-900 p-4 border border-gray-300 rounded-xl"
-                  placeholder="Enter quantity"
-                  placeholderTextColor="#9CA3AF"
-                  value={newMaterialForm.quantity}
-                  onChangeText={(text) => setNewMaterialForm({...newMaterialForm, quantity: text})}
-                  keyboardType="numeric"
-                  editable={!creatingMaterial}
-                />
-              </View>
-
-              {/* Stock Field */}
-              <View className="mb-4">
-                <Text className="mb-2 text-sm font-medium text-gray-700">Current Stock</Text>
-                <TextInput
-                  className="text-base text-gray-900 p-4 border border-gray-300 rounded-xl"
-                  placeholder="Enter current stock"
-                  placeholderTextColor="#9CA3AF"
-                  value={newMaterialForm.stock}
-                  onChangeText={(text) => setNewMaterialForm({...newMaterialForm, stock: text})}
-                  keyboardType="numeric"
-                  editable={!creatingMaterial}
-                />
-              </View>
-
-              {/* Price Field */}
-              <View className="mb-4">
-                <Text className="mb-2 text-sm font-medium text-gray-700">Price</Text>
-                <TextInput
-                  className="text-base text-gray-900 p-4 border border-gray-300 rounded-xl"
-                  placeholder="Enter price"
-                  placeholderTextColor="#9CA3AF"
-                  value={newMaterialForm.price}
-                  onChangeText={(text) => setNewMaterialForm({...newMaterialForm, price: text})}
-                  keyboardType="numeric"
-                  editable={!creatingMaterial}
-                />
-              </View>
-
-              {/* Minimum Stock Field */}
-              <View className="mb-4">
-                <Text className="mb-2 text-sm font-medium text-gray-700">Minimum Stock</Text>
-                <TextInput
-                  className="text-base text-gray-900 p-4 border border-gray-300 rounded-xl"
-                  placeholder="Enter minimum stock"
-                  placeholderTextColor="#9CA3AF"
-                  value={newMaterialForm.minStock}
-                  onChangeText={(text) => setNewMaterialForm({...newMaterialForm, minStock: text})}
-                  keyboardType="numeric"
-                  editable={!creatingMaterial}
-                />
-              </View>
-
               {/* Description Field */}
               <View className="mb-6">
                 <Text className="mb-2 text-sm font-medium text-gray-700">Description</Text>
@@ -2099,7 +1796,7 @@ const MaterialsListScreen = () => {
                   placeholder="Enter description..."
                   placeholderTextColor="#9CA3AF"
                   value={newMaterialForm.description}
-                  onChangeText={(text) => setNewMaterialForm({...newMaterialForm, description: text})}
+                  onChangeText={(text) => setNewMaterialForm({ ...newMaterialForm, description: text })}
                   multiline
                   editable={!creatingMaterial}
                   textAlignVertical="top"
@@ -2108,10 +1805,9 @@ const MaterialsListScreen = () => {
               </View>
             </ScrollView>
 
-            <TouchableOpacity 
-              className={`flex-row items-center justify-center rounded-xl py-4 ${
-                creatingMaterial ? 'bg-blue-400' : 'bg-blue-600'
-              } mt-4`}
+            <TouchableOpacity
+              className={`flex-row items-center justify-center rounded-xl py-4 ${creatingMaterial ? 'bg-blue-400' : 'bg-blue-600'
+                } mt-4`}
               onPress={createNewMaterial}
               disabled={creatingMaterial}
             >
@@ -2139,14 +1835,14 @@ const MaterialsListScreen = () => {
           activeOpacity={1}
           onPress={() => !updatingMaterial && setEditMaterialModalVisible(false)}
         >
-          <TouchableOpacity 
-            activeOpacity={1} 
-            className="h-[85%] rounded-t-3xl bg-white p-5" 
-            onPress={() => {}}
+          <TouchableOpacity
+            activeOpacity={1}
+            className="h-[85%] rounded-t-3xl bg-white p-5"
+            onPress={() => { }}
           >
             <View className="mb-4 flex-row items-center justify-between">
               <Text className="text-lg font-bold text-gray-900">Edit Material</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => !updatingMaterial && setEditMaterialModalVisible(false)}
                 disabled={updatingMaterial}
               >
@@ -2163,7 +1859,7 @@ const MaterialsListScreen = () => {
                   placeholder="Enter material name"
                   placeholderTextColor="#9CA3AF"
                   value={editMaterialForm.materialName}
-                  onChangeText={(text) => setEditMaterialForm({...editMaterialForm, materialName: text})}
+                  onChangeText={(text) => setEditMaterialForm({ ...editMaterialForm, materialName: text })}
                   editable={!updatingMaterial}
                 />
               </View>
@@ -2171,7 +1867,7 @@ const MaterialsListScreen = () => {
               {/* Unit Field */}
               <View className="mb-4">
                 <Text className="mb-2 text-sm font-medium text-gray-700">Unit *</Text>
-                <TouchableOpacity 
+                <TouchableOpacity
                   className="flex-row items-center justify-between p-4 border border-gray-300 rounded-xl"
                   onPress={() => !updatingMaterial && setShowEditUnitModal(true)}
                   disabled={updatingMaterial}
@@ -2186,7 +1882,7 @@ const MaterialsListScreen = () => {
               {/* GST Field */}
               <View className="mb-4">
                 <Text className="mb-2 text-sm font-medium text-gray-700">GST % *</Text>
-                <TouchableOpacity 
+                <TouchableOpacity
                   className="flex-row items-center justify-between p-4 border border-gray-300 rounded-xl"
                   onPress={() => !updatingMaterial && setShowEditGstModal(true)}
                   disabled={updatingMaterial}
@@ -2204,7 +1900,7 @@ const MaterialsListScreen = () => {
                   placeholder="Enter HSN/SAC code"
                   placeholderTextColor="#9CA3AF"
                   value={editMaterialForm.hsnCode}
-                  onChangeText={(text) => setEditMaterialForm({...editMaterialForm, hsnCode: text})}
+                  onChangeText={(text) => setEditMaterialForm({ ...editMaterialForm, hsnCode: text })}
                   editable={!updatingMaterial}
                   keyboardType="numeric"
                 />
@@ -2213,7 +1909,7 @@ const MaterialsListScreen = () => {
               {/* Category Field */}
               <View className="mb-4">
                 <Text className="mb-2 text-sm font-medium text-gray-700">Category *</Text>
-                <TouchableOpacity 
+                <TouchableOpacity
                   className="flex-row items-center justify-between p-4 border border-gray-300 rounded-xl"
                   onPress={() => !updatingMaterial && setShowEditCategoryModal(true)}
                   disabled={updatingMaterial}
@@ -2233,7 +1929,7 @@ const MaterialsListScreen = () => {
                   placeholder="Enter quantity"
                   placeholderTextColor="#9CA3AF"
                   value={editMaterialForm.quantity}
-                  onChangeText={(text) => setEditMaterialForm({...editMaterialForm, quantity: text})}
+                  onChangeText={(text) => setEditMaterialForm({ ...editMaterialForm, quantity: text })}
                   keyboardType="numeric"
                   editable={!updatingMaterial}
                 />
@@ -2247,7 +1943,7 @@ const MaterialsListScreen = () => {
                   placeholder="Enter current stock"
                   placeholderTextColor="#9CA3AF"
                   value={editMaterialForm.stock}
-                  onChangeText={(text) => setEditMaterialForm({...editMaterialForm, stock: text})}
+                  onChangeText={(text) => setEditMaterialForm({ ...editMaterialForm, stock: text })}
                   keyboardType="numeric"
                   editable={!updatingMaterial}
                 />
@@ -2261,7 +1957,7 @@ const MaterialsListScreen = () => {
                   placeholder="Enter price"
                   placeholderTextColor="#9CA3AF"
                   value={editMaterialForm.price}
-                  onChangeText={(text) => setEditMaterialForm({...editMaterialForm, price: text})}
+                  onChangeText={(text) => setEditMaterialForm({ ...editMaterialForm, price: text })}
                   keyboardType="numeric"
                   editable={!updatingMaterial}
                 />
@@ -2275,7 +1971,7 @@ const MaterialsListScreen = () => {
                   placeholder="Enter minimum stock"
                   placeholderTextColor="#9CA3AF"
                   value={editMaterialForm.minStock}
-                  onChangeText={(text) => setEditMaterialForm({...editMaterialForm, minStock: text})}
+                  onChangeText={(text) => setEditMaterialForm({ ...editMaterialForm, minStock: text })}
                   keyboardType="numeric"
                   editable={!updatingMaterial}
                 />
@@ -2289,7 +1985,7 @@ const MaterialsListScreen = () => {
                   placeholder="Enter description..."
                   placeholderTextColor="#9CA3AF"
                   value={editMaterialForm.description}
-                  onChangeText={(text) => setEditMaterialForm({...editMaterialForm, description: text})}
+                  onChangeText={(text) => setEditMaterialForm({ ...editMaterialForm, description: text })}
                   multiline
                   editable={!updatingMaterial}
                   textAlignVertical="top"
@@ -2298,10 +1994,9 @@ const MaterialsListScreen = () => {
               </View>
             </ScrollView>
 
-            <TouchableOpacity 
-              className={`flex-row items-center justify-center rounded-xl py-4 ${
-                updatingMaterial ? 'bg-blue-400' : 'bg-blue-600'
-              } mt-4`}
+            <TouchableOpacity
+              className={`flex-row items-center justify-center rounded-xl py-4 ${updatingMaterial ? 'bg-blue-400' : 'bg-blue-600'
+                } mt-4`}
               onPress={handleEditMaterial}
               disabled={updatingMaterial}
             >
@@ -2506,340 +2201,612 @@ const MaterialsListScreen = () => {
         </View>
       </Modal>
 
-      {/* === REQUEST MATERIAL MODAL === */}
-      <Modal
-        visible={requestMaterialModalVisible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setRequestMaterialModalVisible(false)}>
-        <TouchableOpacity
-          className="flex-1 justify-end bg-black/50"
-          activeOpacity={1}
-          onPress={() => setRequestMaterialModalVisible(false)}
-        >
-          <TouchableOpacity activeOpacity={1} className="max-h-[90%] rounded-t-3xl bg-white p-5" onPress={() => {}}>
-            <View className="mb-4 flex-row items-center justify-between">
-              <Text className="text-lg font-bold text-gray-900">Material Request</Text>
-              <TouchableOpacity onPress={() => setRequestMaterialModalVisible(false)}>
-                <Ionicons name="close" size={24} color="#6B7280" />
-              </TouchableOpacity>
-            </View>
-            
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <View className="mb-4">
-                <Text className="mb-1 text-sm font-medium text-gray-700">MR Number</Text>
-                <TextInput
-                  className="text-base text-gray-900"
-                  value={requestForm.mrNumber}
-                  onChangeText={(text) => setRequestForm({...requestForm, mrNumber: text})}
-                />
-                <View className="mt-1 h-px bg-gray-300" />
-              </View>
 
-              <View className="mb-4">
-                <Text className="mb-1 text-sm font-medium text-gray-700">Date</Text>
-                <View className="flex-row items-center justify-between">
-                  <Text className="text-base text-gray-900">{requestForm.date}</Text>
-                  <TouchableOpacity onPress={() => setShowDatePicker(true)}>
-                    <Ionicons name="calendar-outline" size={20} color="#0066FF" />
-                  </TouchableOpacity>
-                </View>
-                <View className="mt-1 h-px bg-gray-300" />
-              </View>
 
-              <TouchableOpacity
-                className="mb-4 flex-row items-center justify-center rounded-xl bg-blue-50 py-3"
-                onPress={() => {
-                  setRequestMaterialModalVisible(false);
-                  setMaterialLibraryModalVisible(true);
-                }}>
-                <Ionicons name="add" size={20} color="#0066FF" />
-                <Text className="ml-1 font-medium text-blue-600">+ Add Material</Text>
-              </TouchableOpacity>
-
-              <View className="mb-4">
-                <Text className="mb-1 text-sm font-medium text-gray-700">Material Name</Text>
-                <TextInput
-                  className="text-base text-gray-900"
-                  value={requestForm.materialName}
-                  onChangeText={(text) => setRequestForm({...requestForm, materialName: text})}
-                />
-                <View className="mt-1 h-px bg-gray-300" />
-              </View>
-
-              <View className="mb-4">
-                <Text className="mb-1 text-sm text-gray-500">Enter Quantity</Text>
-                <TextInput
-                  className="text-base text-gray-900"
-                  placeholder="Enter quantity"
-                  placeholderTextColor="#9CA3AF"
-                  value={requestForm.quantity}
-                  onChangeText={(text) => setRequestForm({...requestForm, quantity: text})}
-                  keyboardType="numeric"
-                />
-                <View className="mt-1 h-px bg-gray-300" />
-              </View>
-
-              <View className="mb-4">
-                <Text className="mb-1 text-sm font-medium text-gray-700">Item Description</Text>
-                <TextInput
-                  className="text-base text-gray-900"
-                  placeholder="Enter description"
-                  placeholderTextColor="#9CA3AF"
-                  value={requestForm.itemDescription}
-                  onChangeText={(text) => setRequestForm({...requestForm, itemDescription: text})}
-                />
-                <View className="mt-1 h-px bg-gray-300" />
-              </View>
-
-              <View className="mb-6">
-                <Text className="mb-1 text-sm font-medium text-gray-700">Notes</Text>
-                <TextInput
-                  className="h-20 text-sm text-gray-900"
-                  placeholder="Enter notes..."
-                  placeholderTextColor="#9CA3AF"
-                  value={requestForm.notes}
-                  onChangeText={(text) => setRequestForm({...requestForm, notes: text})}
-                  multiline
-                  numberOfLines={4}
-                />
-              </View>
-            </ScrollView>
-
-            <TouchableOpacity className="flex-row items-center justify-center rounded-xl bg-blue-600 py-3.5">
-              <Text className="text-base font-semibold text-white">Save</Text>
-              <Ionicons name="checkmark" size={20} color="white" style={{ marginLeft: 6 }} />
-            </TouchableOpacity>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
-
-      {/* === PURCHASED MODAL === */}
       <Modal
         visible={addMaterialPurchaseModalVisible}
         transparent={true}
         animationType="slide"
-        onRequestClose={() => setAddMaterialPurchaseModalVisible(false)}>
+        onRequestClose={() => {
+          setAddMaterialPurchaseModalVisible(false);
+          setShowMaterialListInPurchase(false);
+          clearPurchaseForm();
+        }}
+      >
         <TouchableOpacity
           className="flex-1 justify-end bg-black/50"
           activeOpacity={1}
-          onPress={() => setAddMaterialPurchaseModalVisible(false)}
+          onPress={() => {
+            setAddMaterialPurchaseModalVisible(false);
+            setShowMaterialListInPurchase(false);
+            clearPurchaseForm();
+          }}
         >
-          <TouchableOpacity activeOpacity={1} className="max-h-[90%] rounded-t-3xl bg-white p-5" onPress={() => {}}>
-            <View className="mb-4 flex-row items-center justify-between">
-              <Text className="text-lg font-bold text-gray-900">Material Purchase</Text>
-              <TouchableOpacity onPress={() => setAddMaterialPurchaseModalVisible(false)}>
-                <Ionicons name="close" size={24} color="#6B7280" />
-              </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={1}
+            className="rounded-t-3xl bg-white"
+            style={{
+              height: showMaterialListInPurchase ? '85%' : '75%',
+              maxHeight: '90%',
+            }}
+            onPress={() => { }}
+          >
+            {/* Drag handle */}
+            <View className="items-center pt-3 pb-1">
+              <View className="h-1.5 w-12 rounded-full bg-gray-300" />
             </View>
-            
-            <View className="mb-4 flex-row items-center justify-between">
-              <Text className="text-sm text-gray-600">{formatDate(purchaseDate)}</Text>
-              <TouchableOpacity onPress={() => setShowPurchaseDatePicker(true)}>
-                <Ionicons name="calendar-outline" size={20} color="#0066FF" />
-              </TouchableOpacity>
-            </View>
-            {showPurchaseDatePicker && (
-              <DateTimePicker 
-                value={purchaseDate} 
-                mode="date" 
-                display={Platform.OS === 'ios' ? 'spinner' : 'default'} 
-                onChange={onPurchaseDateChange} 
-              />
+
+            {showMaterialListInPurchase ? (
+              // Material selection list (unchanged)
+              <View className="flex-1 px-5">
+                <View className="flex-row items-center justify-between mb-4">
+                  <TouchableOpacity onPress={() => setShowMaterialListInPurchase(false)} className="p-2">
+                    <Ionicons name="arrow-back" size={24} color="#6B7280" />
+                  </TouchableOpacity>
+                  <Text className="text-lg font-bold text-gray-900">Select Material</Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setAddMaterialPurchaseModalVisible(false);
+                      setShowMaterialListInPurchase(false);
+                      clearPurchaseForm();
+                    }}
+                    className="p-2"
+                  >
+                    <Ionicons name="close" size={24} color="#6B7280" />
+                  </TouchableOpacity>
+                </View>
+
+                <View className="mb-3 h-12 flex-row items-center rounded-xl bg-gray-100 px-3">
+                  <Ionicons name="search" size={20} color="#9CA3AF" />
+                  <TextInput
+                    className="ml-2 flex-1 text-base text-gray-900"
+                    placeholder="Search materials..."
+                    placeholderTextColor="#9CA3AF"
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                  />
+                </View>
+
+                <FlatList
+                  data={filteredLibrary}
+                  renderItem={renderLibraryItem}
+                  keyExtractor={(item) => item.id}
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={{ paddingBottom: 20 }}
+                  ListEmptyComponent={
+                    <View className="py-8 items-center">
+                      <Text className="text-gray-500">No materials found</Text>
+                      <TouchableOpacity onPress={fetchMaterials} className="mt-2 px-4 py-2 bg-blue-100 rounded-lg">
+                        <Text className="text-blue-600">Refresh</Text>
+                      </TouchableOpacity>
+                    </View>
+                  }
+                />
+              </View>
+            ) : (
+              // === PURCHASE FORM VIEW ===
+              <View className="flex-1 px-5 relative">
+                <View className="mb-4 flex-row items-center justify-between">
+                  <Text className="text-lg font-bold text-gray-900">Material Purchase</Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setAddMaterialPurchaseModalVisible(false);
+                      setShowMaterialListInPurchase(false);
+                      clearPurchaseForm();
+                    }}
+                  >
+                    <Ionicons name="close" size={24} color="#6B7280" />
+                  </TouchableOpacity>
+                </View>
+
+                <ScrollView
+                  showsVerticalScrollIndicator={false}
+                  className="flex-1"
+                  contentContainerStyle={{ paddingBottom: 140 }} // Extra space for button + dropdown
+                  keyboardShouldPersistTaps="handled"
+                >
+                  {/* Date */}
+                  <View className="mb-4">
+                    <Text className="mb-1 text-sm font-medium text-gray-700">Date</Text>
+                    <View className="flex-row items-center justify-between">
+                      <Text className="text-base text-gray-900">{formatDate(purchaseDate)}</Text>
+                      <TouchableOpacity onPress={() => setShowPurchaseDatePicker(true)}>
+                        <Ionicons name="calendar-outline" size={20} color="#0066FF" />
+                      </TouchableOpacity>
+                    </View>
+                    <View className="mt-1 h-px bg-gray-300" />
+                    {showPurchaseDatePicker && (
+                      <DateTimePicker
+                        value={purchaseDate}
+                        mode="date"
+                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                        onChange={onPurchaseDateChange}
+                      />
+                    )}
+                  </View>
+
+                  {/* Party Name */}
+                  <View className="mb-6">
+                    <Text className="mb-1 text-sm font-medium text-gray-700">Party Name</Text>
+                    <View className="flex-row items-center border-b border-gray-300 pb-1">
+                      <TextInput
+                        className="flex-1 text-base text-gray-900"
+                        placeholder="Select or enter party name"
+                        placeholderTextColor="#9CA3AF"
+                        value={purchaseForm.partyName}
+                        onChangeText={(text) => setPurchaseForm({ ...purchaseForm, partyName: text })}
+                        onFocus={() => {
+                          setShowPartyDropdown(true);
+                          setPartySearch(purchaseForm.partyName || '');
+                        }}
+                      />
+                      <TouchableOpacity onPress={() => setShowPartyDropdown(!showPartyDropdown)}>
+                        <Ionicons name={showPartyDropdown ? "chevron-up" : "chevron-down"} size={20} color="#6B7280" />
+                      </TouchableOpacity>
+                    </View>
+                    {purchaseForm.partyName && !showPartyDropdown && vendors.find(v => v.name === purchaseForm.partyName) && (
+                      <Text className="mt-1 text-xs text-gray-600">
+                        Selected: {purchaseForm.partyName}
+                        {vendors.find(v => v.name === purchaseForm.partyName)?.vendorcode && ` • Code: ${vendors.find(v => v.name === purchaseForm.partyName)?.vendorcode}`}
+                      </Text>
+                    )}
+                  </View>
+
+                  {/* Material Selection */}
+                  {selectedPurchaseMaterial ? (
+                    <View className="mb-4">
+                      <View className="flex-row items-center justify-between mb-2">
+                        <Text className="text-sm font-medium text-gray-700">Material</Text>
+                        <TouchableOpacity onPress={() => setShowMaterialListInPurchase(true)} className="p-1">
+                          <Text className="text-blue-600 text-sm">Change</Text>
+                        </TouchableOpacity>
+                      </View>
+                      <View className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <Text className="text-base font-medium text-gray-900">{selectedPurchaseMaterial.name}</Text>
+                        <View className="flex-row mt-1">
+                          <Text className="text-xs text-gray-500 mr-3">Category: {selectedPurchaseMaterial.category}</Text>
+                          <Text className="text-xs text-gray-500">Unit: {selectedPurchaseMaterial.unit}</Text>
+                        </View>
+                        <Text className="text-xs text-gray-500 mt-1">ID: {selectedPurchaseMaterial.id}</Text>
+                      </View>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      className="mb-4 flex-row items-center justify-center rounded-xl bg-blue-50 py-3"
+                      onPress={() => setShowMaterialListInPurchase(true)}
+                    >
+                      <Ionicons name="add" size={20} color="#0066FF" />
+                      <Text className="ml-1 font-medium text-blue-600">+ Add Material</Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {/* Quantity */}
+                  <View className="mb-4">
+                    <Text className="mb-1 text-sm font-medium text-gray-700">Quantity ({selectedPurchaseMaterial?.unit || 'units'})</Text>
+                    <TextInput
+                      className="text-base text-gray-900"
+                      placeholder="Enter quantity"
+                      placeholderTextColor="#9CA3AF"
+                      value={purchaseForm.quantity}
+                      onChangeText={(text) => setPurchaseForm({ ...purchaseForm, quantity: text })}
+                      keyboardType="numeric"
+                    />
+                    <View className="mt-1 h-px bg-gray-300" />
+                  </View>
+
+                  {/* Rate per Unit */}
+                  <View className="mb-4">
+                    <Text className="mb-1 text-sm font-medium text-gray-700">Rate per Unit (₹)</Text>
+                    <TextInput
+                      className="text-base text-gray-900"
+                      placeholder="Enter rate per unit"
+                      placeholderTextColor="#9CA3AF"
+                      value={purchaseForm.rate}
+                      onChangeText={(text) => setPurchaseForm({ ...purchaseForm, rate: text })}
+                      keyboardType="numeric"
+                    />
+                    <View className="mt-1 h-px bg-gray-300" />
+                  </View>
+
+                  {/* Total Amount (Auto-calculated) */}
+                  <View className="mb-4">
+                    <Text className="mb-1 text-sm font-medium text-gray-700">Total Amount (₹)</Text>
+                    <Text className="text-base font-semibold text-gray-900">
+                      {purchaseForm.totalAmount ? `₹ ${purchaseForm.totalAmount}` : '—'}
+                    </Text>
+                    <View className="mt-1 h-px bg-gray-300" />
+                  </View>
+
+                  {/* Advance */}
+                  <View className="mb-4">
+                    <Text className="mb-1 text-sm font-medium text-gray-700">Advance (₹)</Text>
+                    <TextInput
+                      className="text-base text-gray-900"
+                      placeholder="Enter advance amount"
+                      placeholderTextColor="#9CA3AF"
+                      value={purchaseForm.advance}
+                      onChangeText={(text) => setPurchaseForm({ ...purchaseForm, advance: text })}
+                      keyboardType="numeric"
+                    />
+                    <View className="mt-1 h-px bg-gray-300" />
+                  </View>
+
+                  {/* Balance (Auto-calculated) */}
+                  <View className="mb-6">
+                    <Text className="mb-1 text-sm font-medium text-gray-700">Balance (₹)</Text>
+                    <Text className="text-base font-semibold text-gray-900">
+                      {purchaseForm.balance ? `₹ ${purchaseForm.balance}` : '—'}
+                    </Text>
+                    <View className="mt-1 h-px bg-gray-300" />
+                  </View>
+
+
+                </ScrollView>
+
+                {/* Save Button */}
+                <TouchableOpacity
+                  className="flex-row items-center justify-center rounded-xl bg-blue-600 py-3.5 mb-4"
+                  onPress={handleSavePurchase}
+                >
+                  <Text className="text-base font-semibold text-white">Save Purchase</Text>
+                  <Ionicons name="checkmark" size={20} color="white" style={{ marginLeft: 6 }} />
+                </TouchableOpacity>
+
+                {/* Party Dropdown (absolute positioned) */}
+                {showPartyDropdown && (
+                  <View
+                    className="absolute bg-white border border-gray-300 rounded-lg shadow-xl overflow-hidden z-50"
+                    style={{
+                      top: 140,
+                      left: 20,
+                      right: 20,
+                      maxHeight: 300,
+                      elevation: 10,
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.3,
+                      shadowRadius: 8,
+                    }}
+                  >
+                    <ScrollView nestedScrollEnabled={true} keyboardShouldPersistTaps="handled" className="max-h-[300px]">
+                      {filteredParties.length > 0 ? (
+                        filteredParties.map((vendor) => (
+                          <TouchableOpacity
+                            key={vendor.id}
+                            className="px-4 py-3 border-b border-gray-100 active:bg-blue-50"
+                            onPress={() => selectParty(vendor, 'purchase')}
+                          >
+                            <Text className="text-base font-medium text-gray-900">{vendor.name}</Text>
+                            <View className="flex-row justify-between mt-1">
+                              {vendor.vendorcode && <Text className="text-xs text-gray-500">Code: {vendor.vendorcode}</Text>}
+                              {vendor.vendorType && <Text className="text-xs text-gray-500">{vendor.vendorType}</Text>}
+                            </View>
+                          </TouchableOpacity>
+                        ))
+                      ) : (
+                        <View className="px-4 py-3">
+                          <Text className="text-gray-500 text-center">
+                            {partySearch ? 'No vendors found' : 'Type to search vendors'}
+                          </Text>
+                        </View>
+                      )}
+
+                      {partySearch && !vendors.some(v => v.name.toLowerCase() === partySearch.toLowerCase()) && (
+                        <TouchableOpacity
+                          className="px-4 py-3 border-t border-gray-200 bg-blue-50"
+                          onPress={() => {
+                            setPurchaseForm({ ...purchaseForm, partyName: partySearch });
+                            setShowPartyDropdown(false);
+                            setPartySearch('');
+                          }}
+                        >
+                          <Text className="text-blue-600 font-medium">+ Add "{partySearch}" as new vendor</Text>
+                        </TouchableOpacity>
+                      )}
+                    </ScrollView>
+                  </View>
+                )}
+              </View>
             )}
-
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <View className="mb-4">
-                <Text className="mb-1 text-sm font-medium text-gray-700">Party Name</Text>
-                <TextInput
-                  className="text-base text-gray-900"
-                  placeholder="Enter party name"
-                  placeholderTextColor="#9CA3AF"
-                  value={purchaseForm.partyName}
-                  onChangeText={(text) => setPurchaseForm({...purchaseForm, partyName: text})}
-                />
-                <View className="mt-1 h-px bg-gray-300" />
-              </View>
-
-              <TouchableOpacity
-                className="mb-4 flex-row items-center justify-center rounded-xl bg-blue-50 py-3"
-                onPress={() => {
-                  setAddMaterialPurchaseModalVisible(false);
-                  setMaterialLibraryModalVisible(true);
-                }}>
-                <Ionicons name="add" size={20} color="#0066FF" />
-                <Text className="ml-1 font-medium text-blue-600">+ Add Material</Text>
-              </TouchableOpacity>
-
-              <View className="mb-4">
-                <Text className="mb-1 text-sm font-medium text-gray-700">Quantity</Text>
-                <TextInput
-                  className="text-base text-gray-900"
-                  value={purchaseForm.quantity}
-                  onChangeText={(text) => setPurchaseForm({...purchaseForm, quantity: text})}
-                />
-                <View className="mt-1 h-px bg-gray-300" />
-              </View>
-
-              <View className="mb-4">
-                <Text className="mb-1 text-sm font-medium text-gray-700">Amount</Text>
-                <TextInput
-                  className="text-base text-gray-900"
-                  value={purchaseForm.amount}
-                  onChangeText={(text) => setPurchaseForm({...purchaseForm, amount: text})}
-                  keyboardType="numeric"
-                />
-                <View className="mt-1 h-px bg-gray-300" />
-              </View>
-
-              <View className="mb-4">
-                <Text className="mb-1 text-sm font-medium text-gray-700">Bill To</Text>
-                <TextInput
-                  className="text-base text-gray-900"
-                  placeholder="Enter bill to"
-                  placeholderTextColor="#9CA3AF"
-                  value={purchaseForm.billTo}
-                  onChangeText={(text) => setPurchaseForm({...purchaseForm, billTo: text})}
-                />
-                <View className="mt-1 h-px bg-gray-300" />
-              </View>
-
-              <View className="mb-4">
-                <Text className="mb-1 text-sm font-medium text-gray-700">Advance</Text>
-                <TextInput
-                  className="text-base text-gray-900"
-                  placeholder="Enter advance amount"
-                  placeholderTextColor="#9CA3AF"
-                  value={purchaseForm.advance}
-                  onChangeText={(text) => setPurchaseForm({...purchaseForm, advance: text})}
-                  keyboardType="numeric"
-                />
-                <View className="mt-1 h-px bg-gray-300" />
-              </View>
-
-              <View className="mb-6">
-                <Text className="mb-1 text-sm font-medium text-gray-700">Balance</Text>
-                <TextInput
-                  className="text-base text-gray-900"
-                  value={purchaseForm.balance}
-                  onChangeText={(text) => setPurchaseForm({...purchaseForm, balance: text})}
-                  keyboardType="numeric"
-                />
-                <View className="mt-1 h-px bg-gray-300" />
-              </View>
-            </ScrollView>
-
-            <TouchableOpacity className="flex-row items-center justify-center rounded-xl bg-blue-600 py-3.5">
-              <Text className="text-base font-semibold text-white">Save</Text>
-              <Ionicons name="checkmark" size={20} color="white" style={{ marginLeft: 6 }} />
-            </TouchableOpacity>
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
-
-      {/* === RECEIVED MODAL === */}
       <Modal
         visible={receivedModalVisible}
         transparent={true}
         animationType="slide"
-        onRequestClose={() => setReceivedModalVisible(false)}>
+        onRequestClose={() => {
+          setReceivedModalVisible(false);
+          setShowMaterialListInReceived(false);
+          clearReceivedForm();
+        }}
+      >
         <TouchableOpacity
           className="flex-1 justify-end bg-black/50"
           activeOpacity={1}
-          onPress={() => setReceivedModalVisible(false)}
+          onPress={() => {
+            setReceivedModalVisible(false);
+            setShowMaterialListInReceived(false);
+            clearReceivedForm();
+          }}
         >
-          <TouchableOpacity activeOpacity={1} className="max-h-[90%] rounded-t-3xl bg-white p-5" onPress={() => {}}>
-            <View className="mb-4 flex-row items-center justify-between">
-              <Text className="text-lg font-bold text-gray-900">Material Received</Text>
-              <TouchableOpacity onPress={() => setReceivedModalVisible(false)}>
-                <Ionicons name="close" size={24} color="#6B7280" />
-              </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={1}
+            className="rounded-t-3xl bg-white"
+            style={{
+              height: showMaterialListInReceived ? '85%' : '75%',
+              maxHeight: '90%',
+            }}
+            onPress={() => { }}
+          >
+            {/* Drag handle */}
+            <View className="items-center pt-3 pb-1">
+              <View className="h-1.5 w-12 rounded-full bg-gray-300" />
             </View>
-            <View className="mb-4 flex-row items-center justify-between">
-              <Text className="text-sm text-gray-600">{formatDate(date)}</Text>
-              <TouchableOpacity onPress={() => setShowDatePicker(true)}>
-                <Ionicons name="calendar-outline" size={20} color="#0066FF" />
-              </TouchableOpacity>
-            </View>
-            {showDatePicker && (
-              <DateTimePicker value={date} mode="date" display={Platform.OS === 'ios' ? 'spinner' : 'default'} onChange={onDateChange} />
+
+            {showMaterialListInReceived ? (
+              // Material selection list
+              <View className="flex-1 px-5">
+                <View className="flex-row items-center justify-between mb-4">
+                  <TouchableOpacity onPress={() => setShowMaterialListInReceived(false)} className="p-2">
+                    <Ionicons name="arrow-back" size={24} color="#6B7280" />
+                  </TouchableOpacity>
+                  <Text className="text-lg font-bold text-gray-900">Select Material</Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setReceivedModalVisible(false);
+                      setShowMaterialListInReceived(false);
+                      clearReceivedForm();
+                    }}
+                    className="p-2"
+                  >
+                    <Ionicons name="close" size={24} color="#6B7280" />
+                  </TouchableOpacity>
+                </View>
+
+                <View className="mb-3 h-12 flex-row items-center rounded-xl bg-gray-100 px-3">
+                  <Ionicons name="search" size={20} color="#9CA3AF" />
+                  <TextInput
+                    className="ml-2 flex-1 text-base text-gray-900"
+                    placeholder="Search materials..."
+                    placeholderTextColor="#9CA3AF"
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                  />
+                </View>
+
+                <FlatList
+                  data={filteredLibrary}
+                  renderItem={renderLibraryItem}
+                  keyExtractor={(item) => item.id}
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={{ paddingBottom: 20 }}
+                  ListEmptyComponent={
+                    <View className="py-8 items-center">
+                      <Text className="text-gray-500">No materials found</Text>
+                      <TouchableOpacity onPress={fetchMaterials} className="mt-2 px-4 py-2 bg-blue-100 rounded-lg">
+                        <Text className="text-blue-600">Refresh</Text>
+                      </TouchableOpacity>
+                    </View>
+                  }
+                />
+              </View>
+            ) : (
+              // === RECEIVED FORM VIEW ===
+              <View className="flex-1 px-5 relative">
+                <View className="mb-4 flex-row items-center justify-between">
+                  <Text className="text-lg font-bold text-gray-900">Material Received</Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setReceivedModalVisible(false);
+                      setShowMaterialListInReceived(false);
+                      clearReceivedForm();
+                    }}
+                  >
+                    <Ionicons name="close" size={24} color="#6B7280" />
+                  </TouchableOpacity>
+                </View>
+
+                <ScrollView
+                  showsVerticalScrollIndicator={false}
+                  className="flex-1"
+                  contentContainerStyle={{ paddingBottom: 140 }}
+                  keyboardShouldPersistTaps="handled"
+                >
+                  {/* Date */}
+                  <View className="mb-4">
+                    <Text className="mb-1 text-sm font-medium text-gray-700">Date</Text>
+                    <View className="flex-row items-center justify-between">
+                      <Text className="text-base text-gray-900">{formatDate(date)}</Text>
+                      <TouchableOpacity onPress={() => setShowDatePicker(true)}>
+                        <Ionicons name="calendar-outline" size={20} color="#0066FF" />
+                      </TouchableOpacity>
+                    </View>
+                    <View className="mt-1 h-px bg-gray-300" />
+                    {showDatePicker && (
+                      <DateTimePicker
+                        value={date}
+                        mode="date"
+                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                        onChange={onDateChange}
+                      />
+                    )}
+                  </View>
+
+                  {/* Party Name Dropdown */}
+                  <View className="mb-6">
+                    <Text className="mb-1 text-sm font-medium text-gray-700">Party Name</Text>
+                    <View className="flex-row items-center border-b border-gray-300 pb-1">
+                      <TextInput
+                        className="flex-1 text-base text-gray-900"
+                        placeholder="Select or enter party name"
+                        placeholderTextColor="#9CA3AF"
+                        value={receivedForm.partyName}
+                        onChangeText={(text) => setReceivedForm({ ...receivedForm, partyName: text })}
+                        onFocus={() => {
+                          setShowPartyDropdown(true);
+                          setPartySearch(receivedForm.partyName || '');
+                        }}
+                      />
+                      <TouchableOpacity onPress={() => setShowPartyDropdown(!showPartyDropdown)}>
+                        <Ionicons name={showPartyDropdown ? "chevron-up" : "chevron-down"} size={20} color="#6B7280" />
+                      </TouchableOpacity>
+                    </View>
+                    {receivedForm.partyName && !showPartyDropdown && vendors.find(v => v.name === receivedForm.partyName) && (
+                      <Text className="mt-1 text-xs text-gray-600">
+                        Selected: {receivedForm.partyName}
+                        {vendors.find(v => v.name === receivedForm.partyName)?.vendorcode &&
+                          ` • Code: ${vendors.find(v => v.name === receivedForm.partyName)?.vendorcode}`}
+                      </Text>
+                    )}
+                  </View>
+
+                  {/* Material Selection */}
+                  {selectedReceivedMaterial ? (
+                    <View className="mb-4">
+                      <View className="flex-row items-center justify-between mb-2">
+                        <Text className="text-sm font-medium text-gray-700">Material</Text>
+                        <TouchableOpacity onPress={() => setShowMaterialListInReceived(true)} className="p-1">
+                          <Text className="text-blue-600 text-sm">Change</Text>
+                        </TouchableOpacity>
+                      </View>
+                      <View className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <Text className="text-base font-medium text-gray-900">{selectedReceivedMaterial.name}</Text>
+                        <View className="flex-row mt-1">
+                          <Text className="text-xs text-gray-500 mr-3">Category: {selectedReceivedMaterial.category}</Text>
+                          <Text className="text-xs text-gray-500">Unit: {selectedReceivedMaterial.unit}</Text>
+                        </View>
+                        <Text className="text-xs text-gray-500 mt-1">ID: {selectedReceivedMaterial.id}</Text>
+                      </View>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      className="mb-4 flex-row items-center justify-center rounded-xl bg-blue-50 py-3"
+                      onPress={() => setShowMaterialListInReceived(true)}
+                    >
+                      <Ionicons name="add" size={20} color="#0066FF" />
+                      <Text className="ml-1 font-medium text-blue-600">+ Add Material</Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {/* Quantity */}
+                  <View className="mb-4">
+                    <Text className="mb-1 text-sm text-gray-500">Enter Quantity</Text>
+                    <TextInput
+                      className="text-base text-gray-900"
+                      placeholder="Enter quantity"
+                      placeholderTextColor="#9CA3AF"
+                      value={receivedForm.quantity}
+                      onChangeText={(text) => setReceivedForm({ ...receivedForm, quantity: text })}
+                      keyboardType="numeric"
+                    />
+                    <View className="mt-1 h-px bg-gray-300" />
+                  </View>
+
+                  {/* Challan No. */}
+                  <View className="mb-4">
+                    <Text className="mb-1 text-sm font-medium text-gray-700">Challan No.</Text>
+                    <TextInput
+                      className="text-base text-gray-900"
+                      value={receivedForm.challanNo}
+                      onChangeText={(text) => setReceivedForm({ ...receivedForm, challanNo: text })}
+                      keyboardType="numeric"
+                    />
+                    <View className="mt-1 h-px bg-gray-300" />
+                  </View>
+
+                  {/* Vehicle No. */}
+                  <View className="mb-4">
+                    <Text className="mb-1 text-sm font-medium text-gray-700">Vehicle No.</Text>
+                    <TextInput
+                      className="text-base text-gray-900"
+                      value={receivedForm.vehicleNo}
+                      onChangeText={(text) => setReceivedForm({ ...receivedForm, vehicleNo: text })}
+                    />
+                    <View className="mt-1 h-px bg-gray-300" />
+                  </View>
+
+                  {/* Notes */}
+                  <View className="mb-6">
+                    <Text className="mb-1 text-sm font-medium text-gray-700">Notes</Text>
+                    <TextInput
+                      className="h-20 text-sm text-gray-900"
+                      placeholder="Enter notes..."
+                      placeholderTextColor="#9CA3AF"
+                      value={receivedForm.notes}
+                      onChangeText={(text) => setReceivedForm({ ...receivedForm, notes: text })}
+                      multiline
+                      numberOfLines={4}
+                      textAlignVertical="top"
+                    />
+                  </View>
+                </ScrollView>
+
+                {/* Save Button */}
+                <TouchableOpacity
+                  className="flex-row items-center justify-center rounded-xl bg-blue-600 py-3.5 mb-4"
+                  onPress={handleSaveReceived}
+                >
+                  <Text className="text-base font-semibold text-white">Save Received</Text>
+                  <Ionicons name="checkmark" size={20} color="white" style={{ marginLeft: 6 }} />
+                </TouchableOpacity>
+
+                {/* Party Dropdown */}
+                {showPartyDropdown && (
+                  <View
+                    className="absolute bg-white border border-gray-300 rounded-lg shadow-xl overflow-hidden z-50"
+                    style={{
+                      top: 140,
+                      left: 20,
+                      right: 20,
+                      maxHeight: 300,
+                      elevation: 10,
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.3,
+                      shadowRadius: 8,
+                    }}
+                  >
+                    <ScrollView nestedScrollEnabled={true} keyboardShouldPersistTaps="handled" className="max-h-[300px]">
+                      {filteredParties.length > 0 ? (
+                        filteredParties.map((vendor) => (
+                          <TouchableOpacity
+                            key={vendor.id}
+                            className="px-4 py-3 border-b border-gray-100 active:bg-blue-50"
+                            onPress={() => selectParty(vendor, 'received')}
+                          >
+                            <Text className="text-base font-medium text-gray-900">{vendor.name}</Text>
+                            <View className="flex-row justify-between mt-1">
+                              {vendor.vendorcode && <Text className="text-xs text-gray-500">Code: {vendor.vendorcode}</Text>}
+                              {vendor.vendorType && <Text className="text-xs text-gray-500">{vendor.vendorType}</Text>}
+                            </View>
+                          </TouchableOpacity>
+                        ))
+                      ) : (
+                        <View className="px-4 py-3">
+                          <Text className="text-gray-500 text-center">
+                            {partySearch ? 'No vendors found' : 'Type to search vendors'}
+                          </Text>
+                        </View>
+                      )}
+
+                      {partySearch && !vendors.some(v => v.name.toLowerCase() === partySearch.toLowerCase()) && (
+                        <TouchableOpacity
+                          className="px-4 py-3 border-t border-gray-200 bg-blue-50"
+                          onPress={() => {
+                            setReceivedForm({ ...receivedForm, partyName: partySearch });
+                            setShowPartyDropdown(false);
+                            setPartySearch('');
+                          }}
+                        >
+                          <Text className="text-blue-600 font-medium">+ Add "{partySearch}" as new vendor</Text>
+                        </TouchableOpacity>
+                      )}
+                    </ScrollView>
+                  </View>
+                )}
+              </View>
             )}
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <View className="mb-4">
-                <Text className="mb-1 text-sm font-medium text-gray-700">Party Name</Text>
-                <TextInput
-                  className="text-base text-gray-900"
-                  value={receivedForm.partyName}
-                  onChangeText={(text) => setReceivedForm({...receivedForm, partyName: text})}
-                />
-                <View className="mt-1 h-px bg-gray-300" />
-              </View>
-              <TouchableOpacity
-                className="mb-4 flex-row items-center justify-center rounded-xl bg-blue-50 py-3"
-                onPress={() => {
-                  setReceivedModalVisible(false);
-                  setMaterialLibraryModalVisible(true);
-                }}>
-                <Ionicons name="add" size={20} color="#0066FF" />
-                <Text className="ml-1 font-medium text-blue-600">+ Add Material</Text>
-              </TouchableOpacity>
-              <View className="mb-4">
-                <Text className="mb-1 text-sm font-medium text-gray-700">Test Material</Text>
-                <TextInput
-                  className="text-base text-gray-900"
-                  value={receivedForm.materialName}
-                  onChangeText={(text) => setReceivedForm({...receivedForm, materialName: text})}
-                />
-                <View className="mt-1 h-px bg-gray-300" />
-              </View>
-              <View className="mb-4">
-                <Text className="mb-1 text-sm text-gray-500">Enter Quantity</Text>
-                <TextInput
-                  className="text-base text-gray-900"
-                  placeholder="Enter quantity"
-                  placeholderTextColor="#9CA3AF"
-                  value={receivedForm.quantity}
-                  onChangeText={(text) => setReceivedForm({...receivedForm, quantity: text})}
-                  keyboardType="numeric"
-                />
-                <View className="mt-1 h-px bg-gray-300" />
-              </View>
-              <View className="mb-4">
-                <Text className="mb-1 text-sm font-medium text-gray-700">Challan No.</Text>
-                <TextInput
-                  className="text-base text-gray-900"
-                  value={receivedForm.challanNo}
-                  onChangeText={(text) => setReceivedForm({...receivedForm, challanNo: text})}
-                  keyboardType="numeric"
-                />
-                <View className="mt-1 h-px bg-gray-300" />
-              </View>
-              <View className="mb-4">
-                <Text className="mb-1 text-sm font-medium text-gray-700">Vehicle No.</Text>
-                <TextInput
-                  className="text-base text-gray-900"
-                  value={receivedForm.vehicleNo}
-                  onChangeText={(text) => setReceivedForm({...receivedForm, vehicleNo: text})}
-                />
-                <View className="mt-1 h-px bg-gray-300" />
-              </View>
-              <View className="mb-6">
-                <Text className="mb-1 text-sm font-medium text-gray-700">Notes</Text>
-                <TextInput
-                  className="h-20 text-sm text-gray-900"
-                  placeholder="Enter notes..."
-                  placeholderTextColor="#9CA3AF"
-                  value={receivedForm.notes}
-                  onChangeText={(text) => setReceivedForm({...receivedForm, notes: text})}
-                  multiline
-                  numberOfLines={4}
-                />
-              </View>
-            </ScrollView>
-            <TouchableOpacity className="flex-row items-center justify-center rounded-xl bg-blue-600 py-3.5">
-              <Text className="text-base font-semibold text-white">Save</Text>
-              <Ionicons name="checkmark" size={20} color="white" style={{ marginLeft: 6 }} />
-            </TouchableOpacity>
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
@@ -2849,63 +2816,194 @@ const MaterialsListScreen = () => {
         visible={usedModalVisible}
         transparent={true}
         animationType="slide"
-        onRequestClose={() => setUsedModalVisible(false)}>
+        onRequestClose={() => setUsedModalVisible(false)}
+      >
         <TouchableOpacity
           className="flex-1 justify-end bg-black/50"
           activeOpacity={1}
           onPress={() => setUsedModalVisible(false)}
         >
-          <TouchableOpacity activeOpacity={1} className="bg-white rounded-t-3xl p-5" onPress={() => {}}>
-            <View className="items-center pt-3 pb-2">
-              <View className="h-1 w-10 bg-gray-300 rounded-full" />
+          <TouchableOpacity
+            activeOpacity={1}
+            className="rounded-t-3xl bg-white"
+            style={{
+              height: showMaterialListInUsed ? '85%' : '75%',
+              maxHeight: '90%',
+            }}
+            onPress={() => { }}
+          >
+            {/* Drag handle */}
+            <View className="items-center pt-3 pb-1">
+              <View className="h-1.5 w-12 rounded-full bg-gray-300" />
             </View>
-            <Text className="text-lg font-bold text-gray-900 mb-4">Material Used</Text>
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-sm text-gray-600">01-04-25</Text>
-              <Ionicons name="chevron-down" size={20} color="#9CA3AF" />
-            </View>
-            <View className="h-px bg-gray-300 mb-4" />
-            <View className="mb-4">
-              <Text className="text-sm font-medium text-gray-700 mb-1">Material</Text>
-              <View className="flex-row items-center justify-between">
-                <Text className="text-base text-gray-900"></Text>
-                <Ionicons name="chevron-down" size={20} color="#9CA3AF" />
+
+            {showMaterialListInUsed ? (
+              // Material List View
+              <View className="flex-1 px-5">
+                <View className="flex-row items-center justify-between mb-4">
+                  <TouchableOpacity
+                    onPress={() => setShowMaterialListInUsed(false)}
+                    className="p-2"
+                  >
+                    <Ionicons name="arrow-back" size={24} color="#6B7280" />
+                  </TouchableOpacity>
+                  <Text className="text-lg font-bold text-gray-900">Select Material</Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setUsedModalVisible(false);
+                      setShowMaterialListInUsed(false);
+                      clearUsedForm();
+                    }}
+                    className="p-2"
+                  >
+                    <Ionicons name="close" size={24} color="#6B7280" />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Search */}
+                <View className="mb-3 h-12 flex-row items-center rounded-xl bg-gray-100 px-3">
+                  <Ionicons name="search" size={20} color="#9CA3AF" />
+                  <TextInput
+                    className="ml-2 flex-1 text-base text-gray-900"
+                    placeholder="Search materials..."
+                    placeholderTextColor="#9CA3AF"
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                  />
+                </View>
+
+                <FlatList
+                  data={filteredLibrary}
+                  renderItem={renderLibraryItem}
+                  keyExtractor={(item) => item.id}
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={{ paddingBottom: 20 }}
+                  ListEmptyComponent={
+                    <View className="py-8 items-center">
+                      <Text className="text-gray-500">No materials found</Text>
+                      <TouchableOpacity
+                        onPress={fetchMaterials}
+                        className="mt-2 px-4 py-2 bg-blue-100 rounded-lg"
+                      >
+                        <Text className="text-blue-600">Refresh</Text>
+                      </TouchableOpacity>
+                    </View>
+                  }
+                />
               </View>
-              <View className="h-px bg-gray-300 mt-1" />
-            </View>
-            <View className="mb-4">
-              <Text className="text-sm text-gray-500 mb-1">Quantity in numbers</Text>
-              <TextInput
-                className="text-base text-gray-900"
-                placeholder="0"
-                placeholderTextColor="#9CA3AF"
-                keyboardType="numeric"
-                value={usedForm.quantity}
-                onChangeText={(text) => setUsedForm({...usedForm, quantity: text})}
-              />
-              <View className="h-px bg-gray-300 mt-1" />
-            </View>
-            <View className="mb-6">
-              <Text className="text-sm font-medium text-gray-700 mb-1">Notes</Text>
-              <TextInput
-                className="h-20 text-base text-gray-900"
-                placeholder="Enter notes..."
-                placeholderTextColor="#9CA3AF"
-                multiline
-                value={usedForm.notes}
-                onChangeText={(text) => setUsedForm({...usedForm, notes: text})}
-              />
-            </View>
-            <TouchableOpacity className="bg-blue-600 rounded-xl py-3.5 flex-row items-center justify-center">
-              <Text className="text-white font-semibold text-base mr-2">Save</Text>
-              <Ionicons name="checkmark" size={20} color="white" />
-            </TouchableOpacity>
+            ) : (
+              // Used Form View
+              <View className="flex-1 px-5">
+                <View className="mb-4 flex-row items-center justify-between">
+                  <Text className="text-lg font-bold text-gray-900">Material Used</Text>
+                  <TouchableOpacity onPress={() => setUsedModalVisible(false)}>
+                    <Ionicons name="close" size={24} color="#6B7280" />
+                  </TouchableOpacity>
+                </View>
+
+                <ScrollView
+                  showsVerticalScrollIndicator={false}
+                  className="flex-1"
+                  contentContainerStyle={{ paddingBottom: 20 }}
+                >
+                  {/* Date */}
+                  <View className="mb-4">
+                    <Text className="mb-1 text-sm font-medium text-gray-700">Date</Text>
+                    <View className="flex-row items-center justify-between">
+                      <Text className="text-base text-gray-900">{usedForm.date}</Text>
+                      <TouchableOpacity onPress={() => setShowDatePicker(true)}>
+                        <Ionicons name="calendar-outline" size={20} color="#0066FF" />
+                      </TouchableOpacity>
+                    </View>
+                    <View className="mt-1 h-px bg-gray-300" />
+                  </View>
+
+                  {/* Material Selection */}
+                  {selectedUsedMaterial ? (
+                    <View className="mb-4">
+                      <View className="flex-row items-center justify-between mb-2">
+                        <Text className="text-sm font-medium text-gray-700">Material</Text>
+                        <TouchableOpacity
+                          onPress={() => setShowMaterialListInUsed(true)}
+                          className="p-1"
+                        >
+                          <Text className="text-blue-600 text-sm">Change</Text>
+                        </TouchableOpacity>
+                      </View>
+                      <View className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <Text className="text-base font-medium text-gray-900">
+                          {selectedUsedMaterial.name}
+                        </Text>
+                        <View className="flex-row mt-1">
+                          <Text className="text-xs text-gray-500 mr-3">
+                            Category: {selectedUsedMaterial.category}
+                          </Text>
+                          <Text className="text-xs text-gray-500">
+                            Unit: {selectedUsedMaterial.unit}
+                          </Text>
+                        </View>
+                        <Text className="text-xs text-gray-500 mt-1">
+                          ID: {selectedUsedMaterial.id}
+                        </Text>
+                      </View>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      className="mb-4 flex-row items-center justify-center rounded-xl bg-blue-50 py-3"
+                      onPress={() => setShowMaterialListInUsed(true)}
+                    >
+                      <Ionicons name="add" size={20} color="#0066FF" />
+                      <Text className="ml-1 font-medium text-blue-600">+ Add Material</Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {/* Quantity */}
+                  <View className="mb-4">
+                    <Text className="mb-1 text-sm font-medium text-gray-700">
+                      Quantity ({selectedUsedMaterial?.unit || 'units'})
+                    </Text>
+                    <TextInput
+                      className="text-base text-gray-900"
+                      placeholder="Enter quantity"
+                      placeholderTextColor="#9CA3AF"
+                      value={usedForm.quantity}
+                      onChangeText={(text) => setUsedForm({ ...usedForm, quantity: text })}
+                      keyboardType="numeric"
+                    />
+                    <View className="mt-1 h-px bg-gray-300" />
+                  </View>
+
+                  {/* Notes */}
+                  <View className="mb-6">
+                    <Text className="mb-1 text-sm font-medium text-gray-700">Notes</Text>
+                    <TextInput
+                      className="h-24 text-sm text-gray-900"
+                      placeholder="Enter notes..."
+                      placeholderTextColor="#9CA3AF"
+                      value={usedForm.notes}
+                      onChangeText={(text) => setUsedForm({ ...usedForm, notes: text })}
+                      multiline
+                      numberOfLines={4}
+                      textAlignVertical="top"
+                    />
+                  </View>
+                </ScrollView>
+
+                {/* Save Button */}
+                <TouchableOpacity
+                  className="flex-row items-center justify-center rounded-xl bg-blue-600 py-3.5 mb-4"
+                  onPress={handleSaveUsed}
+                >
+                  <Text className="text-base font-semibold text-white">Save Used</Text>
+                  <Ionicons name="checkmark" size={20} color="white" style={{ marginLeft: 6 }} />
+                </TouchableOpacity>
+              </View>
+            )}
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
 
-    </SafeAreaView>
-    
+    </View>
   );
 };
 

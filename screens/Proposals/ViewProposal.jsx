@@ -847,7 +847,7 @@ const ViewProposal = ({ navigation, route }) => {
       );
       return;
     }
-
+ const nextStatus = needsNewSiteSurvey ? "Initialize" : "Ongoing";
     Alert.alert(
       "Approve Proposal",
       "Are you sure you want to approve this proposal?",
@@ -862,7 +862,7 @@ const ViewProposal = ({ navigation, route }) => {
             try {
               // Prepare the request body with "Initialize" status
               const requestBody = {
-                status: "Initialize", // Changed from "Approved" to "Initialize"
+                status: nextStatus, // Changed from "Approved" to "Initialize"
                 // Optionally, you can add an approval note or timestamp
                 updatedAt: new Date().toISOString()
               };
@@ -1220,7 +1220,8 @@ const ViewProposal = ({ navigation, route }) => {
 
   // Safe data access with fallbacks
   const projectDocuments = rawData.projectDocuments || [];
-  const selectedItems = rawData.selectedItems || [];
+const needsNewSiteSurvey = rawData?.needsNewSiteSurvey ?? false;
+
   const projectType = rawData.projectType || {};
   const description = rawData.description || 'No description provided.';
   const budget = rawData.budget || 'NA';
@@ -1449,15 +1450,18 @@ const ViewProposal = ({ navigation, route }) => {
                 color: '#666666',
                 marginBottom: 8,
               }}>
-                Reference ID
+                Need New Site Survey
               </Text>
-              <Text style={{
-                fontFamily: 'Urbanist-Medium',
-                fontSize: 14,
-                color: '#1A1A1A',
-              }}>
-                {itemId || 'Not available'}
-              </Text>
+            <Text
+  style={{
+    fontFamily: 'Urbanist-Medium',
+    fontSize: 14,
+    color: '#1A1A1A',
+  }}
+>
+  {needsNewSiteSurvey ? "Yes" : "No"}
+</Text>
+
             </View>
             
             <View>
