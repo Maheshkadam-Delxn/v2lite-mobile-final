@@ -679,6 +679,7 @@ const getTransactionAmount = (t) => {
   return 0;
 };
 
+
 const calculateOutgoing = (list) => {
   return list
     .filter(
