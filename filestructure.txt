@@ -130,13 +130,11 @@
     |-- FilterPanel.jsx
     |-- GenericFormModal.jsx
     |-- Header.jsx
-    |-- IncomingPaymentModal.jsx
     |-- Inputfield.jsx
     |-- Loader.jsx
     |-- MaterialPurchaseModal.jsx
     |-- Modal.jsx
     |-- NotificationItem.jsx
-    |-- OutgoingPaymentModal.jsx
     |-- ProgressBar.jsx
     |-- Project
         |-- AttendanceTab.jsx
@@ -162,6 +160,7 @@
     |-- PermissionContext.js
     |-- ProjectContext.jsx
     |-- SnagContext.jsx
+    |-- StoreProvider.js
     |-- SurveyContext.jsx
     |-- ThemeContext.jsx
 |-- dircraft-structure.txt
@@ -198,9 +197,11 @@
         |-- DebitNote.jsx
         |-- DebitNoteAddItem.jsx
         |-- IncomingPayment.jsx
+        |-- IncomingPaymentModal.jsx
         |-- InvoiceAddBoqItem.jsx
         |-- MaterialPurchase.jsx
         |-- OutgoingPayment.jsx
+        |-- OutgoingPaymentModal.jsx
         |-- Transaction.jsx
         |-- TransactionAdd.jsx
         |-- TransactionApproval.jsx
@@ -254,6 +255,7 @@
         |-- AddDocumentScreen.jsx
         |-- FileScreen.jsx
         |-- FolderDetailsScreen.jsx
+        |-- viewDocument.jsx
     |-- Documents
         |-- DocumentDetailScreen.jsx
         |-- DocumentsListScreen.jsx
@@ -265,6 +267,14 @@
         |-- FeedDetailsScreen.jsx
         |-- FeedsScreen.jsx
     |-- HomeOwner
+        |-- AI
+            |-- AISuggestions.jsx
+            |-- costestimation.jsx
+            |-- EstimateDetails.jsx
+            |-- Finance.jsx
+            |-- LiveMonitoring.jsx
+            |-- Materials.jsx
+            |-- UploadAnalysis.jsx
         |-- BudgetTracker.jsx
         |-- ChangeRequests.jsx
         |-- clientpages
@@ -315,6 +325,7 @@
         |-- ClientProposalScreen.jsx
         |-- CreateProposal.jsx
         |-- CreateTemplate.jsx
+        |-- dd.jsx
         |-- EditProposalScreen.jsx
         |-- PreviewProposalScreen.jsx
         |-- ProposalsListScreen.jsx
@@ -366,6 +377,8 @@
         |-- UploadUtilityScreen.jsx
     |-- Vendors
         |-- Vendors.jsx
+|-- store
+    |-- surveyStore.js
 |-- styles
     |-- colors.js
     |-- layout.js

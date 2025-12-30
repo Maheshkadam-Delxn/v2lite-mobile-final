@@ -147,14 +147,7 @@ const DeliveryItem = ({ item, isLast }) => (
   /* ----------------------- RENDER ----------------------- */
   return (
     <SafeAreaView className="flex-1 bg-white">
-      {/* ---------- HEADER ---------- */}
-      <Header
-        title="Material Status"
-        showBackButton={true}
-        backgroundColor="#0066FF"
-        titleColor="white"
-        iconColor="white"
-      />
+    
 
       <ScrollView
         className="flex-1 bg-gray-50"

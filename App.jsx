@@ -1133,7 +1133,7 @@ import SubmitProposalCustomer from 'screens/HomeOwner/SubmitProposalCustomer';
 import EditProfileScreen from 'screens/Profile/EditProfileScreen';
 import PrivacyPolicyScreen from 'screens/Profile/PrivacyPolicyScreen';
 import CustomerSupport from 'screens/Profile/CustomerSupport';
-
+import ViewDocument from 'screens/Document-Management/viewDocument';
 // Materials Screens
 import MaterialsListScreen from 'screens/Materials/MaterialsListScreen';
 import MaterialDetailScreen from 'screens/Materials/MaterialDetailScreen';
@@ -1172,6 +1172,8 @@ import viewSiteSurvey from 'screens/siteSurveys/viewSiteSurvey';
 import BOQListScreen from 'screens/BOQ/BOQListScreen';
 import CreateBOQDraftScreen from 'screens/BOQ/CreateBOQDraftScreen';
 import BOQDetailScreen from 'screens/BOQ/BOQDetailScreen';
+import SiteSurveyTemplateForm from 'screens/Proposals/SiteSurveyForTemplate';
+import { StoreProvider } from 'context/StoreProvider';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const TOKEN_KEY = 'userToken';
@@ -1193,6 +1195,7 @@ const ProjectStack = () => (
         <Stack.Screen name="BOQcreateScreen" component={CreateBOQDraftScreen} />
          <Stack.Screen name="BOQdetailsScreen" component={BOQDetailScreen} />
     <Stack.Screen name="FolderDetails" component={FolderDetailsScreen} />
+     <Stack.Screen name="viewDocument" component={ViewDocument} />
     <Stack.Screen name="View Report" component={GenerateReportScreen} />
     <Stack.Screen name="AddDocumentScreen" component={AddDocumentScreen} />
   </Stack.Navigator>
@@ -1207,6 +1210,9 @@ const ProposalStack = () => (
 
     <Stack.Screen name="CreateProposalScreen" component={CreateProposalScreen} />
     <Stack.Screen name="CreateTemplate" component={CreateTemplate}/>
+        <Stack.Screen name="SiteSurveyTemplate" component={SiteSurveyTemplateForm}/>
+
+
     <Stack.Screen name="SubmitProposal" component={SubmitProposal} />
     <Stack.Screen name="ViewProposal" component={ViewProposal} />
     <Stack.Screen name="ChooseTemplate" component={ChooseTemplate} />
@@ -1436,8 +1442,8 @@ const ClientTabs = () => (
 
         if (route.name === "ClientHome")
           icon = focused ? "home" : "home-outline";
-        else if (route.name === "Projects")
-          icon = focused ? "apps-sharp" : "apps-outline";
+          else if (route.name === "AI")
+          icon = focused ? "sparkles" : "sparkles-outline";
         else if (route.name === "ClientProfile")
           icon = focused ? "person" : "person-outline";
 
@@ -1462,16 +1468,20 @@ const ClientTabs = () => (
       </SafeAreaView>
     )}
   >
+   
+  <Tab.Screen 
+  name="ClientHome"
+  component={ClientProjectStack}
+  options={{ title: "Home" }}
+  />
+    
+     {/* AI TAB (NEW MIDDLE BUTTON) */}
     <Tab.Screen
-      name="ClientHome"
-      component={ClientMainPage}
-      options={{ title: "Home" }}
+      name="AI"
+       component={AIStack}   // <-- replace with actual screen
+      options={{ title: "AI" }}
     />
-    <Tab.Screen
-      name="Projects"
-      component={Overview}
-      options={{ title: "Projects" }}
-    />
+
     <Tab.Screen
       name="ClientProfile"
       component={clientProfilePage}
@@ -1479,6 +1489,27 @@ const ClientTabs = () => (
     />
   </Tab.Navigator>
 );
+
+const AIStack = ()=>(
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Cost Estimation" component={costestimation}/>
+
+    </Stack.Navigator>
+  );
+
+const ClientProjectStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="ClientHome" component={ClientMainPage} />
+    <Stack.Screen name="Overview" component={Overview} />
+    <Stack.Screen name="ProjectTimeline" component={ProjectTimeline} />
+    <Stack.Screen name="BudgetTracker" component={BudgetTracker} />
+    <Stack.Screen name="QualityChecks" component={QualityChecks} />
+    <Stack.Screen name="ChangeRequests" component={ChangeRequests} />
+    <Stack.Screen name="MaterialStatus" component={MaterialStatus} />
+
+  </Stack.Navigator>
+);
+
 
 const ClientStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -1532,6 +1563,7 @@ export default function App() {
   }
 
   return (
+    <StoreProvider>
      <PermissionProvider>
     <View style={{ flex: 1 }}>
       <StatusBar style="light" backgroundColor="#ffffff" />
@@ -1552,17 +1584,12 @@ export default function App() {
          
           <Stack.Screen name="CustomerCreateProposal" component={CustomerCreateProposal} />
          
-          <Stack.Screen name="Overview" component={Overview} />
-          <Stack.Screen name="ProjectTimeline" component={ProjectTimeline} />
-          <Stack.Screen name="BudgetTracker" component={BudgetTracker} />
+          
           
           <Stack.Screen name="FeedDetails" component={FeedDetailsScreen} />
           <Stack.Screen name="ChatScreen" component={ChatScreen} />
 
           <Stack.Screen name="DesignApprovals" component={DesignApprovals} />
-          <Stack.Screen name="QualityChecks" component={QualityChecks} />
-          <Stack.Screen name="ChangeRequests" component={ChangeRequests} />
-          <Stack.Screen name="MaterialStatus" component={MaterialStatus} />
           <Stack.Screen name="SurveyRequestScreen" component={SurveyRequestScreen} />
           <Stack.Screen name="SurveyApprovalScreen" component={SurveyApprovalScreen} />
           <Stack.Screen name="NewSurveyScreen" component={NewSurveyScreen} />
@@ -1582,5 +1609,6 @@ export default function App() {
       </NavigationContainer>
     </View>
      </PermissionProvider>
+     </StoreProvider>
   );
 }

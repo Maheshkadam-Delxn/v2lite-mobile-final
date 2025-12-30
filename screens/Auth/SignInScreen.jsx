@@ -6,7 +6,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import Header from '../../components/Header'
 import { usePermissions } from 'context/PermissionContext'
 
-//const API_URL = 'https://skystruct-lite-backend.vercel.app/api/auth/login'
 console.log("adsf", process.env.BASE_API_URL);
 const API_URL = `${process.env.BASE_API_URL}/api/auth/login`;
 console.log(process.env.BASE_API_URL);
@@ -61,6 +60,8 @@ const ModernSignInScreen = () => {
         const data = await response.json()
         console.log('Login successful:', data)
 
+         setEmail('');
+
         if (data.data?.token) {
           await AsyncStorage.setItem('userToken', data.data.token)
         }
@@ -82,7 +83,7 @@ const ModernSignInScreen = () => {
         if (rememberMe) {
           await AsyncStorage.setItem('rememberedEmail', email)
         }
-
+ setEmail('');
         setModalVisible(true)
         setTimeout(() => {
           setModalVisible(false)
@@ -127,7 +128,7 @@ const ModernSignInScreen = () => {
       try {
         const rememberedEmail = await AsyncStorage.getItem('rememberedEmail')
         if (rememberedEmail) {
-          setEmail(rememberedEmail)
+          // setEmail(rememberedEmail)
           setRememberMe(true)
         }
       } catch (error) {

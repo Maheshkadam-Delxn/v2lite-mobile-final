@@ -1,155 +1,407 @@
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Modal, TouchableWithoutFeedback } from 'react-native'
-import React, { useState } from 'react'
+
+
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+  Modal,
+  TextInput,
+  Alert,
+} from 'react-native'
+import * as DocumentPicker from 'expo-document-picker'
+import React, { useEffect, useState } from 'react'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
+import { useNavigation, useRoute } from '@react-navigation/native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import Header from 'components/Header'
+import * as Crypto from 'expo-crypto'
 
-const FolderDetailsScreen = ({ route, navigation }) => {
-  const { folderName } = route.params || { folderName: 'Sample Reports' }
-  
-  const [modalVisible, setModalVisible] = useState(false)
+const API_URL = process.env.BASE_API_URL
+const CLOUDINARY_CONFIG = {
+  cloudName: 'dmlsgazvr',
+  apiKey: '353369352647425',
+  apiSecret: '8qcz7uAdftDVFNd6IqaDOytg_HI',
+}
 
-  const files = [
-    { 
-      id: 1, 
-      name: 'SampleCSVReport.xlsx', 
-      size: '300 kb',
-      icon: 'file-excel',
-      iconColor: '#10B981',
-      iconBg: '#D1FAE5'
-    },
-    { 
-      id: 2, 
-      name: 'DetailProjectReport.docx', 
-      size: '300 kb',
-      icon: 'file-word',
-      iconColor: '#0066FF',
-      iconBg: '#DBEAFE'
-    },
-    { 
-      id: 3, 
-      name: 'SummaryReport.pdf', 
-      size: '1.2 mb',
-      icon: 'file-pdf-box',
-      iconColor: '#EF4444',
-      iconBg: '#FEE2E2'
-    },
-  ]
+const FolderDetailsScreen = () => {
+  const navigation = useNavigation()
+  const route = useRoute()
+const generateSignature = async (timestamp) => {
+  const stringToSign = `timestamp=${timestamp}${CLOUDINARY_CONFIG.apiSecret}`
+  return await Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA1,
+    stringToSign
+  )
+}
+
+  const { folderId, folderName,parentFolderId, project } = route.params
+// console.log(route.params);
+console.log(parentFolderId);
+  const [subFolders, setSubFolders] = useState([])
+  const [documents, setDocuments] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [docModalVisible, setDocModalVisible] = useState(false)
+  const [docTitle, setDocTitle] = useState('')
+  const [selectedFile, setSelectedFile] = useState(null)
+  const [uploading, setUploading] = useState(false)
+
+  /* -------------------- FETCH FOLDER CONTENT -------------------- */
+  const fetchFolderContent = async () => {
+    try {
+      setLoading(true)
+      const token = await AsyncStorage.getItem('userToken')
+
+      const res = await fetch(
+        `${API_URL}/api/plan-folders?parentFolder=${folderId}&projectId=${project._id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+
+      const json = await res.json()
+      setSubFolders(json.data || [])
+
+      // fetch documents inside folder
+      const docRes = await fetch(
+        `${API_URL}/api/plan-documents?folderId=${folderId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+
+      const docJson = await docRes.json()
+      setDocuments(docJson.data || [])
+    } catch (err) {
+      console.log('Fetch folder content error:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchFolderContent()
+  }, [])
+const uploadToCloudinary = async (file) => {
+  try {
+    const timestamp = Math.round(Date.now() / 1000)
+    const signature = await generateSignature(timestamp)
+
+    const isImage = file.mimeType?.startsWith('image')
+    const uploadType = isImage ? 'image' : 'raw' // raw = pdf
+
+    const formData = new FormData()
+    formData.append('file', {
+      uri: file.uri,
+      name: file.name,
+      type: file.mimeType,
+    })
+    formData.append('timestamp', timestamp.toString())
+    formData.append('signature', signature)
+    formData.append('api_key', CLOUDINARY_CONFIG.apiKey)
+
+    const uploadUrl = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/${uploadType}/upload`
+
+    const res = await fetch(uploadUrl, {
+      method: 'POST',
+      body: formData,
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+
+    const data = await res.json()
+
+    if (!res.ok || !data.secure_url) {
+      throw new Error(data.error?.message || 'Cloudinary upload failed')
+    }
+
+    return {
+      success: true,
+      url: data.secure_url,
+      publicId: data.public_id,
+      type: uploadType,
+    }
+  } catch (err) {
+    console.log('Cloudinary error:', err)
+    return { success: false, error: err.message }
+  }
+}
+
+  /* -------------------- OPEN SUBFOLDER -------------------- */
+  const openSubFolder = (folder) => {
+    navigation.push('FolderDetailsScreen', {
+      folderId: folder._id,
+      folderName: folder.name,
+      project,
+    })
+  }
+
+  /* -------------------- ADD DOCUMENT -------------------- */
+  const addDocument = () => {
+    setDocModalVisible(true)
+  }
+  const pickFile = async () => {
+  const result = await DocumentPicker.getDocumentAsync({
+    type: ['application/pdf', 'image/*'],
+    copyToCacheDirectory: true,
+  })
+
+  if (result.canceled) return
+
+  const file = result.assets[0]
+  setUploading(true)
+
+  const uploadResult = await uploadToCloudinary(file)
+
+  setUploading(false)
+
+  if (uploadResult.success) {
+    setSelectedFile({
+      name: file.name,
+      url: uploadResult.url,
+      type: uploadResult.type,
+    })
+  } else {
+    Alert.alert('Upload Failed', uploadResult.error)
+  }
+}
+
+const fetchDocuments = async () => {
+  try {
+    const token = await AsyncStorage.getItem('userToken')
+
+    const res = await fetch(
+      `${API_URL}/api/plan-folders/document/${parentFolderId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+
+    const json = await res.json()
+
+    if (json.success) {
+      console.log(json.data);
+      setDocuments(json.data)
+    }
+  } catch (err) {
+    console.log('Fetch documents error:', err)
+  }
+}
+useEffect(()=>{
+  fetchDocuments();
+},[])
+
+const submitDocument = async () => {
+  if (!docTitle || !selectedFile?.url) {
+    Alert.alert('Error', 'Document name and upload are required')
+    return
+  }
+
+  try {
+    setUploading(true)
+    const token = await AsyncStorage.getItem('userToken')
+
+    const payload = {
+      documentName: docTitle,
+      imageUrl: selectedFile.url,
+    }
+
+    console.log("Sending payload:", payload)
+
+    const res = await fetch(
+      `${API_URL}/api/plan-folders/document/${parentFolderId}`,
+      {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload), // ✅ VERY IMPORTANT
+      }
+    )
+
+    const json = await res.json()
+
+    if (json.success) {
+      Alert.alert('Success', 'Document added')
+      setDocModalVisible(false)
+      setDocTitle('')
+      setSelectedFile(null)
+      fetchFolderContent()
+    } else {
+      Alert.alert('Error', json.message || 'Failed')
+    }
+  } catch (err) {
+    console.log('Submit document error:', err)
+    Alert.alert('Error', 'Something went wrong')
+  } finally {
+    setUploading(false)
+  }
+}
+
+
+
 
   return (
     <View className="flex-1 bg-gray-100">
-      <Header title="Sample Reports" showBackButton={true} onRightIconPress={() => {}} backgroundColor="#0066FF" titleColor="white" iconColor="white" />
-      
-      <ScrollView 
-        className="flex-1 px-5" 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 100 }}
-      >
-        {/* Search Bar */}
-        <View className="flex-row items-center bg-white rounded-xl px-4 py-3 mt-5 mb-5">
-          <Icon name="magnify" size={20} color="#9CA3AF" />
-          <TextInput
-            className="flex-1 ml-2 text-base text-gray-900"
-            placeholder="Search"
-            placeholderTextColor="#9CA3AF"
-          />
-        </View>
+      <Header title={folderName} showBackButton={true} />
 
-        {/* Files List */}
-        <View className="gap-3">
-          {files.map((file) => (
-            <TouchableOpacity 
-              key={file.id} 
-              className="flex-row items-center justify-between bg-white rounded-xl px-4 py-4"
-            >
-              <View className="flex-row items-center gap-3 flex-1">
-                <View 
-                  className="w-10 h-10 rounded-lg items-center justify-center"
-                  style={{ backgroundColor: file.iconBg }}
-                >
-                  <Icon name={file.icon} size={24} color={file.iconColor} />
-                </View>
-                <Text className="text-base font-medium text-gray-900 flex-1">
-                  {file.name}
+      <ScrollView
+        className="px-5"
+        contentContainerStyle={{ paddingBottom: 120 }}
+      >
+        {loading ? (
+          <ActivityIndicator size="large" className="mt-10" />
+        ) : (
+          <>
+            {/* Subfolders */}
+            {subFolders.length > 0 && (
+              <>
+                <Text className="text-sm text-gray-500 mt-5 mb-2">
+                  Folders
+                </Text>
+                {subFolders.map((folder) => (
+                  <TouchableOpacity
+                    key={folder._id}
+                    className="flex-row justify-between bg-white rounded-xl px-4 py-4 mb-3"
+                    onPress={() => openSubFolder(folder)}
+                  >
+                    <View className="flex-row items-center gap-3">
+                      <Icon name="folder" size={24} color="#2563EB" />
+                      <Text className="text-base font-semibold">
+                        {folder.name}
+                      </Text>
+                    </View>
+                    <Icon name="chevron-right" size={20} color="#9CA3AF" />
+                  </TouchableOpacity>
+                ))}
+              </>
+            )}
+
+            {/* Documents */}
+            {documents.length > 0 && (
+              <>
+                <Text className="text-sm text-gray-500 mt-6 mb-2">
+                  Documents
+                </Text>
+                {documents.map((doc) => (
+                  <TouchableOpacity
+                    key={doc._id}
+                    onPress={()=>navigation.navigate('viewDocument',{document : doc , folderId:parentFolderId})}
+                    className="flex-row justify-between bg-white rounded-xl px-4 py-4 mb-3"
+                  >
+                    <View className="flex-row items-center gap-3">
+                      <Icon name="file-pdf-box" size={24} color="#EF4444" />
+                      <Text className="text-base font-semibold">
+                        {doc.name}
+                      </Text>
+                    </View>
+                    {/* <Text className="text-sm text-gray-400">
+                      v{doc.versions?.length || 1}
+                    </Text> */}
+                  </TouchableOpacity>
+                ))}
+              </>
+            )}
+
+            {subFolders.length === 0 && documents.length === 0 && (
+              <View className="items-center mt-16">
+                <Icon name="folder-open" size={64} color="#D1D5DB" />
+                <Text className="text-gray-400 mt-4">
+                  This folder is empty
                 </Text>
               </View>
-              <Text className="text-sm text-gray-400 ml-2">
-                {file.size}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+            )}
+          </>
+        )}
       </ScrollView>
 
       {/* Bottom Buttons */}
       <View className="absolute bottom-0 left-0 right-0 flex-row gap-3 px-5 py-5 bg-gray-100">
-        <TouchableOpacity 
-          onPress={() => setModalVisible(true)}
-          className="flex-1 bg-blue-500 rounded-xl py-4 items-center justify-center"
-        >
-          <Text className="text-base font-semibold text-white">
-            Add Folder
-          </Text>
-        </TouchableOpacity>
-        
         <TouchableOpacity
-          onPress={() => navigation.navigate('AddDocumentScreen')}
-          className="flex-1 bg-blue-500 rounded-xl py-4 items-center justify-center"
+          onPress={() =>
+            navigation.navigate('FilesScreen', {
+              parentFolderId: folderId,
+              project,
+            })
+          }
+          className="flex-1 bg-blue-500 py-4 rounded-xl items-center"
         >
-          <Text className="text-base font-semibold text-white">
-            Add Document
-          </Text>
+          <Text className="text-white font-semibold">Add Folder</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={addDocument}
+          className="flex-1 bg-blue-500 py-4 rounded-xl items-center"
+        >
+          <Text className="text-white font-semibold">Add Document</Text>
         </TouchableOpacity>
       </View>
+      <Modal
+        visible={docModalVisible}
+        transparent
+        animationType="slide"
+      >
+        <View className="flex-1 justify-end bg-black/40">
+          <View className="bg-white rounded-t-3xl px-5 py-6">
 
-      {/* Add Folder Modal – 100% Match to Your Image */}
-      <Modal visible={modalVisible} transparent animationType="slide">
-        <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
-          <View className="flex-1 bg-black/50 justify-end">
-            <TouchableWithoutFeedback>
-              <View className="bg-white rounded-t-3xl pb-8">
-                {/* Header */}
-                <View className="flex-row justify-between items-center px-6 py-5 border-b border-gray-200">
-                  <Text className="text-lg font-semibold text-gray-900">Add Folder</Text>
-                  <TouchableOpacity onPress={() => setModalVisible(false)}>
-                    <Icon name="close" size={24} color="#6B7280" />
-                  </TouchableOpacity>
-                </View>
+            <Text className="text-lg font-semibold mb-4">
+              Add Document
+            </Text>
 
-                {/* Form Fields */}
-                <View className="px-6 mt-5">
-                  <Text className="text-sm text-gray-500 mb-2">Folder Name</Text>
-                  <TextInput
-                    className="border border-gray-300 rounded-xl px-4 py-3.5 text-base text-gray-900"
-                    placeholder="C 4.1"
-                    placeholderTextColor="#9CA3AF"
-                  />
-                </View>
+            {/* Document Name */}
+            <TextInput
+              placeholder="Document Name"
+              value={docTitle}
+              onChangeText={setDocTitle}
+              className="bg-gray-100 rounded-xl px-4 py-3 mb-4"
+            />
 
-                <View className="px-6 mt-5">
-                  <Text className="text-sm text-gray-500 mb-2">Category</Text>
-                  <TouchableOpacity className="border border-gray-300 rounded-xl px-4 py-3.5 flex-row justify-between items-center">
-                    <Text className="text-base text-gray-900">Grading Plan</Text>
-                    <Icon name="chevron-down" size={20} color="#9CA3AF" />
-                  </TouchableOpacity>
-                </View>
+            {/* File Picker */}
+            <TouchableOpacity
+              onPress={pickFile}
+              className="bg-gray-100 rounded-xl px-4 py-4 mb-3 flex-row items-center gap-3"
+            >
+              <Icon name="upload" size={22} color="#2563EB" />
+              <Text className="text-gray-700">
+                {selectedFile ? selectedFile.name : 'Upload PDF or Image'}
+              </Text>
+            </TouchableOpacity>
 
-                <View className="px-6 mt-5">
-                  <Text className="text-sm text-gray-500 mb-2">Folder Icon</Text>
-                  <TouchableOpacity className="border border-gray-300 rounded-xl px-4 py-3.5 flex-row justify-between items-center">
-                    <Text className="text-base text-gray-900">far-regular far-settings</Text>
-                    <Icon name="chevron-down" size={20} color="#9CA3AF" />
-                  </TouchableOpacity>
-                </View>
+            {/* Buttons */}
+            <View className="flex-row gap-3 mt-4">
+              <TouchableOpacity
+                onPress={() => setDocModalVisible(false)}
+                className="flex-1 bg-gray-200 py-4 rounded-xl items-center"
+              >
+                <Text className="text-gray-700 font-semibold">Cancel</Text>
+              </TouchableOpacity>
 
-                {/* Save Button */}
-                <TouchableOpacity className="bg-blue-500 mx-6 mt-8 py-4 rounded-xl items-center">
-                  <Text className="text-white text-base font-semibold">Save</Text>
-                </TouchableOpacity>
-              </View>
-            </TouchableWithoutFeedback>
+              <TouchableOpacity
+                onPress={submitDocument}
+                disabled={uploading}
+                className="flex-1 bg-blue-500 py-4 rounded-xl items-center"
+              >
+                {uploading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text className="text-white font-semibold">
+                    Save
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+
           </View>
-        </TouchableWithoutFeedback>
+        </View>
       </Modal>
+
     </View>
   )
 }
