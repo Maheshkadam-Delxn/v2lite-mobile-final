@@ -184,9 +184,9 @@ export default function BOQListScreen({ navigation: navProp, project }) {
                         <Feather name="list" size={18} color="#10B981" />
                       </View>
                       <View>
-                        <Text style={styles.infoLabel}>Materials</Text>
+                        <Text style={styles.infoLabel}>Versions</Text>
                         <Text style={styles.infoValue}>
-                          {boq.materials?.length || 0} items
+                          {boq.boqVersion?.length || 0} items
                         </Text>
                       </View>
                     </View>

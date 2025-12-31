@@ -31,8 +31,7 @@ export default function CreateBOQDraftScreen({ navigation, route }) {
     structuralType: "",
     foundationType: "",
     laborCost: "",
-    miscCost: "",
-    contingency: "",
+  
   });
 
   const [materials, setMaterials] = useState([
@@ -68,7 +67,7 @@ export default function CreateBOQDraftScreen({ navigation, route }) {
     }
 
     setLoading(true);
-
+console.log("data is", { projectId, ...form, materials });
     try {
       const token = await AsyncStorage.getItem("userToken");
       const userData = await AsyncStorage.getItem("userData");
@@ -228,8 +227,7 @@ export default function CreateBOQDraftScreen({ navigation, route }) {
           </View>
 
           {renderInput("Labor Cost (₹)", "laborCost", "Enter labor cost", "numeric")}
-          {renderInput("Miscellaneous Cost (₹)", "miscCost", "Enter misc cost", "numeric")}
-          {renderInput("Contingency (%)", "contingency", "Enter percentage", "numeric")}
+          
         </View>
 
         <View style={{ height: 100 }} />
@@ -300,6 +298,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
+    marginTop: 10,
     fontSize: 15,
     borderWidth: 1,
     borderColor: "#E2E8F0",
