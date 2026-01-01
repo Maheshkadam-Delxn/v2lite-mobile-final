@@ -1278,6 +1278,8 @@ const CreateTemplate = () => {
     budgetMaxRange: '',
     boqs: [],
     siteSurvey: null,
+    planData: null,
+    milestoneData: null, // Added milestone data field
     createdAt: new Date().toISOString().split('T')[0]
   });
   
@@ -1360,6 +1362,8 @@ const CreateTemplate = () => {
         budgetMaxRange: finalInitialData.budgetMaxRange || formData.budgetMaxRange,
         boqs: ensureBoqsStructure(finalInitialData.boqs || (finalInitialData.boq ? [finalInitialData.boq] : [])),
         siteSurvey: finalInitialData?.siteSurvey || formData.siteSurvey,
+        planData: finalInitialData?.planData || formData.planData,
+        milestoneData: finalInitialData?.milestoneData || formData.milestoneData, // Added milestone data
         createdAt: finalInitialData.createdAt || formData.createdAt
       };
       
@@ -1372,6 +1376,8 @@ const CreateTemplate = () => {
       // Use stored form data, merging with defaults
       initialFormData = { ...formData, ...finalFormData };
       initialFormData.boqs = ensureBoqsStructure(finalFormData.boqs || (finalFormData.boq ? [finalFormData.boq] : []));
+      initialFormData.planData = finalFormData.planData || formData.planData;
+      initialFormData.milestoneData = finalFormData.milestoneData || formData.milestoneData; // Added milestone data
       if (finalFormData.image) {
         setSelectedImage({ uri: finalFormData.image });
         setUploadProgress(100);
@@ -1766,7 +1772,9 @@ const CreateTemplate = () => {
           })),
           status: boq.status || 'draft'
         })),
-        siteSurvey: surveyData, // ✅ FULL survey object
+        siteSurvey: surveyData,
+        planData: formData.planData,
+        milestoneData: formData.milestoneData, // Added milestone data
       };
 
       console.log("📤 Submitting data:", requestData);
@@ -1852,6 +1860,32 @@ const CreateTemplate = () => {
     });
   };
 
+  // Navigate to Template Plan Screen
+  const goToTemplatePlan = () => {
+    // Save current form data before navigating
+    setTemplateFormData(formData);
+    
+    navigation.navigate('TemplatePlanScreen', {
+      source: 'CreateTemplate',
+      timestamp: Date.now(),
+      formData: formData,
+      mode: mode,
+    });
+  };
+
+  // Navigate to Milestone Screen
+  const goToMilestone = () => {
+    // Save current form data before navigating
+    setTemplateFormData(formData);
+    
+    navigation.navigate('MilestoneScreen', {
+      source: 'CreateTemplate',
+      timestamp: Date.now(),
+      formData: formData,
+      mode: mode,
+    });
+  };
+
   // Update form field
   const updateField = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -1911,6 +1945,88 @@ const CreateTemplate = () => {
       <Feather name="chevron-right" size={20} color="#0066FF" />
     </TouchableOpacity>
   );
+
+  // Add Plan button
+  const renderAddPlanButton = () => {
+    // Check if plan data exists
+    const hasPlan = formData.planData && Object.keys(formData.planData).length > 0;
+    
+    return (
+      <TouchableOpacity
+        onPress={goToTemplatePlan}
+        style={styles.addPlanButton}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Feather 
+            name={hasPlan ? "check-circle" : "file-text"} 
+            size={20} 
+            color={hasPlan ? "#00C851" : "#0066FF"} 
+            style={{ marginRight: 10 }} 
+          />
+          <View>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={styles.addPlanTitle}>
+                {hasPlan ? '✓ Project Plan Added' : 'Add Project Plan'}
+              </Text>
+              {hasPlan && (
+                <View style={styles.planStatus}>
+                  <Feather name="check" size={12} color="#00C851" />
+                  <Text style={styles.planStatusText}>
+                    Plan ready
+                  </Text>
+                </View>
+              )}
+            </View>
+            <Text style={styles.addPlanSubtitle}>
+              Add project phases, milestones, and timelines
+            </Text>
+          </View>
+        </View>
+        <Feather name="chevron-right" size={20} color="#0066FF" />
+      </TouchableOpacity>
+    );
+  };
+
+  // Add Milestone button
+  const renderAddMilestoneButton = () => {
+    // Check if milestone data exists
+    const hasMilestone = formData.milestoneData && Object.keys(formData.milestoneData).length > 0;
+    
+    return (
+      <TouchableOpacity
+        onPress={goToMilestone}
+        style={styles.addMilestoneButton}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Feather 
+            name={hasMilestone ? "check-circle" : "flag"} 
+            size={20} 
+            color={hasMilestone ? "#00C851" : "#0066FF"} 
+            style={{ marginRight: 10 }} 
+          />
+          <View>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={styles.addMilestoneTitle}>
+                {hasMilestone ? '✓ Milestones Added' : 'Add Milestones'}
+              </Text>
+              {hasMilestone && (
+                <View style={styles.milestoneStatus}>
+                  <Feather name="check" size={12} color="#00C851" />
+                  <Text style={styles.milestoneStatusText}>
+                    {formData.milestoneData?.milestones?.length || 0} milestones
+                  </Text>
+                </View>
+              )}
+            </View>
+            <Text style={styles.addMilestoneSubtitle}>
+              Define project milestones and delivery dates
+            </Text>
+          </View>
+        </View>
+        <Feather name="chevron-right" size={20} color="#0066FF" />
+      </TouchableOpacity>
+    );
+  };
 
   // Check if save button should be enabled
   const isSaveEnabled = () => {
@@ -2313,6 +2429,12 @@ const CreateTemplate = () => {
           
           {/* Site Survey Button */}
           {renderSiteSurveyButton()}
+
+          {/* Add Plan Button */}
+          {renderAddPlanButton()}
+
+          {/* Add Milestone Button */}
+          {renderAddMilestoneButton()}
         </ScrollView>
 
         {/* Footer Buttons */}
@@ -2583,7 +2705,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#0066FF',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   siteSurveyTitle: {
     fontFamily: 'Urbanist-SemiBold',
@@ -2595,6 +2717,80 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666666',
     marginTop: 2,
+  },
+  addPlanButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#F8FAFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#0066FF',
+    marginBottom: 16,
+  },
+  addPlanTitle: {
+    fontFamily: 'Urbanist-SemiBold',
+    fontSize: 16,
+    color: '#000000',
+  },
+  addPlanSubtitle: {
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 12,
+    color: '#666666',
+    marginTop: 2,
+  },
+  addMilestoneButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#F8FAFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#0066FF',
+    marginBottom: 24,
+  },
+  addMilestoneTitle: {
+    fontFamily: 'Urbanist-SemiBold',
+    fontSize: 16,
+    color: '#000000',
+  },
+  addMilestoneSubtitle: {
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 12,
+    color: '#666666',
+    marginTop: 2,
+  },
+  planStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F5E8',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
+    marginLeft: 8,
+  },
+  planStatusText: {
+    fontSize: 10,
+    color: '#00C851',
+    fontFamily: 'Urbanist-Medium',
+    marginLeft: 2,
+  },
+  milestoneStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F5E8',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
+    marginLeft: 8,
+  },
+  milestoneStatusText: {
+    fontSize: 10,
+    color: '#00C851',
+    fontFamily: 'Urbanist-Medium',
+    marginLeft: 2,
   },
   saveIndicator: {
     position: 'absolute',

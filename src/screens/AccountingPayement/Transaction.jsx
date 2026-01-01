@@ -39,21 +39,11 @@ const Transaction = ({ project }) => {
   const [error, setError] = useState(null);
   const [editingTransaction, setEditingTransaction] = useState(null);
 
-  // Debug AsyncStorage (once)
-  useEffect(() => {
-    const debugAsyncStorage = async () => {
-      const keys = await AsyncStorage.getAllKeys();
-      const data = await AsyncStorage.multiGet(keys);
-      console.log('[Debug] AsyncStorage contents:', data);
-    };
-    debugAsyncStorage();
-  }, []);
+ 
 
-  // ---------------------------------------------------------------------
-  // Fetch Transactions (GET)
-  // ---------------------------------------------------------------------
+  
   const fetchTransactions = useCallback(async () => {
-    setError(null);
+     setError(null);
     try {
       console.log('\n[Transactions] Fetching transactions...');
       const token = await AsyncStorage.getItem(TOKEN_KEY);
@@ -206,9 +196,6 @@ console.log("this is payload",formData);
     }
   };
 
-  // ---------------------------------------------------------------------
-  // Delete Transaction (DELETE)
-  // ---------------------------------------------------------------------
   const handleDeleteTransaction = async (id) => {
     Alert.alert('Confirm Delete', 'Are you sure you want to delete this transaction?', [
       { text: 'Cancel', style: 'cancel' },
