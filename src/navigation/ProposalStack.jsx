@@ -14,7 +14,7 @@ import EditProposalScreen from '../screens/Proposals/EditProposalScreen';
 import TemplatePlanScreen from '@/screens/Proposals/TemplatePlanScreen';
 import addmilestones from '@/screens/Proposals/addmilestones';
 
-const Stack = createNativeStackNavigator();
+const Stack = createNativeStackNavigator(); 
 
 const ProposalStack = () => (
     <Stack.Navigator screenOptions={{ headerShown: false }}>

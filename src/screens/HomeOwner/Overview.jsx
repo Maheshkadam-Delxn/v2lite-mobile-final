@@ -19,6 +19,7 @@ import BudgetTracker from '../HomeOwner/BudgetTracker';
 import QualityChecks from '../HomeOwner/QualityChecks';
 import ChangeRequests from '../HomeOwner/ChangeRequests';
 import MaterialStatus from '../HomeOwner/MaterialStatus';
+import FilesScreen from '../Document-Management/FileScreen';
 
 const Overview = () => {
   const navigation = useNavigation();
@@ -30,8 +31,9 @@ const Overview = () => {
 
   const tabs = [
     { id: 'Overview', label: 'Overview' },
+    { id: 'Plans', label: 'Plans' },
     { id: 'ProjectTimeline', label: 'Project Timeline' },
-    { id: 'BudgetTracker', label: 'Budget Track' },
+    { id: 'BudgetTracker', label: 'Budget Track' }, 
     { id: 'QualityChecks', label: 'Quality Checks' },
     { id: 'ChangeRequests', label: 'Change Request' },
     { id: 'MaterialStatus', label: 'Material Status' },
@@ -131,6 +133,8 @@ const Overview = () => {
           return <ChangeRequests project={project} />;
         case 'MaterialStatus':
           return <MaterialStatus project={project} />;
+        case 'Plans':
+          return <FilesScreen project={project} />;
         default:
           return null;
       }
@@ -147,9 +151,8 @@ const Overview = () => {
           {progressData.map((item, index) => (
             <View
               key={index}
-              className={`w-[48%] ${
-                index % 2 === 0 ? 'mr-[4%]' : ''
-              } mb-3`}
+              className={`w-[48%] ${index % 2 === 0 ? 'mr-[4%]' : ''
+                } mb-3`}
             >
               <View
                 className={`bg-white rounded-xl border p-4 ${item.borderColor} ${item.leftBorder}`}
@@ -179,101 +182,100 @@ const Overview = () => {
         </View>
 
         {/* ------------------ TASKS PROGRESS (ENHANCED) ------------------ */}
-<View className="mx-4 mt-4 rounded-2xl bg-white shadow-sm border border-gray-100 overflow-hidden">
-  {/* Header */}
-  <View className="flex-row items-center justify-between px-4 py-4 border-b border-gray-100">
-    <View className="flex-row items-center">
-      <View className="h-9 w-9 items-center justify-center rounded-full bg-blue-100 mr-2">
-        <Ionicons name="list-outline" size={18} color="#2563EB" />
-      </View>
-      <Text className="text-base font-bold text-gray-800">
-        Tasks Progress
-      </Text>
-    </View>
+        <View className="mx-4 mt-4 rounded-2xl bg-white shadow-sm border border-gray-100 overflow-hidden">
+          {/* Header */}
+          <View className="flex-row items-center justify-between px-4 py-4 border-b border-gray-100">
+            <View className="flex-row items-center">
+              <View className="h-9 w-9 items-center justify-center rounded-full bg-blue-100 mr-2">
+                <Ionicons name="list-outline" size={18} color="#2563EB" />
+              </View>
+              <Text className="text-base font-bold text-gray-800">
+                Tasks Progress
+              </Text>
+            </View>
 
-    <Text className="text-xs text-gray-400">
-      {milestones.length} Tasks
-    </Text>
-  </View>
-
-  {/* Empty State */}
-  {milestones.length === 0 && (
-    <View className="py-8 items-center">
-      <Ionicons name="clipboard-outline" size={32} color="#CBD5E1" />
-      <Text className="mt-2 text-sm text-gray-400">
-        No milestones added yet
-      </Text>
-    </View>
-  )}
-
-  {/* Milestone List */}
-  {milestones.map((milestone, index) => {
-    const progress = milestone.progress || 0;
-
-    const progressColor =
-      milestone.status === 'completed'
-        ? 'bg-green-500'
-        : milestone.status === 'in_progress'
-        ? 'bg-blue-500'
-        : 'bg-gray-400';
-
-    const statusBadge =
-      milestone.status === 'completed'
-        ? 'bg-green-100 text-green-700'
-        : milestone.status === 'in_progress'
-        ? 'bg-blue-100 text-blue-700'
-        : 'bg-gray-100 text-gray-500';
-
-    return (
-      <View
-        key={milestone._id}
-        className={`px-4 py-4 ${
-          index !== milestones.length - 1
-            ? 'border-b border-gray-100'
-            : ''
-        }`}
-      >
-        {/* Title + Status */}
-        <View className="flex-row items-start justify-between mb-2">
-          <Text className="text-sm font-semibold text-gray-800 flex-1 pr-3">
-            {milestone.title}
-          </Text>
-
-          <View className={`px-2 py-0.5 rounded-full ${statusBadge}`}>
-            <Text className="text-xs font-semibold">
-              {getStatusLabel(milestone.status)}
+            <Text className="text-xs text-gray-400">
+              {milestones.length} Tasks
             </Text>
           </View>
-        </View>
 
-        {/* Progress Info */}
-        <View className="flex-row items-center justify-between mb-1">
-          <Text className="text-xs text-gray-500">
-            Progress
-          </Text>
-          <Text className="text-xs font-semibold text-gray-700">
-            {progress}%
-          </Text>
-        </View>
+          {/* Empty State */}
+          {milestones.length === 0 && (
+            <View className="py-8 items-center">
+              <Ionicons name="clipboard-outline" size={32} color="#CBD5E1" />
+              <Text className="mt-2 text-sm text-gray-400">
+                No milestones added yet
+              </Text>
+            </View>
+          )}
 
-        {/* Progress Bar */}
-        <View className="h-2.5 rounded-full bg-gray-200 overflow-hidden">
-          <View
-            className={`h-full rounded-full ${progressColor}`}
-            style={{ width: `${progress}%` }}
-          />
-        </View>
+          {/* Milestone List */}
+          {milestones.map((milestone, index) => {
+            const progress = milestone.progress || 0;
 
-        {/* Description */}
-        {milestone.description ? (
-          <Text className="mt-2 text-xs text-gray-500 leading-4">
-            {milestone.description}
-          </Text>
-        ) : null}
-      </View>
-    );
-  })}
-</View>
+            const progressColor =
+              milestone.status === 'completed'
+                ? 'bg-green-500'
+                : milestone.status === 'in_progress'
+                  ? 'bg-blue-500'
+                  : 'bg-gray-400';
+
+            const statusBadge =
+              milestone.status === 'completed'
+                ? 'bg-green-100 text-green-700'
+                : milestone.status === 'in_progress'
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'bg-gray-100 text-gray-500';
+
+            return (
+              <View
+                key={milestone._id}
+                className={`px-4 py-4 ${index !== milestones.length - 1
+                  ? 'border-b border-gray-100'
+                  : ''
+                  }`}
+              >
+                {/* Title + Status */}
+                <View className="flex-row items-start justify-between mb-2">
+                  <Text className="text-sm font-semibold text-gray-800 flex-1 pr-3">
+                    {milestone.title}
+                  </Text>
+
+                  <View className={`px-2 py-0.5 rounded-full ${statusBadge}`}>
+                    <Text className="text-xs font-semibold">
+                      {getStatusLabel(milestone.status)}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Progress Info */}
+                <View className="flex-row items-center justify-between mb-1">
+                  <Text className="text-xs text-gray-500">
+                    Progress
+                  </Text>
+                  <Text className="text-xs font-semibold text-gray-700">
+                    {progress}%
+                  </Text>
+                </View>
+
+                {/* Progress Bar */}
+                <View className="h-2.5 rounded-full bg-gray-200 overflow-hidden">
+                  <View
+                    className={`h-full rounded-full ${progressColor}`}
+                    style={{ width: `${progress}%` }}
+                  />
+                </View>
+
+                {/* Description */}
+                {milestone.description ? (
+                  <Text className="mt-2 text-xs text-gray-500 leading-4">
+                    {milestone.description}
+                  </Text>
+                ) : null}
+              </View>
+            );
+          })}
+        </View>
 
       </ScrollView>
     );
@@ -282,16 +284,14 @@ const Overview = () => {
   const renderTabItem = ({ item }) => (
     <TouchableOpacity
       onPress={() => setActiveTab(item.id)}
-      className={`px-4 py-2 mx-1 rounded-full border ${
-        activeTab === item.id
-          ? 'bg-blue-600 border-blue-600'
-          : 'bg-white border-gray-300'
-      }`}
+      className={`px-4 py-2 mx-1 rounded-full border ${activeTab === item.id
+        ? 'bg-blue-600 border-blue-600'
+        : 'bg-white border-gray-300'
+        }`}
     >
       <Text
-        className={`text-xs font-semibold ${
-          activeTab === item.id ? 'text-white' : 'text-gray-600'
-        }`}
+        className={`text-xs font-semibold ${activeTab === item.id ? 'text-white' : 'text-gray-600'
+          }`}
       >
         {item.label}
       </Text>

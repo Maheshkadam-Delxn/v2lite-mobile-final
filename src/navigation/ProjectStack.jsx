@@ -9,7 +9,7 @@ import AddNewTask from '../screens/Projects/AddNewTask';
 import TaskScreen from '../screens/Projects/TaskScreen';
 import AddMembers from '../screens/Projects/AddMembers';
 import ImagePreviewScreen from '../screens/Design-Management/ImagePreviewScreen';
-import ReportDetailScreen from '../screens/Reports/ReportDetailScreen';
+import ReportDetailScreen from '../screens/Reports/ReportDetailScreen'; 
 import CreateBOQDraftScreen from '../screens/BOQ/CreateBOQDraftScreen';
 import BOQDetailScreen from '../screens/BOQ/BOQDetailScreen';
 import FolderDetailsScreen from '../screens/Document-Management/FolderDetailsScreen';

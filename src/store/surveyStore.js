@@ -9,29 +9,29 @@ const useSurveyStore = create((set, get) => ({
   mode: 'create',
   initialData: null,
   isDirty: false,
-  
+
   // Actions
   setSurveyData: (surveyData) => {
     set({ surveyData, isDirty: true });
     // Auto-save to AsyncStorage
     AsyncStorage.setItem('@survey_data', JSON.stringify(surveyData)).catch(console.error);
   },
-  
+
   setTemplateFormData: (templateFormData) => {
     set({ templateFormData, isDirty: true });
     AsyncStorage.setItem('@template_form_data', JSON.stringify(templateFormData)).catch(console.error);
   },
-  
+
   setMode: (mode) => {
     set({ mode });
     AsyncStorage.setItem('@mode', mode).catch(console.error);
   },
-  
+
   setInitialData: (initialData) => {
     set({ initialData });
     AsyncStorage.setItem('@initial_data', JSON.stringify(initialData)).catch(console.error);
   },
-  
+
   // Initialize from storage
   initializeFromStorage: async () => {
     try {
@@ -41,7 +41,7 @@ const useSurveyStore = create((set, get) => ({
         AsyncStorage.getItem('@mode'),
         AsyncStorage.getItem('@initial_data'),
       ]);
-      
+
       set({
         surveyData: surveyData ? JSON.parse(surveyData) : null,
         templateFormData: templateFormData ? JSON.parse(templateFormData) : null,
@@ -53,7 +53,7 @@ const useSurveyStore = create((set, get) => ({
       console.error('Error loading from storage:', error);
     }
   },
-  
+
   // Clear all data
   clearStore: async () => {
     try {
@@ -63,7 +63,7 @@ const useSurveyStore = create((set, get) => ({
         AsyncStorage.removeItem('@mode'),
         AsyncStorage.removeItem('@initial_data'),
       ]);
-      
+
       set({
         surveyData: null,
         templateFormData: null,
@@ -75,7 +75,7 @@ const useSurveyStore = create((set, get) => ({
       console.error('Error clearing store:', error);
     }
   },
-  
+
   // Save all at once
   saveAll: async ({ surveyData, templateFormData, mode = 'create', initialData = null }) => {
     try {
@@ -85,7 +85,7 @@ const useSurveyStore = create((set, get) => ({
         AsyncStorage.setItem('@mode', mode),
         AsyncStorage.setItem('@initial_data', JSON.stringify(initialData)),
       ]);
-      
+
       set({
         surveyData,
         templateFormData,
@@ -97,12 +97,12 @@ const useSurveyStore = create((set, get) => ({
       console.error('Error saving all data:', error);
     }
   },
-  
+
   // Check if has unsaved changes
   hasUnsavedChanges: () => {
     return get().isDirty;
   },
-  
+
   // Get combined state
   getState: () => get(),
 }));

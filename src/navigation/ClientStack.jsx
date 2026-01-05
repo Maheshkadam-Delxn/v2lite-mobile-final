@@ -14,6 +14,9 @@ import ChangeRequests from '../screens/HomeOwner/ChangeRequests';
 import MaterialStatus from '../screens/HomeOwner/MaterialStatus';
 import CostEstimation from '../screens/HomeOwner/AI/costestimation';
 import ClientProfilePage from '../screens/HomeOwner/clientpages/clientProfilePage';
+import FolderDetailsScreen from '../screens/Document-Management/FolderDetailsScreen';
+import ViewDocument from '../screens/Document-Management/viewDocument';
+import AddDocumentScreen from '../screens/Document-Management/AddDocumentScreen';
 import CustomerChooseTemplate from '../screens/HomeOwner/CustomerChooseTemplate';
 import TemplatePreview from '../screens/HomeOwner/TemplatePreview';
 import SubmitProposalCustomer from '../screens/HomeOwner/SubmitProposalCustomer';
@@ -30,6 +33,10 @@ const ClientProjectStack = () => (
         <Stack.Screen name="QualityChecks" component={QualityChecks} />
         <Stack.Screen name="ChangeRequests" component={ChangeRequests} />
         <Stack.Screen name="MaterialStatus" component={MaterialStatus} />
+        {/* Document Management Screens for Plans Tab */}
+        <Stack.Screen name="FolderDetails" component={FolderDetailsScreen} />
+        <Stack.Screen name="viewDocument" component={ViewDocument} />
+        <Stack.Screen name="AddDocumentScreen" component={AddDocumentScreen} />
     </Stack.Navigator>
 );
 
