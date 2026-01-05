@@ -16,6 +16,7 @@ import FolderDetailsScreen from '../screens/Document-Management/FolderDetailsScr
 import ViewDocument from '../screens/Document-Management/viewDocument';
 import GenerateReportScreen from '../screens/Reports/GenerateReportScreen';
 import AddDocumentScreen from '../screens/Document-Management/AddDocumentScreen';
+import MilestoneTasksScreen from '../screens/Projects/MilestoneTasksScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -27,6 +28,7 @@ const ProjectStack = () => (
         <Stack.Screen name="FilterScreen" component={FilterScreen} />
         <Stack.Screen name="AddNewTask" component={AddNewTask} />
         <Stack.Screen name="TaskScreen" component={TaskScreen} />
+        <Stack.Screen name="MilestoneTasks" component={MilestoneTasksScreen} />
         <Stack.Screen name="AddMembers" component={AddMembers} />
         <Stack.Screen name="ImagePreview" component={ImagePreviewScreen} />
         <Stack.Screen name="ReportDetailScreen" component={ReportDetailScreen} />

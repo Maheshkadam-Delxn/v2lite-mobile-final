@@ -31,7 +31,18 @@ export default function App() {
     const checkAuth = async () => {
       try {
         const token = await AsyncStorage.getItem(TOKEN_KEY);
-        setInitialRoute(token ? 'MainApp' : 'Auth');
+        if (token) {
+          const userData = await AsyncStorage.getItem('userData');
+          const user = userData ? JSON.parse(userData) : null;
+
+          if (user?.role === 'client') {
+            setInitialRoute('ClientApp');
+          } else {
+            setInitialRoute('MainApp');
+          }
+        } else {
+          setInitialRoute('Auth');
+        }
       } catch (err) {
         console.error('[App] auth check error:', err);
         setInitialRoute('Auth');
