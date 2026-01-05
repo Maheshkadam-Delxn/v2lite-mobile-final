@@ -24,6 +24,7 @@ import MaterialStatus from '../HomeOwner/MaterialStatus';
 import BOQClientScreen from '../HomeOwner/BOQClientScreen';
 
 const { width: screenWidth } = Dimensions.get('window');
+import FilesScreen from '../Document-Management/FileScreen';
 
 const Overview = () => {
   const navigation = useNavigation();
@@ -36,8 +37,9 @@ const Overview = () => {
   const tabs = [
     { id: 'Overview', label: 'Overview' },
     { id: 'BOQ', label: 'BOQ' },
+    { id: 'Plans', label: 'Plans' },
     { id: 'ProjectTimeline', label: 'Project Timeline' },
-    { id: 'BudgetTracker', label: 'Budget Track' },
+    { id: 'BudgetTracker', label: 'Budget Track' }, 
     { id: 'QualityChecks', label: 'Quality Checks' },
     { id: 'ChangeRequests', label: 'Change Request' },
     { id: 'MaterialStatus', label: 'Material Status' },
@@ -663,6 +665,8 @@ const Overview = () => {
           return <ChangeRequests project={project} />;
         case 'MaterialStatus':
           return <MaterialStatus project={project} />;
+        case 'Plans':
+          return <FilesScreen project={project} />;
         default:
           return null;
       }
@@ -679,9 +683,8 @@ const Overview = () => {
           {progressData.map((item, index) => (
             <View
               key={index}
-              className={`w-[48%] ${
-                index % 2 === 0 ? 'mr-[4%]' : ''
-              } mb-3`}
+              className={`w-[48%] ${index % 2 === 0 ? 'mr-[4%]' : ''
+                } mb-3`}
             >
               <View
                 className={`bg-white rounded-xl border p-4 ${item.borderColor} ${item.leftBorder}`}
@@ -729,6 +732,19 @@ const Overview = () => {
               </Text>
             </View>
 
+        {/* ------------------ TASKS PROGRESS (ENHANCED) ------------------ */}
+        <View className="mx-4 mt-4 rounded-2xl bg-white shadow-sm border border-gray-100 overflow-hidden">
+          {/* Header */}
+          <View className="flex-row items-center justify-between px-4 py-4 border-b border-gray-100">
+            <View className="flex-row items-center">
+              <View className="h-9 w-9 items-center justify-center rounded-full bg-blue-100 mr-2">
+                <Ionicons name="list-outline" size={18} color="#2563EB" />
+              </View>
+              <Text className="text-base font-bold text-gray-800">
+                Tasks Progress
+              </Text>
+            </View>
+
             <Text className="text-xs text-gray-400">
               {milestones.length} Tasks
             </Text>
@@ -752,24 +768,23 @@ const Overview = () => {
               milestone.status === 'completed'
                 ? 'bg-green-500'
                 : milestone.status === 'in_progress'
-                ? 'bg-blue-500'
-                : 'bg-gray-400';
+                  ? 'bg-blue-500'
+                  : 'bg-gray-400';
 
             const statusBadge =
               milestone.status === 'completed'
                 ? 'bg-green-100 text-green-700'
                 : milestone.status === 'in_progress'
-                ? 'bg-blue-100 text-blue-700'
-                : 'bg-gray-100 text-gray-500';
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'bg-gray-100 text-gray-500';
 
             return (
               <View
                 key={milestone._id}
-                className={`px-4 py-4 ${
-                  index !== milestones.length - 1
-                    ? 'border-b border-gray-100'
-                    : ''
-                }`}
+                className={`px-4 py-4 ${index !== milestones.length - 1
+                  ? 'border-b border-gray-100'
+                  : ''
+                  }`}
               >
                 {/* Title + Status */}
                 <View className="flex-row items-start justify-between mb-2">
@@ -812,6 +827,9 @@ const Overview = () => {
             );
           })}
         </View>
+        </View>
+        </View>
+
       </ScrollView>
     );
   };
@@ -819,16 +837,14 @@ const Overview = () => {
   const renderTabItem = ({ item }) => (
     <TouchableOpacity
       onPress={() => setActiveTab(item.id)}
-      className={`px-4 py-2 mx-1 rounded-full border ${
-        activeTab === item.id
-          ? 'bg-blue-600 border-blue-600'
-          : 'bg-white border-gray-300'
-      }`}
+      className={`px-4 py-2 mx-1 rounded-full border ${activeTab === item.id
+        ? 'bg-blue-600 border-blue-600'
+        : 'bg-white border-gray-300'
+        }`}
     >
       <Text
-        className={`text-xs font-semibold ${
-          activeTab === item.id ? 'text-white' : 'text-gray-600'
-        }`}
+        className={`text-xs font-semibold ${activeTab === item.id ? 'text-white' : 'text-gray-600'
+          }`}
       >
         {item.label}
       </Text>
