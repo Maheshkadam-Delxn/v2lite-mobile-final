@@ -1,4 +1,4 @@
-// MilestoneTasksScreen.js - Integrated with API for fetching subtasks via GET and adding/updating via PUT
+// MilestoneTasksScreen.js - Updated with delay detection feature
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -56,21 +56,25 @@ const MilestoneTasksScreen = () => {
 
   // States for subtask addition/editing
   const [showSubtaskModal, setShowSubtaskModal] = useState(false);
-  const [editingTaskId, setEditingTaskId] = useState(null); // null for new
+  const [editingTaskId, setEditingTaskId] = useState(null);
   const [currentSubtask, setCurrentSubtask] = useState({
     title: '',
     description: '',
     startDate: '',
     endDate: '',
-    assignedTo: [], // Array of user IDs (strings for now; integrate user search later)
+    assignedTo: [],
     isCompleted: false,
   });
 
-  // Date picker states - Updated for @react-native-community/datetimepicker
+  // Date picker states
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
   const [tempStartDate, setTempStartDate] = useState(new Date());
   const [tempEndDate, setTempEndDate] = useState(new Date());
+
+  // State for delayed tasks warning
+  const [showDelayAlert, setShowDelayAlert] = useState(false);
+  const [delayedTaskInfo, setDelayedTaskInfo] = useState(null);
 
   // Helper to get date key for comparison (YYYY-MM-DD)
   const getDateKey = (date) => {
@@ -78,7 +82,49 @@ const MilestoneTasksScreen = () => {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
 
-  // Filter tasks by date range (active on selected date) - Now returns array
+  // Function to check if task is delayed
+  const isTaskDelayed = (taskEndDate, completionDate = new Date()) => {
+    if (!taskEndDate) return false;
+    
+    try {
+      const endDate = new Date(taskEndDate);
+      const today = new Date(completionDate);
+      
+      // Clear time part for accurate day comparison
+      endDate.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+      
+      // Task is delayed if end date is before today
+      return endDate < today;
+    } catch (error) {
+      console.error('Error checking delay:', error);
+      return false;
+    }
+  };
+
+  // Calculate delay in days
+  const calculateDelayDays = (taskEndDate, completionDate = new Date()) => {
+    if (!taskEndDate) return 0;
+    
+    try {
+      const endDate = new Date(taskEndDate);
+      const today = new Date(completionDate);
+      
+      // Clear time part
+      endDate.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+      
+      const diffTime = today.getTime() - endDate.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      return diffDays > 0 ? diffDays : 0;
+    } catch (error) {
+      console.error('Error calculating delay days:', error);
+      return 0;
+    }
+  };
+
+  // Filter tasks by date range (active on selected date)
   const getFilteredTasks = (tasks, date) => {
     if (!tasks || !Array.isArray(tasks)) {
       return [];
@@ -98,11 +144,10 @@ const MilestoneTasksScreen = () => {
     });
   };
 
-  // Generate week dates function - Fixed to start on Sunday
+  // Generate week dates function
   const generateWeekDates = (startDate) => {
     const dates = [];
     const current = new Date(startDate);
-    // Standard diff for Sunday start
     const dayOfWeek = current.getDay();
     const diff = current.getDate() - dayOfWeek;
     current.setDate(diff);
@@ -151,7 +196,6 @@ const MilestoneTasksScreen = () => {
     const newWeekStart = new Date(currentMonth);
     newWeekStart.setDate(newWeekStart.getDate() - 7);
     setCurrentMonth(newWeekStart);
-    // Update selectedDate to same weekday in new week
     const dayOfWeek = selectedDate.getDay();
     const newSelected = new Date(newWeekStart);
     newSelected.setDate(newWeekStart.getDate() + dayOfWeek);
@@ -163,7 +207,6 @@ const MilestoneTasksScreen = () => {
     const newWeekStart = new Date(currentMonth);
     newWeekStart.setDate(newWeekStart.getDate() + 7);
     setCurrentMonth(newWeekStart);
-    // Update selectedDate to same weekday in new week
     const dayOfWeek = selectedDate.getDay();
     const newSelected = new Date(newWeekStart);
     newSelected.setDate(newWeekStart.getDate() + dayOfWeek);
@@ -173,7 +216,6 @@ const MilestoneTasksScreen = () => {
 
   const handleDateSelect = (date) => {
     setSelectedDate(date);
-    // Set currentMonth to start of week containing date
     const dayOfWeek = date.getDay();
     const diff = date.getDate() - dayOfWeek;
     const weekStart = new Date(date.getFullYear(), date.getMonth(), diff);
@@ -192,7 +234,7 @@ const MilestoneTasksScreen = () => {
     return Math.round((completed / tasks.length) * 100);
   };
 
-  // Fetch members (similar to MilestonesScreen)
+  // Fetch members
   const fetchMembers = async () => {
     if (!projectId) return;
     setMembersLoading(true);
@@ -209,7 +251,6 @@ const MilestoneTasksScreen = () => {
       }
       const json = await res.json();
       const list = Array.isArray(json) ? json : Array.isArray(json.data) ? json.data : [];
-      // Filter members assigned to this projectId
       const membersAssignedToProject = list.filter(member =>
         Array.isArray(member.assignedProjects) &&
         member.assignedProjects.some(pid => String(pid) === String(projectId))
@@ -223,9 +264,8 @@ const MilestoneTasksScreen = () => {
     }
   };
 
-  // Fetch milestone details and subtasks (GET /milestones/${milestoneId})
+  // Fetch milestone details and subtasks
   const fetchMilestone = async () => {
-    // Fix: Handle both 'id' and '_id' for milestone ID
     const milestoneId = milestoneData?.id || milestoneData?._id;
     if (!milestoneId) {
       setTasksError('Missing milestone ID');
@@ -251,7 +291,7 @@ const MilestoneTasksScreen = () => {
       }
 
       const json = await res.json();
-      console.log('GET Milestone Response:', json); // Console the GET response
+      console.log('GET Milestone Response:', json);
       if (!json.success) {
         throw new Error(json.message || 'Failed to fetch milestone');
       }
@@ -259,32 +299,36 @@ const MilestoneTasksScreen = () => {
       const milestone = json.data;
       const subtasks = Array.isArray(milestone.subtasks) ? milestone.subtasks : [];
 
-      // Map subtasks to task format expected by UI - Fixed mapping for description and other fields
+      // Map subtasks with delay calculation
       const mappedTasks = subtasks.map(sub => {
-        console.log('Subtask object:', sub); // Added logging to debug subtask structure
+        const isDelayed = isTaskDelayed(sub.endDate);
+        const delayDays = isDelayed ? calculateDelayDays(sub.endDate) : 0;
+        
         return {
           id: sub._id,
           _id: sub._id,
           title: sub.title || 'Untitled Task',
-          description: sub.description || 'No description available', // Restored fallback to ensure mapping and display
-          priority: sub.priority || 'Medium', // Use API field if available, else default
+          description: sub.description || 'No description available',
+          priority: sub.priority || 'Medium',
           assignees: Array.isArray(sub.assignedTo) ? sub.assignedTo.length : 0,
           startDate: sub.startDate,
           endDate: sub.endDate,
           status: sub.isCompleted ? 'completed' : 'pending',
-          startTime: sub.startTime || '09:00 AM', // Use API if available
-          endTime: sub.endTime || '05:00 PM', // Use API if available
+          startTime: sub.startTime || '09:00 AM',
+          endTime: sub.endTime || '05:00 PM',
           color: milestone.color || '#0066FF',
           attachments: sub.attachments || [],
-          assignedTo: sub.assignedTo || [], // Preserve full array for updates
-          isCompleted: sub.isCompleted || false, // Preserve for updates
+          assignedTo: sub.assignedTo || [],
+          isCompleted: sub.isCompleted || false,
+          isDelayed: isDelayed && !sub.isCompleted, // Only show delay for incomplete tasks
+          delayDays: delayDays,
         };
       });
 
-      setMilestoneData({ ...milestone, id: milestone._id || milestone.id }); // Ensure 'id' is set
+      setMilestoneData({ ...milestone, id: milestone._id || milestone.id });
       setAllTasks(mappedTasks);
 
-      // Set initial selectedDate to today or earliest task start if today has no tasks
+      // Set initial selectedDate
       const today = new Date();
       const todayKey = getDateKey(today);
       const hasTasksToday = mappedTasks.some(task => {
@@ -308,13 +352,11 @@ const MilestoneTasksScreen = () => {
       }
 
       setSelectedDate(initialDate);
-      // Set currentMonth to start of week containing initialDate
       const dayOfWeek = initialDate.getDay();
       const diff = initialDate.getDate() - dayOfWeek;
       const weekStart = new Date(initialDate.getFullYear(), initialDate.getMonth(), diff);
       setCurrentMonth(weekStart);
 
-      // Compute and set filtered tasks immediately
       const initialFiltered = getFilteredTasks(mappedTasks, initialDate);
       setFilteredTasks(initialFiltered);
       const progress = milestone.progress || calculateProgress(mappedTasks);
@@ -322,7 +364,6 @@ const MilestoneTasksScreen = () => {
     } catch (err) {
       console.error('Failed to fetch milestone:', err);
       setTasksError(err.message || 'Failed to fetch milestone details');
-      // Fix: Ensure fallback has 'id'
       const fallbackMilestone = initialMilestone ? { ...initialMilestone, id: initialMilestone._id || initialMilestone.id } : null;
       setMilestoneData(fallbackMilestone);
       const fallbackTasks = [];
@@ -342,7 +383,6 @@ const MilestoneTasksScreen = () => {
       return;
     }
 
-    // Fix: Get milestone ID safely
     const milestoneId = milestoneData?.id || milestoneData?._id;
     if (!milestoneId) {
       Alert.alert("Error", "Milestone ID is missing");
@@ -365,11 +405,10 @@ const MilestoneTasksScreen = () => {
         endDate: currentSubtask.endDate,
         assignedTo: currentSubtask.assignedTo,
         isCompleted: currentSubtask.isCompleted,
-        attachments: [], // Default empty; handle uploads separately
+        attachments: [],
       };
 
       if (isEdit) {
-        // Update existing
         const index = allTasks.findIndex(t => (t._id || t.id) === editingTaskId);
         if (index < 0) {
           Alert.alert("Error", "Task not found for update");
@@ -383,8 +422,7 @@ const MilestoneTasksScreen = () => {
         };
         updatedTasks[index] = updatedTask;
       } else {
-        // Add new
-        const newTaskId = `temp-${Date.now()}`; // Temp ID until refetch
+        const newTaskId = `temp-${Date.now()}`;
         const newTask = {
           id: newTaskId,
           ...subtaskData,
@@ -399,9 +437,8 @@ const MilestoneTasksScreen = () => {
         updatedTasks.push(newTask);
       }
 
-      // Prepare API body with full subtasks array (backend replaces subtasks)
       const apiSubtasks = updatedTasks.map(task => {
-        const { id, status, assignees, priority, startTime, endTime, color, dueDate } = task; // Added dueDate to destructuring
+        const { id, status, assignees, priority, startTime, endTime, color, dueDate, isDelayed, delayDays } = task;
         const apiTask = { ...task };
         delete apiTask.id;
         delete apiTask.status;
@@ -410,7 +447,9 @@ const MilestoneTasksScreen = () => {
         delete apiTask.startTime;
         delete apiTask.endTime;
         delete apiTask.color;
-        delete apiTask.dueDate; // Explicitly remove dueDate to avoid sending unknown fields
+        delete apiTask.dueDate;
+        delete apiTask.isDelayed;
+        delete apiTask.delayDays;
         return apiTask;
       });
 
@@ -418,25 +457,24 @@ const MilestoneTasksScreen = () => {
         subtasks: apiSubtasks,
       };
 
-      console.log('PUT Request Body:', JSON.stringify(body, null, 2)); // Added logging for debugging
+      console.log('PUT Request Body:', JSON.stringify(body, null, 2));
 
       const res = await fetch(MILESTONE_BY_ID(milestoneId), {
-        method: 'PUT', // Fixed: Changed to PUT for consistency
+        method: 'PUT',
         headers,
         body: JSON.stringify(body),
       });
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        console.error('PUT Response Error:', { status: res.status, data: errData }); // Enhanced logging
+        console.error('PUT Response Error:', { status: res.status, data: errData });
         throw new Error(errData.message || "Failed to update milestone");
       }
 
       const updatedData = await res.json();
-      console.log('PUT Response:', updatedData); // Log successful response
+      console.log('PUT Response:', updatedData);
       if (updatedData.success) {
         Alert.alert("Success", isEdit ? "Subtask updated!" : "Subtask added!");
-        // Refetch to get updated data with new _id and progress
         await fetchMilestone();
         resetSubtaskForm();
       } else {
@@ -448,9 +486,8 @@ const MilestoneTasksScreen = () => {
     }
   };
 
-  // Handle delete subtask via PUT
+  // Handle delete subtask
   const handleDeleteSubtask = async (taskId) => {
-    // Fix: Get milestone ID safely
     const milestoneId = milestoneData?.id || milestoneData?._id;
     if (!milestoneId) {
       Alert.alert("Error", "Milestone ID is missing");
@@ -473,11 +510,9 @@ const MilestoneTasksScreen = () => {
                 ...(token && { Authorization: `Bearer ${token}` })
               };
 
-              // Filter out the deleted task
               const remainingTasks = allTasks.filter(t => (t._id || t.id) !== taskId);
-              // Prepare full subtasks for PUT
               const apiSubtasks = remainingTasks.map(task => {
-                const { id, status, assignees, priority, startTime, endTime, color, dueDate } = task; // Added dueDate
+                const { id, status, assignees, priority, startTime, endTime, color, dueDate, isDelayed, delayDays } = task;
                 const apiTask = { ...task };
                 delete apiTask.id;
                 delete apiTask.status;
@@ -486,17 +521,19 @@ const MilestoneTasksScreen = () => {
                 delete apiTask.startTime;
                 delete apiTask.endTime;
                 delete apiTask.color;
-                delete apiTask.dueDate; // Explicitly remove
+                delete apiTask.dueDate;
+                delete apiTask.isDelayed;
+                delete apiTask.delayDays;
                 return apiTask;
               });
               const body = {
                 subtasks: apiSubtasks,
               };
 
-              console.log('DELETE PUT Request Body:', JSON.stringify(body, null, 2)); // Added logging
+              console.log('DELETE PUT Request Body:', JSON.stringify(body, null, 2));
 
               const res = await fetch(MILESTONE_BY_ID(milestoneId), {
-                method: 'PUT', // Fixed: Already PUT
+                method: 'PUT',
                 headers,
                 body: JSON.stringify(body),
               });
@@ -508,7 +545,7 @@ const MilestoneTasksScreen = () => {
                 return;
               }
 
-              console.log('DELETE PUT Response:', await res.json()); // Log response
+              console.log('DELETE PUT Response:', await res.json());
               await fetchMilestone();
             } catch (err) {
               console.error('Delete error:', err);
@@ -538,9 +575,8 @@ const MilestoneTasksScreen = () => {
     setShowSubtaskModal(true);
   };
 
-  // Handle toggle completion via PUT
+  // Handle toggle completion with delay check
   const handleToggleCompletion = async (taskId) => {
-    // Fix: Get milestone ID safely
     const milestoneId = milestoneData?.id || milestoneData?._id;
     if (!milestoneId) {
       Alert.alert("Error", "Milestone ID is missing");
@@ -553,15 +589,37 @@ const MilestoneTasksScreen = () => {
       return;
     }
 
-    const newCompleted = !allTasks[taskIndex].isCompleted;
+    const task = allTasks[taskIndex];
+    const newCompleted = !task.isCompleted;
+    const completionDate = new Date();
 
+    // Check if task is delayed when marking as completed
+    if (newCompleted && isTaskDelayed(task.endDate, completionDate)) {
+      const delayDays = calculateDelayDays(task.endDate, completionDate);
+      setDelayedTaskInfo({
+        title: task.title,
+        endDate: task.endDate,
+        delayDays: delayDays,
+      });
+      setShowDelayAlert(true);
+      return; // Don't proceed until user confirms
+    }
+
+    // If not delayed, proceed with completion
+    proceedWithCompletion(taskId, taskIndex, newCompleted);
+  };
+
+  // Proceed with completion after delay check
+  const proceedWithCompletion = async (taskId, taskIndex, newCompleted) => {
+    const milestoneId = milestoneData?.id || milestoneData?._id;
+    
     try {
       const token = await AsyncStorage.getItem(TOKEN_KEY);
       const headers = {
         'Content-Type': 'application/json',
         ...(token && { Authorization: `Bearer ${token}` })
       };
-      // Prepare full subtasks for PUT with only the toggled change
+      
       const apiSubtasks = allTasks.map(t => {
         if ((t._id || t.id) === taskId) {
           return {
@@ -587,14 +645,15 @@ const MilestoneTasksScreen = () => {
           };
         }
       });
+      
       const body = {
         subtasks: apiSubtasks,
       };
 
-      console.log('TOGGLE PUT Request Body:', JSON.stringify(body, null, 2)); // Added logging
+      console.log('TOGGLE PUT Request Body:', JSON.stringify(body, null, 2));
 
       const res = await fetch(MILESTONE_BY_ID(milestoneId), {
-        method: 'PUT', // Fixed: Already PUT
+        method: 'PUT',
         headers,
         body: JSON.stringify(body),
       });
@@ -606,12 +665,42 @@ const MilestoneTasksScreen = () => {
         return;
       }
 
-      console.log('TOGGLE PUT Response:', await res.json()); // Log response
+      console.log('TOGGLE PUT Response:', await res.json());
       await fetchMilestone();
+      
+      // Show success message
+      Alert.alert(
+        "Task Completed",
+        "Task has been marked as completed!",
+        [{ text: "OK" }]
+      );
     } catch (err) {
       console.error('Toggle error:', err);
       Alert.alert("Error", "Failed to update status");
     }
+  };
+
+  // Handle delay alert response
+  const handleDelayAlertResponse = (confirm) => {
+    if (confirm && delayedTaskInfo) {
+      // Find the task again and proceed with completion
+      const taskId = allTasks.find(t => 
+        t.title === delayedTaskInfo.title && 
+        t.endDate === delayedTaskInfo.endDate
+      )?._id || allTasks.find(t => 
+        t.title === delayedTaskInfo.title && 
+        t.endDate === delayedTaskInfo.endDate
+      )?.id;
+      
+      if (taskId) {
+        const taskIndex = allTasks.findIndex(t => (t._id || t.id) === taskId);
+        proceedWithCompletion(taskId, taskIndex, true);
+      }
+    }
+    
+    // Reset delay alert state
+    setShowDelayAlert(false);
+    setDelayedTaskInfo(null);
   };
 
   // Reset form
@@ -630,7 +719,7 @@ const MilestoneTasksScreen = () => {
     setShowSubtaskModal(true);
   };
 
-  // Handle date change for start/end (updated for new picker)
+  // Handle date change for start/end
   const handleStartDateChange = (event, selectedDate) => {
     setShowStartDatePicker(Platform.OS === 'ios');
     if (selectedDate) {
@@ -648,16 +737,15 @@ const MilestoneTasksScreen = () => {
   };
 
   useEffect(() => {
-    // Fix: Ensure initialMilestone has 'id'
     const mappedInitial = initialMilestone ? { ...initialMilestone, id: initialMilestone._id || initialMilestone.id } : null;
     setMilestoneData(mappedInitial);
     if (mappedInitial) {
       fetchMilestone();
-      fetchMembers(); // Fetch members on mount
+      fetchMembers();
     }
   }, [initialMilestone, projectId]);
 
-  // UI Components - Enhanced ActivityCard with actions
+  // UI Components - Enhanced ActivityCard with delay indicator
   const ActivityCard = ({ item, taskId }) => {
     if (!item) return null;
     
@@ -665,9 +753,29 @@ const MilestoneTasksScreen = () => {
     const formattedEndDate = item.endDate ? new Date(item.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No end date';
     
     return (
-      <View style={styles.activityCard}>
+      <View style={[
+        styles.activityCard,
+        item.isDelayed && styles.delayedTaskCard
+      ]}>
+        {/* Delay Indicator Banner */}
+        {item.isDelayed && (
+          <View style={styles.delayBanner}>
+            <Ionicons name="alert-circle" size={14} color="#DC2626" />
+            <Text style={styles.delayBannerText}>
+              Delayed by {item.delayDays} day{item.delayDays !== 1 ? 's' : ''}
+            </Text>
+          </View>
+        )}
+        
         <View style={styles.activityHeader}>
-          <Text style={styles.activityTitle}>{item.title || 'Untitled Task'}</Text>
+          <View style={styles.titleWithDelay}>
+            <Text style={styles.activityTitle}>{item.title || 'Untitled Task'}</Text>
+            {item.isDelayed && (
+              <View style={styles.delayBadge}>
+                <Text style={styles.delayBadgeText}>DELAYED</Text>
+              </View>
+            )}
+          </View>
           <View
             style={[
               styles.priorityBadge,
@@ -687,6 +795,19 @@ const MilestoneTasksScreen = () => {
         <Text style={styles.activityDesc}>
           {item.description}
         </Text>
+        
+        {/* Delay Warning if task is delayed */}
+        {item.isDelayed && (
+          <View style={styles.delayWarningContainer}>
+            <View style={styles.delayWarning}>
+              <Ionicons name="time-outline" size={14} color="#DC2626" />
+              <Text style={styles.delayWarningText}>
+                Was due on {formattedEndDate}
+              </Text>
+            </View>
+          </View>
+        )}
+        
         <View style={styles.taskDetails}>
           <View style={styles.dateRow}>
             <Ionicons name="calendar-outline" size={12} color="#6B7280" />
@@ -736,13 +857,34 @@ const MilestoneTasksScreen = () => {
     const formattedEndDate = item.endDate ? new Date(item.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No date';
     
     return (
-      <View style={styles.scheduleCard}>
-        <View style={[styles.scheduleColorBar, { backgroundColor: item.color || milestoneData?.color || '#0066FF' }]} />
+      <View style={[
+        styles.scheduleCard,
+        item.isDelayed && styles.delayedScheduleCard
+      ]}>
+        <View style={[
+          styles.scheduleColorBar, 
+          { backgroundColor: item.isDelayed ? '#DC2626' : (item.color || milestoneData?.color || '#0066FF') }
+        ]} />
         <View style={styles.scheduleContent}>
-          <Text style={styles.scheduleTitle}>{item.title || 'Untitled Task'}</Text>
+          <View style={styles.scheduleHeader}>
+            <Text style={styles.scheduleTitle}>{item.title || 'Untitled Task'}</Text>
+            {item.isDelayed && (
+              <View style={styles.scheduleDelayBadge}>
+                <Text style={styles.scheduleDelayBadgeText}>Delayed</Text>
+              </View>
+            )}
+          </View>
           <Text style={styles.scheduleTime}>
             {formattedStartDate} - {formattedEndDate}
           </Text>
+          {item.isDelayed && (
+            <View style={styles.scheduleDelayInfo}>
+              <Ionicons name="alert-circle-outline" size={12} color="#DC2626" />
+              <Text style={styles.scheduleDelayText}>
+                {item.delayDays} day{item.delayDays !== 1 ? 's' : ''} overdue
+              </Text>
+            </View>
+          )}
           <Text style={styles.scheduleDesc}>
             {item.description}
           </Text>
@@ -781,7 +923,7 @@ const MilestoneTasksScreen = () => {
 
   return (
     <View style={styles.container}>
-      {/* Header Component - Shows milestone name */}
+      {/* Header Component */}
       <Header 
         title={milestoneData.title || 'Untitled Milestone'} 
         showBackButton={true} 
@@ -886,7 +1028,7 @@ const MilestoneTasksScreen = () => {
                 </View>
               </View>
 
-              {/* Tasks for Selected Date - Fixed: Show only month and date */}
+              {/* Tasks for Selected Date */}
               <View style={styles.tasksContainer}>
                 <View style={styles.tasksHeader}>
                   <Text style={styles.tasksDate}>
@@ -1023,7 +1165,44 @@ const MilestoneTasksScreen = () => {
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* Subtask Modal - Updated with user dropdown like MilestonesScreen */}
+      {/* Delay Alert Modal */}
+      <Modal
+        visible={showDelayAlert}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowDelayAlert(false)}
+      >
+        <View style={styles.alertOverlay}>
+          <View style={styles.alertContainer}>
+            <View style={styles.alertIconContainer}>
+              <Ionicons name="alert-circle" size={60} color="#DC2626" />
+            </View>
+            <Text style={styles.alertTitle}>Task is Delayed!</Text>
+            <Text style={styles.alertMessage}>
+              The task "{delayedTaskInfo?.title}" was due on {' '}
+              {delayedTaskInfo?.endDate ? new Date(delayedTaskInfo.endDate).toLocaleDateString() : 'unknown date'}.
+              {'\n\n'}
+              It is {delayedTaskInfo?.delayDays || 0} day{delayedTaskInfo?.delayDays !== 1 ? 's' : ''} overdue.
+            </Text>
+            <View style={styles.alertButtons}>
+              <TouchableOpacity 
+                style={[styles.alertButton, styles.alertButtonCancel]}
+                onPress={() => handleDelayAlertResponse(false)}
+              >
+                <Text style={styles.alertButtonCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.alertButton, styles.alertButtonConfirm]}
+                onPress={() => handleDelayAlertResponse(true)}
+              >
+                <Text style={styles.alertButtonConfirmText}>Mark as Completed</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Subtask Modal */}
       <Modal
         visible={showSubtaskModal}
         transparent
@@ -1109,7 +1288,7 @@ const MilestoneTasksScreen = () => {
                 )}
               </View>
 
-              {/* Assigned To: Updated to dropdown like MilestonesScreen */}
+              {/* Assigned To */}
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Assigned To (Optional)</Text>
                 {membersLoading ? (
@@ -1212,14 +1391,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#f9fafb' 
   },
   contentContainer: {
-    marginTop: 16, // Adds spacing below header
+    marginTop: 16,
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    marginTop: 80, // Account for header height
+    marginTop: 80,
   },
   errorTitle: {
     fontFamily: 'Urbanist-Bold',
@@ -1422,6 +1601,8 @@ const styles = StyleSheet.create({
     color: '#0066FF',
     marginLeft: 6,
   },
+  
+  // Activity Card Styles with Delay Indicators
   activityCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
@@ -1429,19 +1610,54 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: '#f3f4f6',
+    position: 'relative',
+  },
+  delayedTaskCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#DC2626',
+  },
+  delayBanner: {
+    backgroundColor: '#FEE2E2',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  delayBannerText: {
+    fontFamily: 'Urbanist-SemiBold',
+    fontSize: 12,
+    color: '#DC2626',
+    marginLeft: 6,
   },
   activityHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 8,
+  },
+  titleWithDelay: {
+    flex: 1,
+    marginRight: 12,
   },
   activityTitle: {
     fontFamily: 'Urbanist-SemiBold',
     fontSize: 16,
     color: '#111827',
-    flex: 1,
-    marginRight: 12,
+    marginBottom: 4,
+  },
+  delayBadge: {
+    backgroundColor: '#DC2626',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+  },
+  delayBadgeText: {
+    fontFamily: 'Urbanist-Bold',
+    fontSize: 10,
+    color: 'white',
   },
   priorityBadge: {
     paddingHorizontal: 10,
@@ -1465,6 +1681,25 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 12,
   },
+  delayWarningContainer: {
+    marginBottom: 12,
+  },
+  delayWarning: {
+    backgroundColor: '#FEF2F2',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  delayWarningText: {
+    fontFamily: 'Urbanist-Medium',
+    fontSize: 12,
+    color: '#DC2626',
+    marginLeft: 6,
+  },
   taskDetails: {
     marginBottom: 8,
   },
@@ -1472,12 +1707,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 4,
-  },
-  dateText: {
-    fontFamily: 'Urbanist-Regular',
-    fontSize: 12,
-    color: '#6B7280',
-    marginLeft: 4,
   },
   assigneeRow: {
     flexDirection: 'row',
@@ -1509,9 +1738,7 @@ const styles = StyleSheet.create({
     padding: 4,
     marginRight: 8,
   },
-  toggleCompleted: {
-    // Optional: Style change for completed
-  },
+  toggleCompleted: {},
   editButton: {
     padding: 4,
     marginRight: 8,
@@ -1519,39 +1746,8 @@ const styles = StyleSheet.create({
   deleteButton: {
     padding: 4,
   },
-  activityContainer: {
-    paddingBottom: 16,
-  },
-  scheduleSection: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-  },
-  scheduleSectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  scheduleSectionTitle: {
-    fontFamily: 'Urbanist-Bold',
-    fontSize: 16,
-    color: '#111827',
-  },
-  selectMemberButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
-  selectMemberText: {
-    fontFamily: 'Urbanist-Medium',
-    fontSize: 13,
-    color: '#6b7280',
-    marginRight: 4,
-  },
+  
+  // Schedule Card Styles with Delay Indicators
   scheduleCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
@@ -1561,6 +1757,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#f3f4f6',
   },
+  delayedScheduleCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#DC2626',
+  },
   scheduleColorBar: {
     width: 4,
   },
@@ -1568,17 +1768,51 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 14,
   },
+  scheduleHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 4,
+  },
   scheduleTitle: {
     fontFamily: 'Urbanist-SemiBold',
     fontSize: 15,
     color: '#111827',
-    marginBottom: 4,
+    flex: 1,
+    marginRight: 8,
+  },
+  scheduleDelayBadge: {
+    backgroundColor: '#DC2626',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  scheduleDelayBadgeText: {
+    fontFamily: 'Urbanist-Bold',
+    fontSize: 10,
+    color: 'white',
   },
   scheduleTime: {
     fontFamily: 'Urbanist-Medium',
     fontSize: 13,
     color: '#0066FF',
     marginBottom: 4,
+  },
+  scheduleDelayInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF2F2',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    marginBottom: 4,
+    alignSelf: 'flex-start',
+  },
+  scheduleDelayText: {
+    fontFamily: 'Urbanist-Medium',
+    fontSize: 11,
+    color: '#DC2626',
+    marginLeft: 4,
   },
   scheduleDesc: {
     fontFamily: 'Urbanist-Regular',
@@ -1591,6 +1825,74 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#9CA3AF',
   },
+  
+  // Alert Modal Styles
+  alertOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  alertContainer: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  alertIconContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  alertTitle: {
+    fontFamily: 'Urbanist-Bold',
+    fontSize: 20,
+    color: '#DC2626',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  alertMessage: {
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  alertButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  alertButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  alertButtonCancel: {
+    backgroundColor: '#F3F4F6',
+  },
+  alertButtonConfirm: {
+    backgroundColor: '#DC2626',
+  },
+  alertButtonCancelText: {
+    fontFamily: 'Urbanist-SemiBold',
+    fontSize: 16,
+    color: '#374151',
+  },
+  alertButtonConfirmText: {
+    fontFamily: 'Urbanist-SemiBold',
+    fontSize: 16,
+    color: 'white',
+  },
+  
+  // Error and Loading States
   errorText: {
     textAlign: 'center',
     color: '#ef4444',
@@ -1615,6 +1917,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#9CA3AF',
   },
+  
   // Modal styles
   modalOverlay: {
     flex: 1,
@@ -1678,12 +1981,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  dateText: {
-    fontFamily: 'Urbanist-Regular',
-    fontSize: 16,
-    color: '#111827',
-  },
-  // Member selection styles (from MilestonesScreen)
+  
+  // Member selection styles
   dropdownInput: {
     borderWidth: 1,
     borderColor: '#E5E7EB',
@@ -1770,6 +2069,41 @@ const styles = StyleSheet.create({
     fontFamily: 'Urbanist-SemiBold',
     fontSize: 16,
     color: 'white',
+  },
+  
+  // Existing styles for other components
+  activityContainer: {
+    paddingBottom: 16,
+  },
+  scheduleSection: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  scheduleSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  scheduleSectionTitle: {
+    fontFamily: 'Urbanist-Bold',
+    fontSize: 16,
+    color: '#111827',
+  },
+  selectMemberButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  selectMemberText: {
+    fontFamily: 'Urbanist-Medium',
+    fontSize: 13,
+    color: '#6b7280',
+    marginRight: 4,
   },
 });
 

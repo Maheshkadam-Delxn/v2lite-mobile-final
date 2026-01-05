@@ -1,5 +1,5 @@
-// MilestonesScreen.js - Updated to include color and icon in POST, plus subtask addition UI in create modal
-import React, { useState, useEffect } from 'react';
+// MilestonesScreen.js - Updated to include pull-to-refresh and manual reload
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,50 +13,58 @@ import {
   Alert,
   Switch,
   Platform,
+  RefreshControl, // Added for pull-to-refresh
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native'; // Added useFocusEffect
 import { Ionicons, Feather } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
+
 const BASE_URL = `${process.env.BASE_API_URL}/api`;
 const MILESTONES_BY_PROJECT = (projectId) => `${BASE_URL}/milestones?projectId=${projectId}`;
 const USERS_URL = `${BASE_URL}/users`;
 const TOKEN_KEY = 'userToken';
+
 const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
   const navigation = useNavigation();
   const route = routeProp || {};
- 
+  
   const projectId = (projectProp && (projectProp._id || projectProp.id)) || route?.params?.projectId || null;
   const [milestones, setMilestones] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false); // For pull-to-refresh state
   const [error, setError] = useState(null);
   const [showNewMilestoneModal, setShowNewMilestoneModal] = useState(false);
   const [newMilestone, setNewMilestone] = useState({
     title: '',
     description: '',
     color: '#0066FF',
-    subtasks: [], // New: Array for subtasks
+    subtasks: [],
   });
+  
   // New: States for subtask addition in modal
   const [showSubtaskModal, setShowSubtaskModal] = useState(false);
-  const [editingSubtaskIndex, setEditingSubtaskIndex] = useState(null); // -1 for new
+  const [editingSubtaskIndex, setEditingSubtaskIndex] = useState(null);
   const [currentSubtask, setCurrentSubtask] = useState({
     title: '',
     description: '',
     startDate: '',
     endDate: '',
-    assignedTo: [], // Array of user IDs (strings for now; integrate user search later)
+    assignedTo: [],
     isCompleted: false,
   });
+  
   // Date picker states
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
   const [tempStartDate, setTempStartDate] = useState(new Date());
   const [tempEndDate, setTempEndDate] = useState(new Date());
+  
   // Members states
   const [members, setMembers] = useState([]);
   const [membersLoading, setMembersLoading] = useState(false);
   const [membersError, setMembersError] = useState(null);
+  
   // Status mapping from API to UI
   const mapStatusToUI = (apiStatus) => {
     switch (apiStatus) {
@@ -66,11 +74,12 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
       default: return 'Not Started';
     }
   };
+  
   // Subtask status mapping for UI
   const mapSubtaskStatus = (apiStatus) => {
-    // Assuming API subtasks have isCompleted; map to UI status
     return apiStatus === true ? 'completed' : 'pending';
   };
+  
   // Fetch milestones (GET API)
   const fetchMilestones = async () => {
     if (!projectId) {
@@ -80,26 +89,30 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
     }
     setLoading(true);
     setError(null);
-   
+    
     try {
       const token = await AsyncStorage.getItem(TOKEN_KEY);
       const headers = {
         'Content-Type': 'application/json',
         ...(token && { 'Authorization': `Bearer ${token}` })
       };
+      
       const res = await fetch(MILESTONES_BY_PROJECT(projectId), {
         method: 'GET',
         headers,
       });
+      
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}: ${res.statusText}`);
       }
+      
       const json = await res.json();
       if (!json.success) {
         throw new Error(json.message || 'Failed to fetch milestones');
       }
+      
       const items = Array.isArray(json.data) ? json.data : [];
-     
+      
       // Map API data to UI shape
       const mappedMilestones = items.map(item => ({
         id: item._id,
@@ -112,13 +125,14 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
         subtasks: (item.subtasks || []).map(sub => ({
           id: sub._id,
           title: sub.title,
-          description: sub.description || '', // Fixed: Use correct field name (assuming schema fix)
+          description: sub.description || '',
           startDate: sub.startDate ? new Date(sub.startDate).toLocaleDateString() : '',
           endDate: sub.endDate ? new Date(sub.endDate).toLocaleDateString() : '',
           status: mapSubtaskStatus(sub.isCompleted),
           assignedTo: sub.assignedTo?.map(userId => ({ name: 'User' })) || ['Not Assigned'],
         })),
       }));
+      
       setMilestones(mappedMilestones);
     } catch (err) {
       console.error('Failed to fetch milestones:', err);
@@ -128,6 +142,28 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
       setLoading(false);
     }
   };
+  
+  // Pull-to-refresh handler
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    setError(null);
+    
+    try {
+      await fetchMilestones();
+    } catch (err) {
+      console.error('Refresh failed:', err);
+      setError(err.message || 'Refresh failed');
+    } finally {
+      setRefreshing(false);
+    }
+  }, [projectId]);
+  
+  // Manual reload handler
+  const handleManualReload = () => {
+    setError(null);
+    fetchMilestones();
+  };
+  
   // Fetch members
   useEffect(() => {
     if (!projectId) return;
@@ -161,16 +197,27 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
     };
     fetchMembers();
   }, [projectId]);
+  
+  // Fetch milestones when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchMilestones();
+    }, [projectId])
+  );
+  
   // Calculate progress based on subtasks (for validation)
   const calculateProgress = (subtasks) => {
     if (!subtasks || subtasks.length === 0) return 0;
-    const completed = subtasks.filter(task => task.isCompleted).length; // Use isCompleted for calc
+    const completed = subtasks.filter(task => task.isCompleted).length;
     return Math.round((completed / subtasks.length) * 100);
   };
+  
   // Colors for new milestones
   const milestoneColors = ['#0066FF', '#FFA800', '#1DD1A1', '#FF6B6B', '#9B59B6', '#FFC312'];
+  
   // Icons for new milestones
   const milestoneIcons = ['home', 'cube', 'square', 'grid', 'water', 'flash', 'construct', 'hammer', 'layers'];
+  
   // New: Handle add/edit subtask
   const handleSaveSubtask = () => {
     if (!currentSubtask.title.trim()) {
@@ -182,18 +229,20 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
       ...currentSubtask,
       startDate: currentSubtask.startDate || '',
       endDate: currentSubtask.endDate || '',
-      // Note: assignedTo as strings; in prod, map to real ObjectIds from user selection
     };
+    
     if (editingSubtaskIndex >= 0) {
       subtasks[editingSubtaskIndex] = subtaskData;
     } else {
       subtasks.push(subtaskData);
     }
+    
     setNewMilestone({ ...newMilestone, subtasks });
     setCurrentSubtask({ title: '', description: '', startDate: '', endDate: '', assignedTo: [], isCompleted: false });
     setEditingSubtaskIndex(null);
     setShowSubtaskModal(false);
   };
+  
   // New: Handle delete subtask
   const handleDeleteSubtask = (index) => {
     Alert.alert(
@@ -212,6 +261,7 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
       ]
     );
   };
+  
   // New: Handle edit subtask
   const handleEditSubtask = (index) => {
     const subtask = newMilestone.subtasks[index];
@@ -221,12 +271,14 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
     setTempEndDate(subtask.endDate ? new Date(subtask.endDate) : new Date());
     setShowSubtaskModal(true);
   };
+  
   // Create new milestone (POST API) - Updated to include subtasks
   const handleCreateMilestone = async () => {
     if (!newMilestone.title.trim()) {
       Alert.alert("Error", "Title is required");
       return;
     }
+    
     const randomIcon = milestoneIcons[Math.floor(Math.random() * milestoneIcons.length)];
     const body = {
       projectId,
@@ -236,32 +288,37 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
       icon: randomIcon,
       subtasks: newMilestone.subtasks.map((subtask) => ({
         title: subtask.title,
-        description: subtask.description, // Fixed: Use correct field
+        description: subtask.description,
         startDate: subtask.startDate,
         endDate: subtask.endDate,
-        assignedTo: subtask.assignedTo, // Array of IDs
+        assignedTo: subtask.assignedTo,
         isCompleted: subtask.isCompleted || false,
-        attachments: [], // Default empty
+        attachments: [],
       })),
     };
+    
     try {
       const token = await AsyncStorage.getItem(TOKEN_KEY);
       const headers = {
         'Content-Type': 'application/json',
         ...(token && { Authorization: `Bearer ${token}` })
       };
+      
       const res = await fetch(`${BASE_URL}/milestones`, {
         method: 'POST',
         headers,
         body: JSON.stringify(body),
       });
+      
       if (!res.ok) {
         const errData = await res.json();
         throw new Error(errData.message || "Failed to create milestone");
       }
+      
       const newData = await res.json();
       if (newData.success) {
         Alert.alert("Success", "Milestone created successfully");
+        
         // Map new milestone to UI shape
         const createdMilestone = {
           id: newData.data._id,
@@ -281,6 +338,7 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
             assignedTo: sub.assignedTo?.map(userId => ({ name: 'User' })) || ['Not Assigned'],
           })),
         };
+        
         setMilestones([createdMilestone, ...milestones]);
         setNewMilestone({ title: '', description: '', color: '#0066FF', subtasks: [] });
         setShowNewMilestoneModal(false);
@@ -292,6 +350,7 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
       Alert.alert("Error", err.message || "Network error");
     }
   };
+  
   // Navigate to milestone tasks screen
   const handleMilestonePress = (milestone) => {
     navigation.navigate('MilestoneTasks', {
@@ -299,11 +358,13 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
       projectId,
     });
   };
+  
   // Fetch on mount
   useEffect(() => {
     fetchMilestones();
   }, [projectId]);
-  // Milestone Card Component (unchanged, but uses mapped data)
+  
+  // Milestone Card Component
   const MilestoneCard = ({ milestone }) => {
     const completedSubtasks = milestone.subtasks.filter(task => task.status === 'completed').length;
     const totalSubtasks = milestone.subtasks.length;
@@ -361,8 +422,9 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
       </TouchableOpacity>
     );
   };
+  
   // Loading state
-  if (loading) {
+  if (loading && !refreshing) {
     return (
       <View style={styles.container}>
         <View style={styles.loadingContainer}>
@@ -372,6 +434,7 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
       </View>
     );
   }
+  
   // Error state
   if (error && milestones.length === 0) {
     return (
@@ -379,20 +442,41 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle" size={64} color="#EF4444" />
           <Text style={styles.errorTitle}>{error}</Text>
-          <TouchableOpacity
-            style={styles.retryButton}
-            onPress={fetchMilestones}
-          >
-            <Text style={styles.retryButtonText}>Retry</Text>
-          </TouchableOpacity>
+          <View style={styles.errorButtonsContainer}>
+            <TouchableOpacity
+              style={styles.retryButton}
+              onPress={handleManualReload}
+            >
+              <Text style={styles.retryButtonText}>Retry</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.refreshButton}
+              onPress={handleManualReload}
+            >
+              <Ionicons name="refresh" size={20} color="#0066FF" />
+              <Text style={styles.refreshButtonText}>Reload</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     );
   }
+  
   return (
     <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#0066FF']}
+            tintColor="#0066FF"
+            progressBackgroundColor="#ffffff"
+          />
+        }
+      >
+        {/* Header with reload button */}
         <View style={styles.header}>
           <View style={styles.headerContent}>
             <Text style={styles.headerTitle}>Project Milestones</Text>
@@ -400,14 +484,29 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
               Track progress for each construction phase
             </Text>
           </View>
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={() => setShowNewMilestoneModal(true)}
-            disabled={loading}
-          >
-            <Ionicons name="add" size={24} color="white" />
-          </TouchableOpacity>
+          <View style={styles.headerButtons}>
+            <TouchableOpacity
+              style={styles.reloadButton}
+              onPress={handleManualReload}
+              disabled={refreshing}
+            >
+              <Ionicons 
+                name="refresh" 
+                size={22} 
+                color="#0066FF" 
+                style={refreshing && styles.spinningIcon}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={() => setShowNewMilestoneModal(true)}
+              disabled={loading || refreshing}
+            >
+              <Ionicons name="add" size={24} color="white" />
+            </TouchableOpacity>
+          </View>
         </View>
+        
         {/* Stats Overview */}
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
@@ -436,6 +535,23 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
             <Text style={styles.statLabel}>Avg Progress</Text>
           </View>
         </View>
+        
+        {/* Last Updated Time */}
+        {milestones.length > 0 && (
+          <View style={styles.lastUpdatedContainer}>
+            <Ionicons name="time-outline" size={14} color="#6B7280" />
+            <Text style={styles.lastUpdatedText}>
+              Last updated: {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </Text>
+            {refreshing && (
+              <View style={styles.refreshingIndicator}>
+                <ActivityIndicator size="small" color="#0066FF" />
+                <Text style={styles.refreshingText}>Refreshing...</Text>
+              </View>
+            )}
+          </View>
+        )}
+        
         {/* Milestones List */}
         {milestones.length === 0 ? (
           <View style={styles.emptyState}>
@@ -449,10 +565,23 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
             <TouchableOpacity
               style={styles.emptyButton}
               onPress={() => setShowNewMilestoneModal(true)}
-              disabled={loading}
+              disabled={loading || refreshing}
             >
               <Ionicons name="add-circle-outline" size={20} color="#0066FF" />
               <Text style={styles.emptyButtonText}>Create Milestone</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.emptyReloadButton}
+              onPress={handleManualReload}
+              disabled={refreshing}
+            >
+              <Ionicons 
+                name="refresh" 
+                size={16} 
+                color="#6B7280" 
+                style={refreshing && styles.spinningIcon}
+              />
+              <Text style={styles.emptyReloadButtonText}>Reload</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -467,6 +596,7 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
         )}
         <View style={{ height: 100 }} />
       </ScrollView>
+      
       {/* New Milestone Modal */}
       <Modal
         visible={showNewMilestoneModal}
@@ -483,6 +613,7 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+              {/* Modal content remains the same */}
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Milestone Title *</Text>
                 <TextInput
@@ -522,7 +653,7 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
                   ))}
                 </View>
               </View>
-              {/* New: Subtasks Section */}
+              {/* Subtasks Section */}
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Subtasks (Optional)</Text>
                 <TouchableOpacity
@@ -593,7 +724,8 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
           </View>
         </View>
       </Modal>
-      {/* New: Subtask Modal */}
+      
+      {/* Subtask Modal */}
       <Modal
         visible={showSubtaskModal}
         transparent
@@ -614,6 +746,7 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+              {/* Subtask modal content remains the same */}
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Title *</Text>
                 <TextInput
@@ -686,7 +819,6 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
                   />
                 )}
               </View>
-              {/* Assigned To: Fetched list */}
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Assigned To (Optional)</Text>
                 {membersLoading ? (
@@ -781,180 +913,8 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
     </View>
   );
 };
-// Add new styles for subtask UI, loading, and error
-const additionalStyles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 16,
-    fontFamily: 'Urbanist-Regular',
-    fontSize: 16,
-    color: '#6B7280',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorTitle: {
-    fontFamily: 'Urbanist-Bold',
-    fontSize: 18,
-    color: '#EF4444',
-    marginTop: 16,
-    marginBottom: 24,
-    textAlign: 'center',
-  },
-  retryButton: {
-    backgroundColor: '#0066FF',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    fontFamily: 'Urbanist-SemiBold',
-    fontSize: 16,
-    color: 'white',
-  },
-  // New: Subtask styles
-  addSubtaskButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    backgroundColor: '#F0F9FF',
-    borderRadius: 8,
-    marginTop: 8,
-  },
-  addSubtaskText: {
-    fontFamily: 'Urbanist-Medium',
-    fontSize: 14,
-    color: '#0066FF',
-    marginLeft: 8,
-  },
-  subtasksList: {
-    marginTop: 12,
-  },
-  subtaskItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  subtaskContent: {
-    flex: 1,
-  },
-  subtaskTitle: {
-    fontFamily: 'Urbanist-SemiBold',
-    fontSize: 14,
-    color: '#111827',
-  },
-  subtaskDesc: {
-    fontFamily: 'Urbanist-Regular',
-    fontSize: 12,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  subtaskDates: {
-    fontFamily: 'Urbanist-Regular',
-    fontSize: 11,
-    color: '#9CA3AF',
-    marginTop: 2,
-  },
-  subtaskActions: {
-    flexDirection: 'row',
-    marginLeft: 12,
-  },
-  editSubtaskButton: {
-    padding: 4,
-    marginRight: 8,
-  },
-  deleteSubtaskButton: {
-    padding: 4,
-  },
-  subtaskHint: {
-    fontFamily: 'Urbanist-Regular',
-    fontSize: 12,
-    color: '#9CA3AF',
-    marginTop: 4,
-  },
-  dateInput: {
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    padding: 16,
-    backgroundColor: '#F9FAFB',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  dateText: {
-    fontFamily: 'Urbanist-Regular',
-    fontSize: 16,
-    color: '#111827',
-  },
-  switchRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 12,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 8,
-  },
-  switchLabel: {
-    fontFamily: 'Urbanist-Medium',
-    fontSize: 14,
-    color: '#374151',
-  },
-  // Member selection styles
-  dropdownInput: {
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    padding: 16,
-    backgroundColor: '#F9FAFB',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  dropdownText: {
-    fontFamily: 'Urbanist-Regular',
-    fontSize: 16,
-    color: '#111827',
-    flex: 1,
-  },
-  memberItem: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    marginBottom: 8,
-    backgroundColor: '#FFFFFF',
-  },
-  memberItemActive: {
-    backgroundColor: '#0066FF',
-    borderColor: '#0066FF',
-  },
-  memberText: {
-    fontFamily: 'Urbanist-SemiBold',
-    fontSize: 14,
-    color: '#111827',
-    marginBottom: 2,
-  },
-  memberTextActive: {
-    color: 'white',
-  },
-  // Modal scroll
-  modalScroll: {
-    flex: 1,
-  },
-});
-// Merge with existing styles
+
+// Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -984,6 +944,19 @@ const styles = StyleSheet.create({
     fontFamily: 'Urbanist-Regular',
     fontSize: 14,
     color: '#6B7280',
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  reloadButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#F0F9FF',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   addButton: {
     width: 48,
@@ -1029,6 +1002,32 @@ const styles = StyleSheet.create({
   statDivider: {
     width: 1,
     backgroundColor: '#F3F4F6',
+  },
+  lastUpdatedContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 16,
+    marginHorizontal: 20,
+    paddingVertical: 8,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 8,
+    gap: 8,
+  },
+  lastUpdatedText: {
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  refreshingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  refreshingText: {
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 12,
+    color: '#0066FF',
   },
   milestonesList: {
     paddingHorizontal: 20,
@@ -1177,12 +1176,88 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     backgroundColor: '#F0F9FF',
     borderRadius: 8,
+    marginBottom: 16,
   },
   emptyButtonText: {
     fontFamily: 'Urbanist-SemiBold',
     fontSize: 16,
     color: '#0066FF',
     marginLeft: 8,
+  },
+  emptyReloadButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    gap: 6,
+  },
+  emptyReloadButtonText: {
+    fontFamily: 'Urbanist-Medium',
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 16,
+    color: '#6B7280',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorTitle: {
+    fontFamily: 'Urbanist-Bold',
+    fontSize: 18,
+    color: '#EF4444',
+    marginTop: 16,
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  errorButtonsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  retryButton: {
+    backgroundColor: '#0066FF',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    fontFamily: 'Urbanist-SemiBold',
+    fontSize: 16,
+    color: 'white',
+  },
+  refreshButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0F9FF',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    gap: 8,
+  },
+  refreshButtonText: {
+    fontFamily: 'Urbanist-SemiBold',
+    fontSize: 16,
+    color: '#0066FF',
+  },
+  spinningIcon: {
+    transform: [{ rotate: '360deg' }],
+    animationDuration: '1s',
+    animationIterationCount: 'infinite',
+    animationTimingFunction: 'linear',
   },
   // Modal Styles
   modalOverlay: {
@@ -1194,8 +1269,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    maxHeight: '85%', // Fix: Increased maxHeight slightly to allow more room
-    minHeight: 600, // Fix: Increased minHeight for taller default modal height
+    maxHeight: '85%',
+    minHeight: 600,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -1208,6 +1283,9 @@ const styles = StyleSheet.create({
     fontFamily: 'Urbanist-Bold',
     fontSize: 20,
     color: '#111827',
+  },
+  modalScroll: {
+    flex: 1,
   },
   inputGroup: {
     marginBottom: 20,
@@ -1294,7 +1372,136 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: 'white',
   },
-  // Additional styles
-  ...additionalStyles,
+  // Subtask styles
+  addSubtaskButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    backgroundColor: '#F0F9FF',
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  addSubtaskText: {
+    fontFamily: 'Urbanist-Medium',
+    fontSize: 14,
+    color: '#0066FF',
+    marginLeft: 8,
+  },
+  subtasksList: {
+    marginTop: 12,
+  },
+  subtaskItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  subtaskContent: {
+    flex: 1,
+  },
+  subtaskTitle: {
+    fontFamily: 'Urbanist-SemiBold',
+    fontSize: 14,
+    color: '#111827',
+  },
+  subtaskDesc: {
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  subtaskDates: {
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 11,
+    color: '#9CA3AF',
+    marginTop: 2,
+  },
+  subtaskActions: {
+    flexDirection: 'row',
+    marginLeft: 12,
+  },
+  editSubtaskButton: {
+    padding: 4,
+    marginRight: 8,
+  },
+  deleteSubtaskButton: {
+    padding: 4,
+  },
+  subtaskHint: {
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 12,
+    color: '#9CA3AF',
+    marginTop: 4,
+  },
+  dateInput: {
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    padding: 16,
+    backgroundColor: '#F9FAFB',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dateText: {
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 16,
+    color: '#111827',
+  },
+  switchRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 12,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 8,
+  },
+  switchLabel: {
+    fontFamily: 'Urbanist-Medium',
+    fontSize: 14,
+    color: '#374151',
+  },
+  // Member selection styles
+  dropdownInput: {
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    padding: 16,
+    backgroundColor: '#F9FAFB',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dropdownText: {
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 16,
+    color: '#111827',
+    flex: 1,
+  },
+  memberItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    marginBottom: 8,
+    backgroundColor: '#FFFFFF',
+  },
+  memberItemActive: {
+    backgroundColor: '#0066FF',
+    borderColor: '#0066FF',
+  },
+  memberText: {
+    fontFamily: 'Urbanist-SemiBold',
+    fontSize: 14,
+    color: '#111827',
+    marginBottom: 2,
+  },
+  memberTextActive: {
+    color: 'white',
+  },
 });
+
 export default MilestonesScreen;
