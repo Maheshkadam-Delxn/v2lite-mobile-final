@@ -26,7 +26,6 @@
     "expo-blur": "~15.0.7",
     "expo-clipboard": "~8.0.7",
     "expo-crypto": "~15.0.7",
-   
     "expo-document-picker": "~14.0.7",
     "expo-file-system": "~19.0.18",
     "expo-image-picker": "~17.0.8",
@@ -52,6 +51,7 @@
     "react-native-multi-slider": "^0.3.6",
     "react-native-pager-view": "^6.9.1",
     "react-native-pdf": "^7.0.3",
+    "react-native-progress": "^5.0.1",
     "react-native-reanimated": "~4.1.1",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",

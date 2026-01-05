@@ -7,6 +7,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import ClientMainPage from '../screens/HomeOwner/clientpages/ClientMainPage';
 import Overview from '../screens/HomeOwner/Overview';
+import BOQClientScreen from '../screens/HomeOwner/BOQClientScreen';
+import BOQClientDetailScreen from '../screens/HomeOwner/BOQClientDetailScreen';
 import ProjectTimeline from '../screens/HomeOwner/ProjectTimeline';
 import BudgetTracker from '../screens/HomeOwner/BudgetTracker';
 import QualityChecks from '../screens/HomeOwner/QualityChecks';
@@ -25,6 +27,8 @@ const ClientProjectStack = () => (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="ClientHome" component={ClientMainPage} />
         <Stack.Screen name="Overview" component={Overview} />
+        <Stack.Screen name="BOQ" component={BOQClientScreen} />
+        <Stack.Screen name="BOQClientDetailScreen" component={BOQClientDetailScreen} />
         <Stack.Screen name="ProjectTimeline" component={ProjectTimeline} />
         <Stack.Screen name="BudgetTracker" component={BudgetTracker} />
         <Stack.Screen name="QualityChecks" component={QualityChecks} />
