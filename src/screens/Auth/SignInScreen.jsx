@@ -161,7 +161,7 @@ const ModernSignInScreen = () => {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#ffffff' }}>
-      <Header />
+     
       <StatusBar barStyle="light-content" backgroundColor="#ffffff" />
 
 
@@ -184,7 +184,7 @@ const ModernSignInScreen = () => {
         </View>
 
         {/* Header */}
-        <View style={{ marginBottom: 40 }}>
+        <View style={{ marginBottom: 40 }} className='flex justify-center  items-center'>
           <Text style={{
             fontSize: 32,
             fontWeight: '700',

@@ -1,6 +1,4 @@
 
-
-
 // import {
 //   View,
 //   Text,
@@ -12,6 +10,11 @@
 //   ActivityIndicator,
 //   Alert,
 //   StyleSheet,
+//   Modal,
+//   Animated,
+//   KeyboardAvoidingView,
+//   Platform,
+//   Dimensions,
 // } from "react-native";
 
 // import React, { useState, useEffect, useRef } from "react";
@@ -20,17 +23,45 @@
 // import Swipeable from "react-native-gesture-handler/Swipeable";
 // import { GestureHandlerRootView } from "react-native-gesture-handler";
 // import { LinearGradient } from "expo-linear-gradient";
+// import * as DocumentPicker from "expo-document-picker";
+// import * as Crypto from "expo-crypto";
 // import Header from "@/components/Header";
 
 // const CLIENT_API_URL = `${process.env.BASE_API_URL}/api/projects`;
+// const CHAT_API_URL = `${process.env.BASE_API_URL}/api/chat/next`;
+// const { width } = Dimensions.get('window');
+
+// const CLOUDINARY_CONFIG = {
+//   cloudName: 'dmlsgazvr',
+//   apiKey: '353369352647425',
+//   apiSecret: '8qcz7uAdftDVFNd6IqaDOytg_HI',
+// };
 
 // export default function ClientMainPage({ navigation }) {
 //   const [dataList, setDataList] = useState([]);
 //   const [isLoading, setIsLoading] = useState(true);
 //   const [refreshing, setRefreshing] = useState(false);
 //   const [searchQuery, setSearchQuery] = useState("");
+//   const [modalVisible, setModalVisible] = useState(false);
+//   const [messages, setMessages] = useState([]);
+//   const [inputText, setInputText] = useState("");
+//   const [showWelcome, setShowWelcome] = useState(true);
+//   const [isTyping, setIsTyping] = useState(false);
+//   const [isUploading, setIsUploading] = useState(false);
+//   const [chatSessionId, setChatSessionId] = useState(null);
+
+//   const slideAnim = useRef(new Animated.Value(300)).current;
+//   const scaleAnim = useRef(new Animated.Value(0)).current;
+//   const scrollViewRef = useRef(null);
 
 //   const openSwipeRefs = useRef(new Map());
+
+//   // Quick action suggestions
+//  const quickActions = [
+//   { id: 1, icon: "home-outline", text: "Residential", color: "#0066FF" },
+//   { id: 2, icon: "business-outline", text: "Commercial", color: "#10B981" },
+// ];
+
 
 //   // ===============================
 //   // Fetch Data
@@ -151,6 +182,281 @@
 //   };
 
 //   // ===============================
+//   // AI Modal Handlers - ENHANCED
+//   // ===============================
+//   const openAIModal = () => {
+//     setModalVisible(true);
+//     setShowWelcome(true);
+//     setMessages([]);
+//     setChatSessionId(null);
+
+//     // Animate modal slide up
+//     Animated.timing(slideAnim, {
+//       toValue: 0,
+//       duration: 350,
+//       useNativeDriver: true,
+//     }).start();
+
+//     // Animate welcome content
+//     Animated.spring(scaleAnim, {
+//       toValue: 1,
+//       friction: 8,
+//       tension: 40,
+//       useNativeDriver: true,
+//     }).start(() => {
+//       // Start flow if opening
+//       sendMessage(null, true, null); // Pass explicit null to force new session
+//     });
+//   };
+
+//   const closeAIModal = () => {
+//     Animated.parallel([
+//       Animated.timing(slideAnim, {
+//         toValue: 300,
+//         duration: 250,
+//         useNativeDriver: true,
+//       }),
+//       Animated.timing(scaleAnim, {
+//         toValue: 0,
+//         duration: 200,
+//         useNativeDriver: true,
+//       }),
+//     ]).start(() => {
+//       setModalVisible(false);
+//       setShowWelcome(true);
+//       setMessages([]);
+//     });
+//   };
+
+//   const sendMessage = async (text, system = false, overrideSessionId = undefined) => {
+//     const textToSend = text || inputText.trim();
+//     if (!textToSend && !system) return;
+
+//     // Use override if provided (even if null), otherwise use state
+//     const currentSessionId = overrideSessionId !== undefined ? overrideSessionId : chatSessionId;
+
+//     if (!system) {
+//       setMessages((prev) => [
+//         ...prev,
+//         {
+//           text: textToSend,
+//           isUser: true,
+//           id: Date.now(),
+//           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+//         },
+//       ]);
+//       setInputText("");
+//       setShowWelcome(false);
+//     }
+
+//     setIsTyping(true);
+
+//     console.log("Sending chat message:", { message: system ? "__START__" : textToSend, sessionId: currentSessionId });
+
+//     try {
+//       const token = await AsyncStorage.getItem("userToken");
+//       const res = await fetch(CHAT_API_URL, {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//           Authorization: `Bearer ${token}`,
+//         },
+//         body: JSON.stringify({
+//           message: system ? "__START__" : textToSend,
+//           sessionId: currentSessionId,
+//         }),
+//       });
+
+//       console.log("Chat Response Status:", res.status);
+
+//       const data = await res.json();
+//       console.log("Chat Response Data:", data);
+//       setChatSessionId(data.sessionId);
+
+//       if (data.action === "PROPOSAL_READY") {
+//         console.log("Proposal Created (Full Details):", JSON.stringify(data, null, 2));
+//         setIsTyping(false);
+//         setModalVisible(false);
+
+//         // Construct a summary if details are present in the response
+//         // Assuming data.session or data.details contains the info. 
+//         // We look for top-level keys or a nested object.
+//         const details = data.session || data;
+
+//         let summary = data.botMessage;
+//         if (details) {
+//           const extraInfo = [
+//             details.category && `Category: ${details.category}`,
+//             details.projectTypeId && `Type ID: ${details.projectTypeId}`,
+//             details.landArea && `Land Area: ${details.landArea}`,
+//             details.hasPlan !== undefined && `Has Plan: ${details.hasPlan ? 'Yes' : 'No'}`,
+//             details.surveyChoice && `Survey: ${details.surveyChoice}`
+//           ].filter(Boolean).join('\n');
+
+//           if (extraInfo) {
+//             summary += `\n\nCaptured Details:\n${extraInfo}`;
+//           }
+//         }
+
+//         Alert.alert("Proposal Submitted", summary, [
+//           { text: "OK", onPress: () => onRefresh() }
+//         ]);
+//         return;
+//       }
+
+//       // Only show bot response if it's not a system initialization message
+//       if (!system) {
+//         setMessages((prev) => [
+//           ...prev,
+//           {
+//             text: data.botMessage,
+//             isUser: false,
+//             id: Date.now() + 1,
+//             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+//             options: data.options || [],
+//             cards: data.cards || [],
+//             inputType: data.inputType || null,
+//           },
+//         ]);
+
+//         // Scroll to bottom
+//         setTimeout(() => {
+//           scrollViewRef.current?.scrollToEnd({ animated: true });
+//         }, 100);
+//       }
+
+//     } catch (err) {
+//       console.error("Chat Error:", err);
+//       Alert.alert("Error", "Failed to connect to AI assistant");
+//     } finally {
+//       setIsTyping(false);
+//     }
+//   };
+
+//   const generateSignature = async (timestamp) => {
+//     const stringToSign = `timestamp=${timestamp}${CLOUDINARY_CONFIG.apiSecret}`;
+//     return await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA1, stringToSign);
+//   };
+
+//   const handleFileUpload = async () => {
+//     console.log("Starting File Upload Process...");
+//     try {
+//       const result = await DocumentPicker.getDocumentAsync({
+//         type: ["application/pdf", "image/*"],
+//         copyToCacheDirectory: true,
+//       });
+
+//       console.log("Document Picker Result:", result);
+
+//       if (result.canceled) {
+//         console.log("Document Picker Cancelled");
+//         return;
+//       }
+
+//       const file = result.assets[0];
+//       console.log("File Selected:", file);
+//       setIsUploading(true);
+
+//       const timestamp = Math.round(Date.now() / 1000);
+//       console.log("Generating Signature with timestamp:", timestamp);
+//       const signature = await generateSignature(timestamp);
+//       console.log("Signature Generated:", signature);
+
+//       const formData = new FormData();
+//       formData.append('file', {
+//         uri: file.uri,
+//         type: file.mimeType || 'application/octet-stream',
+//         name: file.name,
+//       });
+//       formData.append('timestamp', timestamp.toString());
+//       formData.append('signature', signature);
+//       formData.append('api_key', CLOUDINARY_CONFIG.apiKey);
+
+//       const uploadUrl = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/auto/upload`;
+//       console.log("Uploading to:", uploadUrl);
+
+//       const res = await fetch(uploadUrl, {
+//         method: 'POST',
+//         body: formData,
+//         headers: { 'Content-Type': 'multipart/form-data' },
+//       });
+
+//       console.log("Upload Response Status:", res.status);
+//       const responseText = await res.text();
+//       console.log("Upload Response Text:", responseText);
+
+//       const data = JSON.parse(responseText);
+
+//       if (data.secure_url) {
+//         console.log("Upload Success. URL:", data.secure_url);
+//         // Send the URL as the message
+//         sendMessage(data.secure_url);
+//       } else {
+//         console.error("Upload Failed Data:", data);
+//         Alert.alert("Upload Failed", "Could not upload file.");
+//       }
+
+//     } catch (err) {
+//       console.error("Upload Error:", err);
+//       Alert.alert("Error", "File upload failed: " + err.message);
+//     } finally {
+//       setIsUploading(false);
+//     }
+//   };
+
+//  const handleQuickAction = (actionText) => {
+//   sendMessage(actionText);
+// };
+
+
+
+
+//   // ===============================
+//   // Typing Indicator Component
+//   // ===============================
+//   const TypingIndicator = () => {
+//     const dot1 = useRef(new Animated.Value(0)).current;
+//     const dot2 = useRef(new Animated.Value(0)).current;
+//     const dot3 = useRef(new Animated.Value(0)).current;
+
+//     useEffect(() => {
+//       const animate = (dot, delay) => {
+//         Animated.loop(
+//           Animated.sequence([
+//             Animated.delay(delay),
+//             Animated.timing(dot, {
+//               toValue: -10,
+//               duration: 400,
+//               useNativeDriver: true,
+//             }),
+//             Animated.timing(dot, {
+//               toValue: 0,
+//               duration: 400,
+//               useNativeDriver: true,
+//             }),
+//           ])
+//         ).start();
+//       };
+
+//       animate(dot1, 0);
+//       animate(dot2, 200);
+//       animate(dot3, 400);
+//     }, []);
+
+//     return (
+//       <View style={styles.typingContainer}>
+//         <View style={styles.typingBubble}>
+//           <View style={styles.typingDots}>
+//             <Animated.View style={[styles.typingDot, { transform: [{ translateY: dot1 }] }]} />
+//             <Animated.View style={[styles.typingDot, { transform: [{ translateY: dot2 }] }]} />
+//             <Animated.View style={[styles.typingDot, { transform: [{ translateY: dot3 }] }]} />
+//           </View>
+//         </View>
+//       </View>
+//     );
+//   };
+
+//   // ===============================
 //   // Card Component
 //   // ===============================
 //   const Card = ({ item, index }) => {
@@ -168,12 +474,11 @@
 //           });
 //         }}
 //       >
-//         <TouchableOpacity 
+//         <TouchableOpacity
 //           style={styles.card}
 //           activeOpacity={0.7}
-//           onPress={() => navigation.navigate('Overview', { project: item })}  // Updated: Navigate to Overview with project data
+//           onPress={() => navigation.navigate('Overview', { project: item })}
 //         >
-//           {/* Card Header with Gradient */}
 //           <View style={styles.cardHeader}>
 //             <View style={styles.cardHeaderLeft}>
 //               <View style={styles.projectIconContainer}>
@@ -193,9 +498,7 @@
 //             </TouchableOpacity>
 //           </View>
 
-//           {/* Card Body */}
 //           <View style={styles.cardBody}>
-//             {/* Location */}
 //             <View style={styles.infoRow}>
 //               <View style={styles.infoIconContainer}>
 //                 <Ionicons name="location" size={18} color="#EF4444" />
@@ -208,10 +511,8 @@
 //               </View>
 //             </View>
 
-//             {/* Divider */}
 //             <View style={styles.divider} />
 
-//             {/* Status and Date Row */}
 //             <View style={styles.footerRow}>
 //               <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
 //                 <View style={[styles.statusDot, { backgroundColor: statusColors.dot }]} />
@@ -223,19 +524,18 @@
 //               <View style={styles.dateContainer}>
 //                 <Ionicons name="calendar-outline" size={14} color="#9CA3AF" />
 //                 <Text style={styles.dateText}>
-//                   {item.createdAt 
-//                     ? new Date(item.createdAt).toLocaleDateString('en-US', { 
-//                         month: 'short', 
-//                         day: 'numeric',
-//                         year: 'numeric'
-//                       })
+//                   {item.createdAt
+//                     ? new Date(item.createdAt).toLocaleDateString('en-US', {
+//                       month: 'short',
+//                       day: 'numeric',
+//                       year: 'numeric'
+//                     })
 //                     : 'No date'}
 //                 </Text>
 //               </View>
 //             </View>
 //           </View>
 
-//           {/* Card Accent Line */}
 //           <View style={[styles.cardAccent, { backgroundColor: statusColors.dot }]} />
 //         </TouchableOpacity>
 //       </Swipeable>
@@ -257,8 +557,6 @@
 //     <GestureHandlerRootView style={{ flex: 1 }}>
 //       <Header title="Welcome to SkyStruct" />
 
-
-
 //       <ScrollView
 //         style={styles.scrollView}
 //         contentContainerStyle={styles.scrollContent}
@@ -267,7 +565,7 @@
 //         }
 //         showsVerticalScrollIndicator={false}
 //       >
-//         {/* Search + Add Button */}
+//         {/* Search + Add Button + AI Button */}
 //         <View style={styles.searchContainer}>
 //           <View style={styles.searchBar}>
 //             <Ionicons name="search" size={20} color="#9CA3AF" />
@@ -287,6 +585,15 @@
 
 //           <TouchableOpacity style={styles.addButton} onPress={handleAddProject}>
 //             <Ionicons name="add" size={28} color="white" />
+//           </TouchableOpacity>
+
+//           <TouchableOpacity style={styles.aiButton} onPress={openAIModal}>
+//             <LinearGradient
+//               colors={["#10B981", "#059669"]}
+//               style={styles.aiButtonGradient}
+//             >
+//               <Ionicons name="sparkles" size={24} color="white" />
+//             </LinearGradient>
 //           </TouchableOpacity>
 //         </View>
 
@@ -312,8 +619,8 @@
 //               </View>
 //               <Text style={styles.emptyTitle}>No Projects Found</Text>
 //               <Text style={styles.emptySubtitle}>
-//                 {searchQuery 
-//                   ? "Try adjusting your search terms or clear the search to see all proposals" 
+//                 {searchQuery
+//                   ? "Try adjusting your search terms or clear the search to see all proposals"
 //                   : "Get started by creating your first proposal and begin managing your projects efficiently"}
 //               </Text>
 //               {!searchQuery && (
@@ -328,18 +635,294 @@
 
 //         <View style={{ height: 40 }} />
 //       </ScrollView>
-//     </GestureHandlerRootView>
+
+//       {/* ENHANCED AI Chat Modal */}
+//       <Modal
+//         visible={modalVisible}
+//         transparent={true}
+//         animationType="none"
+//         onRequestClose={closeAIModal}
+//       >
+//         <KeyboardAvoidingView
+//           style={styles.modalOverlay}
+//           behavior={Platform.OS === "ios" ? "padding" : "height"}
+//         >
+//           <Animated.View
+//             style={[
+//               styles.modalContainer,
+//               { transform: [{ translateY: slideAnim }] },
+//             ]}
+//           >
+//             {/* Enhanced Modal Header */}
+//             <LinearGradient
+//               colors={["#0066FF", "#3B82F6"]}
+//               start={{ x: 0, y: 0 }}
+//               end={{ x: 1, y: 0 }}
+//               style={styles.modalHeader}
+//             >
+//               <View style={styles.modalHeaderContent}>
+//                 <View style={styles.aiAvatarContainer}>
+//                   <LinearGradient
+//                     colors={["#10B981", "#059669"]}
+//                     style={styles.aiAvatar}
+//                   >
+//                     <Ionicons name="sparkles" size={24} color="white" />
+//                   </LinearGradient>
+//                 </View>
+//                 <View style={styles.modalHeaderText}>
+//                   <Text style={styles.modalTitle}>AI Assistant</Text>
+//                   <Text style={styles.modalSubtitle}>Building Construction Expert</Text>
+//                 </View>
+//               </View>
+//               <TouchableOpacity
+//                 style={styles.closeButton}
+//                 onPress={closeAIModal}
+//               >
+//                 <Ionicons name="close" size={24} color="#FFFFFF" />
+//               </TouchableOpacity>
+//             </LinearGradient>
+
+//             {/* Chat Messages */}
+//             <ScrollView
+//               ref={scrollViewRef}
+//               style={styles.chatContainer}
+//               contentContainerStyle={styles.chatContent}
+//               showsVerticalScrollIndicator={false}
+//             >
+//               {showWelcome ? (
+//                 <Animated.View
+//                   style={[
+//                     styles.welcomeContainer,
+//                     { transform: [{ scale: scaleAnim }] }
+//                   ]}
+//                 >
+//                   <LinearGradient
+//                     colors={["#F0F9FF", "#E0F2FE"]}
+//                     style={styles.welcomeGradient}
+//                   >
+//                     <View style={styles.welcomeIconContainer}>
+//                       <LinearGradient
+//                         colors={["#0066FF", "#3B82F6"]}
+//                         style={styles.welcomeIcon}
+//                       >
+//                         <Ionicons name="construct" size={32} color="white" />
+//                       </LinearGradient>
+//                     </View>
+
+//                     <Text style={styles.welcomeTitle}>
+//                       Welcome to AI Building Assistant! 🏗️
+//                     </Text>
+//                     <Text style={styles.welcomeMessage}>
+//                       I'm here to help you with construction planning, cost estimation, material selection, and project management.
+//                     </Text>
+
+//                     {/* Quick Actions */}
+//                     <View style={styles.quickActionsContainer}>
+//                       <Text style={styles.quickActionsTitle}>Quick Actions</Text>
+//                       <View style={styles.quickActionsGrid}>
+//                         {quickActions.map((action) => (
+//                           <TouchableOpacity
+//                             key={action.id}
+//                             style={styles.quickActionCard}
+//                             onPress={() => handleQuickAction(action.text)}
+//                             activeOpacity={0.7}
+//                           >
+//                             <LinearGradient
+//                               colors={[action.color, action.color + "CC"]}
+//                               style={styles.quickActionIconContainer}
+//                             >
+//                               <Ionicons name={action.icon} size={22} color="white" />
+//                             </LinearGradient>
+//                             <Text style={styles.quickActionText}>{action.text}</Text>
+//                           </TouchableOpacity>
+//                         ))}
+//                       </View>
+//                     </View>
+//                   </LinearGradient>
+//                 </Animated.View>
+//               ) : (
+//                 <>
+//                   {messages.map((msg, index) => (
+//                     <View key={msg.id} style={{ marginBottom: 16 }}>
+
+//                       {/* Message Bubble + Avatar Row */}
+//                       <View style={[
+//                         styles.messageWrapper,
+//                         msg.isUser ? styles.userMessageWrapper : styles.aiMessageWrapper,
+//                         { marginBottom: (msg.options?.length > 0 || msg.cards?.length > 0) ? 4 : 0 }
+//                       ]}>
+//                         {!msg.isUser && (
+//                           <View style={styles.aiMessageAvatar}>
+//                             <LinearGradient
+//                               colors={["#10B981", "#059669"]}
+//                               style={styles.messageAvatar}
+//                             >
+//                               <Ionicons name="sparkles" size={16} color="white" />
+//                             </LinearGradient>
+//                           </View>
+//                         )}
+
+//                         <View style={styles.messageContent}>
+//                           <View
+//                             style={[
+//                               styles.messageBubble,
+//                               msg.isUser ? styles.userMessage : styles.aiMessage,
+//                             ]}
+//                           >
+//                             <Text style={[
+//                               styles.messageText,
+//                               msg.isUser ? styles.userMessageText : styles.aiMessageText
+//                             ]}>
+//                               {msg.text}
+//                             </Text>
+//                           </View>
+//                           <Text style={[
+//                             styles.messageTime,
+//                             msg.isUser ? styles.userMessageTime : styles.aiMessageTime
+//                           ]}>
+//                             {msg.timestamp}
+//                           </Text>
+//                         </View>
+
+//                         {msg.isUser && (
+//                           <View style={styles.userMessageAvatar}>
+//                             <View style={styles.messageAvatar}>
+//                               <Ionicons name="person" size={16} color="#0066FF" />
+//                             </View>
+//                           </View>
+//                         )}
+//                       </View>
+
+//                       {/* Options & Cards Container */}
+//                       {!msg.isUser && (
+//                         <View style={{ marginLeft: 42 }}>
+//                           {msg.options?.length > 0 && (
+//                             <View style={styles.optionRow}>
+//                               {msg.options.map((opt, i) => (
+//                                 <TouchableOpacity
+//                                   key={opt.value + i}
+//                                   style={styles.optionBtn}
+//                                   onPress={() => sendMessage(opt.value)}
+//                                 >
+//                                   <Text style={{ color: "#2563EB", fontWeight: "600" }}>
+//                                     {opt.label}
+//                                   </Text>
+//                                 </TouchableOpacity>
+//                               ))}
+//                             </View>
+//                           )}
+
+//                           {msg.cards?.length > 0 && (
+//                             <ScrollView
+//                               horizontal
+//                               showsHorizontalScrollIndicator={false}
+//                               contentContainerStyle={{ paddingVertical: 5 }}
+//                               style={{ marginTop: 8 }}
+//                             >
+//                               {msg.cards.map((c) => (
+//                                 <TouchableOpacity
+//                                   key={c.id}
+//                                   style={styles.templateCard}
+//                                   onPress={() => sendMessage(c.id)}
+//                                 >
+//                                   <Text style={{ fontWeight: "700", marginBottom: 4 }}>{c.title}</Text>
+//                                   <Text style={{ fontSize: 12, color: "#4B5563", marginBottom: 2 }}>Size: {c.landArea}</Text>
+//                                   <Text style={{ fontSize: 12, color: "#10B981", fontWeight: "600" }}>{c.budget}</Text>
+//                                 </TouchableOpacity>
+//                               ))}
+//                             </ScrollView>
+//                           )}
+//                         </View>
+//                       )}
+
+//                     </View>
+//                   ))}
+
+//                   {isTyping && <TypingIndicator />}
+//                 </>
+//               )}
+//             </ScrollView>
+
+//             {/* Enhanced Input Container */}
+//             <View style={styles.inputWrapper}>
+//               {/* Check if last message expects a file input */}
+//               {messages.length > 0 && !messages[messages.length - 1].isUser && messages[messages.length - 1].inputType === 'file' ? (
+//                 <TouchableOpacity
+//                   style={styles.uploadButton}
+//                   onPress={handleFileUpload}
+//                   disabled={isUploading}
+//                 >
+//                   {isUploading ? (
+//                     <ActivityIndicator color="#fff" />
+//                   ) : (
+//                     <>
+//                       <Ionicons name="cloud-upload-outline" size={20} color="#fff" />
+//                       <Text style={styles.uploadButtonText}>Upload Document (PDF/Image)</Text>
+//                     </>
+//                   )}
+//                 </TouchableOpacity>
+//               ) : (
+//                 <>
+//                   <View style={styles.inputContainer}>
+//                     <TouchableOpacity style={styles.attachButton}>
+//                       <Ionicons name="add-circle-outline" size={24} color="#6B7280" />
+//                     </TouchableOpacity>
+
+//                     <TextInput
+//                       style={styles.chatInput}
+//                       placeholder="Type your message..."
+//                       placeholderTextColor="#9CA3AF"
+//                       value={inputText}
+//                       onChangeText={setInputText}
+//                       multiline={messages.length > 0 && !messages[messages.length - 1].isUser && ['number', 'phone', 'email'].includes(messages[messages.length - 1].inputType) ? false : true}
+//                       maxLength={500}
+//                       keyboardType={(() => {
+//                         const lastMsg = messages.length > 0 ? messages[messages.length - 1] : null;
+//                         if (lastMsg && !lastMsg.isUser) {
+//                           if (lastMsg.inputType === 'number') return 'numeric';
+//                           if (lastMsg.inputType === 'phone') return 'phone-pad';
+//                           if (lastMsg.inputType === 'email') return 'email-address';
+//                         }
+//                         return 'default';
+//                       })()}
+//                     />
+
+//                     <TouchableOpacity
+//                       style={[styles.sendButton, !inputText.trim() && styles.sendButtonDisabled]}
+//                       onPress={() => sendMessage()}
+//                       disabled={!inputText.trim()}
+//                     >
+//                       <LinearGradient
+//                         colors={inputText.trim() ? ["#0066FF", "#3B82F6"] : ["#E5E7EB", "#D1D5DB"]}
+//                         style={styles.sendButtonGradient}
+//                       >
+//                         <Ionicons
+//                           name="send"
+//                           size={20}
+//                           color={inputText.trim() ? "white" : "#9CA3AF"}
+//                         />
+//                       </LinearGradient>
+//                     </TouchableOpacity>
+//                   </View>
+
+//                   <View style={styles.inputFooter}>
+//                     <View style={styles.inputFooterLeft}>
+//                       <Ionicons name="shield-checkmark" size={12} color="#10B981" />
+//                       <Text style={styles.inputFooterText}>Secure & Private</Text>
+//                     </View>
+//                     <Text style={styles.characterCount}>{inputText.length}/500</Text>
+//                   </View>
+//                 </>)}
+//             </View>
+//           </Animated.View>
+//         </KeyboardAvoidingView>
+//       </Modal>
+//     </GestureHandlerRootView >
 //   );
 // }
 
 // // ===============================
-// // Styles
-// // ===============================
-// // (Styles remain the same, omitted for brevity)
-
-
-// // ===============================
-// // Styles
+// // ENHANCED STYLES
 // // ===============================
 // const styles = StyleSheet.create({
 //   loading: {
@@ -369,54 +952,6 @@
 //     paddingBottom: 20,
 //   },
 
-//   // Stats Container
-//   statsContainer: {
-//     flexDirection: "row",
-//     paddingHorizontal: 16,
-//     paddingTop: 16,
-//     paddingBottom: 8,
-//     gap: 12,
-//     backgroundColor: "#F9FAFB",
-//   },
-
-//   statCard: {
-//     flex: 1,
-//     flexDirection: "row",
-//     alignItems: "center",
-//     backgroundColor: "white",
-//     padding: 14,
-//     borderRadius: 12,
-//     gap: 12,
-//     borderWidth: 1,
-//     borderColor: "#F3F4F6",
-//   },
-
-//   statIconContainer: {
-//     width: 44,
-//     height: 44,
-//     borderRadius: 12,
-//     backgroundColor: "#EFF6FF",
-//     justifyContent: "center",
-//     alignItems: "center",
-//   },
-
-//   statContent: {
-//     flex: 1,
-//   },
-
-//   statValue: {
-//     fontSize: 22,
-//     fontWeight: "700",
-//     color: "#111827",
-//     marginBottom: 2,
-//   },
-
-//   statLabel: {
-//     fontSize: 12,
-//     color: "#6B7280",
-//     fontWeight: "500",
-//   },
-
 //   // Search Container
 //   searchContainer: {
 //     flexDirection: "row",
@@ -440,8 +975,8 @@
 //     borderColor: "#E5E7EB",
 //   },
 
-//   searchInput: { 
-//     marginLeft: 10, 
+//   searchInput: {
+//     marginLeft: 10,
 //     flex: 1,
 //     fontSize: 15,
 //     color: "#111827",
@@ -452,6 +987,20 @@
 //     height: 54,
 //     borderRadius: 12,
 //     backgroundColor: "#0066FF",
+//     justifyContent: "center",
+//     alignItems: "center",
+//   },
+
+//   aiButton: {
+//     width: 54,
+//     height: 54,
+//     borderRadius: 12,
+//     overflow: "hidden",
+//   },
+
+//   aiButtonGradient: {
+//     width: "100%",
+//     height: "100%",
 //     justifyContent: "center",
 //     alignItems: "center",
 //   },
@@ -481,7 +1030,8 @@
 //     overflow: "hidden",
 //     borderWidth: 1,
 //     borderColor: "#F3F4F6",
-//     borderLeftColor:"#0066FF",
+//     borderLeftWidth: 4,
+//     borderLeftColor: "#0066FF",
 //   },
 
 //   cardAccent: {
@@ -490,7 +1040,6 @@
 //     top: 0,
 //     bottom: 0,
 //     width: 4,
-//     // backgroundColor: "#0066FF",
 //   },
 
 //   cardHeader: {
@@ -646,15 +1195,15 @@
 //     gap: 6,
 //   },
 
-//   deleteText: { 
-//     color: "#fff", 
+//   deleteText: {
+//     color: "#fff",
 //     fontSize: 13,
 //     fontWeight: "700",
 //   },
 
 //   // Empty State
-//   empty: { 
-//     alignItems: "center", 
+//   empty: {
+//     alignItems: "center",
 //     paddingVertical: 60,
 //     paddingHorizontal: 32,
 //   },
@@ -699,12 +1248,455 @@
 //     color: "#FFFFFF",
 //     fontWeight: "700",
 //   },
+
+//   // ===============================
+//   // ENHANCED AI MODAL STYLES
+//   // ===============================
+//   modalOverlay: {
+//     flex: 1,
+//     justifyContent: "flex-end",
+//     backgroundColor: "rgba(0,0,0,0.5)",
+//   },
+
+//   modalContainer: {
+//     backgroundColor: "#FFFFFF",
+//     borderTopLeftRadius: 28,
+//     borderTopRightRadius: 28,
+//     height: "85%",
+//     shadowColor: "#000",
+//     shadowOffset: { width: 0, height: -4 },
+//     shadowOpacity: 0.15,
+//     shadowRadius: 12,
+//     elevation: 20,
+//   },
+
+//   modalHeader: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     justifyContent: "space-between",
+//     paddingHorizontal: 20,
+//     paddingTop: 20,
+//     paddingBottom: 20,
+//     // borderBottomLeftRadius: 20,
+//     // borderBottomRightRadius: 20,
+//     borderTopLeftRadius: 28,
+//     borderTopRightRadius: 28,
+//   },
+
+//   modalHeaderContent: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     gap: 14,
+//   },
+
+//   aiAvatarContainer: {
+//     shadowColor: "#000",
+//     shadowOffset: { width: 0, height: 2 },
+//     shadowOpacity: 0.15,
+//     shadowRadius: 6,
+//   },
+
+//   aiAvatar: {
+//     width: 48,
+//     height: 48,
+//     borderRadius: 24,
+//     justifyContent: "center",
+//     alignItems: "center",
+//     borderWidth: 3,
+//     borderColor: "rgba(255,255,255,0.3)",
+//   },
+
+//   modalHeaderText: {
+//     gap: 2,
+//   },
+
+//   modalTitle: {
+//     fontSize: 19,
+//     fontWeight: "700",
+//     color: "#FFFFFF",
+//   },
+
+//   modalSubtitle: {
+//     fontSize: 13,
+//     color: "rgba(255,255,255,0.85)",
+//     fontWeight: "500",
+//   },
+
+//   closeButton: {
+//     width: 36,
+//     height: 36,
+//     borderRadius: 18,
+//     backgroundColor: "rgba(255,255,255,0.2)",
+//     justifyContent: "center",
+//     alignItems: "center",
+//   },
+
+//   chatContainer: {
+//     flex: 1,
+//     backgroundColor: "#F9FAFB",
+//   },
+
+//   chatContent: {
+//     padding: 20,
+//     paddingBottom: 10,
+//   },
+
+//   // Welcome Screen
+//   welcomeContainer: {
+//     alignItems: "center",
+//   },
+
+//   welcomeGradient: {
+//     width: "100%",
+//     padding: 28,
+//     borderRadius: 20,
+//     alignItems: "center",
+//     borderWidth: 1,
+//     borderColor: "#E0F2FE",
+//   },
+
+//   welcomeIconContainer: {
+//     marginBottom: 20,
+//     shadowColor: "#0066FF",
+//     shadowOffset: { width: 0, height: 4 },
+//     shadowOpacity: 0.3,
+//     shadowRadius: 8,
+//   },
+
+//   welcomeIcon: {
+//     width: 72,
+//     height: 72,
+//     borderRadius: 36,
+//     justifyContent: "center",
+//     alignItems: "center",
+//     borderWidth: 4,
+//     borderColor: "rgba(255,255,255,0.5)",
+//   },
+
+//   welcomeTitle: {
+//     fontSize: 22,
+//     fontWeight: "700",
+//     color: "#111827",
+//     textAlign: "center",
+//     marginBottom: 12,
+//   },
+
+//   welcomeMessage: {
+//     fontSize: 15,
+//     color: "#6B7280",
+//     textAlign: "center",
+//     lineHeight: 22,
+//     marginBottom: 28,
+//   },
+
+//   quickActionsContainer: {
+//     width: "100%",
+//     marginTop: 8,
+//   },
+
+//   quickActionsTitle: {
+//     fontSize: 14,
+//     fontWeight: "700",
+//     color: "#111827",
+//     marginBottom: 16,
+//     textAlign: "center",
+//   },
+
+//   quickActionsGrid: {
+//     flexDirection: "row",
+//     flexWrap: "wrap",
+//     gap: 12,
+//     justifyContent: "center",
+//   },
+
+//   quickActionCard: {
+//     width: (width - 80) / 3,
+//     backgroundColor: "white",
+//     padding: 12, // Reduced padding
+//     borderRadius: 14,
+//     alignItems: "center",
+//     gap: 8, // Reduced gap
+//     borderWidth: 1,
+//     borderColor: "#E5E7EB",
+//     shadowColor: "#000",
+//     shadowOffset: { width: 0, height: 2 },
+//     shadowOpacity: 0.05,
+//     shadowRadius: 4,
+//     elevation: 2,
+//   },
+
+//   quickActionIconContainer: {
+//     width: 48,
+//     height: 48,
+//     borderRadius: 24,
+//     justifyContent: "center",
+//     alignItems: "center",
+//   },
+
+//   quickActionText: {
+//     fontSize: 13,
+//     fontWeight: "600",
+//     color: "#374151",
+//     textAlign: "center",
+//   },
+
+//   // Messages
+//   messageWrapper: {
+//     flexDirection: "row",
+//     marginBottom: 16,
+//     gap: 10,
+//   },
+
+//   userMessageWrapper: {
+//     justifyContent: "flex-end",
+//   },
+
+//   aiMessageWrapper: {
+//     justifyContent: "flex-start",
+//   },
+
+//   messageContent: {
+//     maxWidth: "75%",
+//     gap: 4,
+//   },
+
+//   messageBubble: {
+//     padding: 14,
+//     borderRadius: 18,
+//     shadowColor: "#000",
+//     shadowOffset: { width: 0, height: 1 },
+//     shadowOpacity: 0.05,
+//     shadowRadius: 3,
+//     elevation: 1,
+//   },
+
+//   userMessage: {
+//     backgroundColor: "#0066FF",
+//     borderTopRightRadius: 4,
+//   },
+
+//   aiMessage: {
+//     backgroundColor: "#FFFFFF",
+//     borderTopLeftRadius: 4,
+//     borderWidth: 1,
+//     borderColor: "#E5E7EB",
+//   },
+
+//   messageText: {
+//     fontSize: 15,
+//     lineHeight: 21,
+//   },
+
+//   userMessageText: {
+//     color: "#FFFFFF",
+//   },
+
+//   aiMessageText: {
+//     color: "#111827",
+//   },
+
+//   messageTime: {
+//     fontSize: 11,
+//     fontWeight: "500",
+//   },
+
+//   userMessageTime: {
+//     color: "#9CA3AF",
+//     textAlign: "right",
+//   },
+
+//   aiMessageTime: {
+//     color: "#9CA3AF",
+//     textAlign: "left",
+//   },
+
+//   messageAvatar: {
+//     width: 32,
+//     height: 32,
+//     borderRadius: 16,
+//     justifyContent: "center",
+//     alignItems: "center",
+//     backgroundColor: "#EFF6FF",
+//   },
+
+//   aiMessageAvatar: {
+//     shadowColor: "#10B981",
+//     shadowOffset: { width: 0, height: 1 },
+//     shadowOpacity: 0.15,
+//     shadowRadius: 3,
+//   },
+
+//   userMessageAvatar: {
+//     shadowColor: "#0066FF",
+//     shadowOffset: { width: 0, height: 1 },
+//     shadowOpacity: 0.15,
+//     shadowRadius: 3,
+//   },
+
+//   // Typing Indicator
+//   typingContainer: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     marginBottom: 16,
+//     gap: 10,
+//   },
+
+//   typingBubble: {
+//     backgroundColor: "#FFFFFF",
+//     borderRadius: 18,
+//     borderTopLeftRadius: 4,
+//     padding: 16,
+//     paddingVertical: 14,
+//     borderWidth: 1,
+//     borderColor: "#E5E7EB",
+//   },
+
+//   typingDots: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     gap: 6,
+//   },
+
+//   typingDot: {
+//     width: 8,
+//     height: 8,
+//     borderRadius: 4,
+//     backgroundColor: "#9CA3AF",
+//   },
+
+//   // Input Container
+//   inputWrapper: {
+//     backgroundColor: "#FFFFFF",
+//     paddingTop: 12,
+//     paddingBottom: Platform.OS === "ios" ? 24 : 12,
+//     paddingHorizontal: 16,
+//     borderTopWidth: 1,
+//     borderTopColor: "#E5E7EB",
+//   },
+
+//   inputContainer: {
+//     flexDirection: "row",
+//     alignItems: "flex-end",
+//     gap: 10,
+//     backgroundColor: "#F9FAFB",
+//     borderRadius: 24,
+//     paddingHorizontal: 8,
+//     paddingVertical: 8,
+//     borderWidth: 1,
+//     borderColor: "#E5E7EB",
+//   },
+
+//   attachButton: {
+//     width: 36,
+//     height: 36,
+//     borderRadius: 18,
+//     justifyContent: "center",
+//     alignItems: "center",
+//   },
+
+//   chatInput: {
+//     flex: 1,
+//     fontSize: 15,
+//     color: "#111827",
+//     maxHeight: 100,
+//     paddingVertical: 8,
+//     paddingHorizontal: 4,
+//   },
+
+//   uploadButton: {
+//     backgroundColor: "#0066FF",
+//     flexDirection: "row",
+//     alignItems: "center",
+//     justifyContent: "center",
+//     paddingVertical: 14,
+//     borderRadius: 12,
+//     gap: 8,
+//     marginHorizontal: 4,
+//   },
+
+//   uploadButtonText: {
+//     color: "#FFFFFF",
+//     fontSize: 15,
+//     fontWeight: "600",
+//   },
+
+//   sendButton: {
+//     width: 40,
+//     height: 40,
+//     borderRadius: 20,
+//     overflow: "hidden",
+//   },
+
+//   sendButtonDisabled: {
+//     opacity: 0.5,
+//   },
+
+//   sendButtonGradient: {
+//     width: "100%",
+//     height: "100%",
+//     justifyContent: "center",
+//     alignItems: "center",
+//   },
+
+//   inputFooter: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     justifyContent: "space-between",
+//     marginTop: 8,
+//     paddingHorizontal: 4,
+//   },
+
+//   inputFooterLeft: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     gap: 6,
+//   },
+
+//   inputFooterText: {
+//     fontSize: 11,
+//     color: "#10B981",
+//     fontWeight: "600",
+//   },
+
+//   characterCount: {
+//     fontSize: 11,
+//     color: "#9CA3AF",
+//     fontWeight: "500",
+//   },
+
+//   optionRow: {
+//     flexDirection: "row",
+//     flexWrap: "wrap",
+//     gap: 8,
+//     marginTop: 8,
+//     marginLeft: 42, // align with bubble
+//   },
+
+//   optionBtn: {
+//     paddingHorizontal: 14,
+//     paddingVertical: 10,
+//     borderRadius: 10,
+//     backgroundColor: "#EFF6FF",
+//     borderWidth: 1,
+//     borderColor: "#BFDBFE",
+//   },
+
+//   templateCard: {
+//     width: 200,
+//     padding: 14,
+//     backgroundColor: "#fff",
+//     borderRadius: 14,
+//     marginRight: 12,
+//     borderWidth: 1,
+//     borderColor: "#E5E7EB",
+//     shadowColor: "#000",
+//     shadowOffset: { width: 0, height: 1 },
+//     shadowOpacity: 0.05,
+//     shadowRadius: 2,
+//     elevation: 2,
+//     marginTop: 8,
+//   },
 // });
-
-
-
-
-
 
 
 import {
@@ -731,10 +1723,19 @@ import { Ionicons } from "@expo/vector-icons";
 import Swipeable from "react-native-gesture-handler/Swipeable";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { LinearGradient } from "expo-linear-gradient";
+import * as DocumentPicker from "expo-document-picker";
+import * as Crypto from "expo-crypto";
 import Header from "@/components/Header";
 
 const CLIENT_API_URL = `${process.env.BASE_API_URL}/api/projects`;
+const CHAT_API_URL = `${process.env.BASE_API_URL}/api/chat/next`;
 const { width } = Dimensions.get('window');
+
+const CLOUDINARY_CONFIG = {
+  cloudName: 'dmlsgazvr',
+  apiKey: '353369352647425',
+  apiSecret: '8qcz7uAdftDVFNd6IqaDOytg_HI',
+};
 
 export default function ClientMainPage({ navigation }) {
   const [dataList, setDataList] = useState([]);
@@ -746,6 +1747,11 @@ export default function ClientMainPage({ navigation }) {
   const [inputText, setInputText] = useState("");
   const [showWelcome, setShowWelcome] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [chatSessionId, setChatSessionId] = useState(null);
+  const [showSubmitButton, setShowSubmitButton] = useState(false);
+  const [proposalData, setProposalData] = useState(null);
+
   const slideAnim = useRef(new Animated.Value(300)).current;
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const scrollViewRef = useRef(null);
@@ -754,10 +1760,8 @@ export default function ClientMainPage({ navigation }) {
 
   // Quick action suggestions
   const quickActions = [
-    { id: 1, icon: "home-outline", text: "Residential Building", color: "#0066FF" },
-    { id: 2, icon: "business-outline", text: "Commercial Project", color: "#10B981" },
-    { id: 3, icon: "construct-outline", text: "Renovation Work", color: "#F59E0B" },
-    { id: 4, icon: "document-text-outline", text: "Cost Estimate", color: "#8B5CF6" },
+    { id: 1, icon: "home-outline", text: "Residential", color: "#0066FF" },
+    { id: 2, icon: "business-outline", text: "Commercial", color: "#10B981" },
   ];
 
   // ===============================
@@ -885,6 +1889,9 @@ export default function ClientMainPage({ navigation }) {
     setModalVisible(true);
     setShowWelcome(true);
     setMessages([]);
+    setChatSessionId(null);
+    setShowSubmitButton(false);
+    setProposalData(null);
 
     // Animate modal slide up
     Animated.timing(slideAnim, {
@@ -899,7 +1906,10 @@ export default function ClientMainPage({ navigation }) {
       friction: 8,
       tension: 40,
       useNativeDriver: true,
-    }).start();
+    }).start(() => {
+      // Start flow if opening
+      sendMessage(null, true, null); // Pass explicit null to force new session
+    });
   };
 
   const closeAIModal = () => {
@@ -918,73 +1928,393 @@ export default function ClientMainPage({ navigation }) {
       setModalVisible(false);
       setShowWelcome(true);
       setMessages([]);
+      setShowSubmitButton(false);
+      setProposalData(null);
     });
   };
 
-  const sendMessage = async (messageText = null) => {
-    const textToSend = messageText || inputText.trim();
-    if (!textToSend) return;
+  const sendMessage = async (text, system = false, overrideSessionId = undefined) => {
+    const textToSend = text || inputText.trim();
+    if (!textToSend && !system) return;
 
-    const userMessage = {
-      text: textToSend,
-      isUser: true,
-      id: Date.now(),
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
+    const currentSessionId = overrideSessionId !== undefined ? overrideSessionId : chatSessionId;
 
-    setMessages((prev) => [...prev, userMessage]);
-    setInputText("");
-    setShowWelcome(false);
+    if (!system) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          text: textToSend,
+          isUser: true,
+          id: Date.now(),
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        },
+      ]);
+      setInputText("");
+      setShowWelcome(false);
+    }
+
     setIsTyping(true);
 
-    // Scroll to bottom
-    setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({ animated: true });
-    }, 100);
+    console.log("Sending chat message:", { message: system ? "__START__" : textToSend, sessionId: currentSessionId });
 
-    // Simulate AI response
-    const aiResponse = await simulateAIResponse(textToSend);
-    setIsTyping(false);
+    try {
+      const token = await AsyncStorage.getItem("userToken");
+      const res = await fetch(CHAT_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          message: system ? "__START__" : textToSend,
+          sessionId: currentSessionId,
+        }),
+      });
 
-    const aiMessage = {
-      text: aiResponse,
-      isUser: false,
-      id: Date.now() + 1,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
+      console.log("Chat Response Status:", res.status);
 
-    setMessages((prev) => [...prev, aiMessage]);
+      const data = await res.json();
+      console.log("Chat Response Data:", data);
+      setChatSessionId(data.sessionId);
 
-    // Scroll to bottom again
-    setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({ animated: true });
-    }, 100);
+      if (data.action === "PROPOSAL_READY") {
+        console.log("Proposal Ready - All details collected!");
+        
+        // Store proposal data
+        setProposalData(data);
+        
+        // Show success message and submit button
+        setMessages((prev) => [
+          ...prev,
+          {
+            text: "🎉 All details collected! Review and submit your proposal.",
+            isUser: false,
+            id: Date.now() + 1,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          },
+        ]);
+        
+        // Show the submit button
+        setShowSubmitButton(true);
+        setIsTyping(false);
+        return;
+      }
+
+      // Only show bot response if it's not a system initialization message
+      if (!system) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            text: data.botMessage,
+            isUser: false,
+            id: Date.now() + 1,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            options: data.options || [],
+            cards: data.cards || [],
+            inputType: data.inputType || null,
+          },
+        ]);
+
+        // Scroll to bottom
+        setTimeout(() => {
+          scrollViewRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      }
+
+    } catch (err) {
+      console.error("Chat Error:", err);
+      Alert.alert("Error", "Failed to connect to AI assistant");
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+  // ===============================
+  // Handle Proposal Submission
+  // ===============================
+  const handleSubmitProposal = async () => {
+    console.log("=== PROPOSAL SUBMISSION DATA ===");
+    console.log("Session ID:", chatSessionId);
+    console.log("Complete Proposal Data:", proposalData);
+     console.log("this isme ", JSON.stringify(proposalData , null, 2))
+const userData = JSON.parse(await AsyncStorage.getItem("userData"));
+    const payload = {
+      name:proposalData.proposalData.projectName,
+      location : proposalData.proposalData.projectLocation,
+      projectImage : proposalData.proposalData.projectTypeDetails?.image || "",
+      projectType : proposalData.proposalData.projectTypeDetails?._id || null,
+      needNewSiteSurvey: proposalData.proposalData.surveyType=="TEMPLATE_SURVEY"? false:true,
+      projectDocuments:proposalData.proposalData.supportingDocumentUrls,
+      clientName:userData.name,
+      clientEmail:userData.email,
+      plans:proposalData.proposalData.plans,
+      category:proposalData.proposalData.category,
+
+      landArea:proposalData.proposalData.landArea,
+      clientPhone:proposalData.proposalData.mobileNumber,
+      description:  proposalData.proposalData.customRequirements || proposalData.proposalData.projectTypeDetails.description || '',
+ status: "Proposal Under Approval",
+    }
+
+if(proposalData.proposalData.projectTypeDetails == null){
+  payload.budget=proposalData.proposalData.budget;
+}
+
+   try {
+  const token = await AsyncStorage.getItem('userToken');
+  console.log("token",token);
+    const response = await fetch(`${process.env.BASE_API_URL}/api/projects`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` 
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+    console.log("==== API RESPONSE ====");
+    console.log(data);
+
+    if (response.ok) {
+      Alert.alert("Success", "Proposal submitted successfully!");
+      //navigation.navigate("ViewCustomerProposal", { payload: data });
+      navigation.navigate("ClientTabs");
+    } else {
+      Alert.alert("Error", data.message || "Something went wrong.");
+    }
+
+  } catch (error) {
+    console.log("API ERROR:", error);
+    Alert.alert("Network Error", "Unable to submit proposal.");
+  }
+    
+    // Extract and log all collected data from messages
+    console.log("\n=== DETAILED CHAT CONVERSATION ===");
+    messages.forEach((msg, index) => {
+      const prefix = msg.isUser ? "👤 User" : "🤖 Bot";
+      console.log(`${index + 1}. ${prefix}: ${msg.text}`);
+      
+      // Log additional data from bot responses
+      if (!msg.isUser) {
+        if (msg.options && msg.options.length > 0) {
+          console.log(`   Options offered: ${msg.options.map(o => o.label).join(', ')}`);
+        }
+        if (msg.inputType) {
+          console.log(`   Input type expected: ${msg.inputType}`);
+        }
+      }
+    });
+    
+    console.log("\n=== FINAL PROPOSAL SUMMARY ===");
+    if (proposalData) {
+      console.log("Bot Message:", proposalData.botMessage);
+      console.log("Session ID:", proposalData.sessionId);
+      console.log("Action:", proposalData.action);
+    }
+    
+    console.log("====================================\n");
+    
+    // Show success message
+    Alert.alert(
+      "Proposal Submitted Successfully!",
+      "Your proposal has been submitted. All data has been logged to console.",
+      [
+        {
+          text: "OK",
+          onPress: () => {
+            // Close the modal
+            closeAIModal();
+            // Refresh the data
+            onRefresh();
+          }
+        }
+      ]
+    );
+  };
+
+  const generateSignature = async (timestamp) => {
+    const stringToSign = `timestamp=${timestamp}${CLOUDINARY_CONFIG.apiSecret}`;
+    return await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA1, stringToSign);
+  };
+
+  const handleFileUpload = async () => {
+    console.log("Starting File Upload Process...");
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ["application/pdf", "image/*"],
+        copyToCacheDirectory: true,
+      });
+
+      console.log("Document Picker Result:", result);
+
+      if (result.canceled) {
+        console.log("Document Picker Cancelled");
+        return;
+      }
+
+      const file = result.assets[0];
+      console.log("File Selected:", file);
+      setIsUploading(true);
+
+      const timestamp = Math.round(Date.now() / 1000);
+      console.log("Generating Signature with timestamp:", timestamp);
+      const signature = await generateSignature(timestamp);
+      console.log("Signature Generated:", signature);
+
+      const formData = new FormData();
+      formData.append('file', {
+        uri: file.uri,
+        type: file.mimeType || 'application/octet-stream',
+        name: file.name,
+      });
+      formData.append('timestamp', timestamp.toString());
+      formData.append('signature', signature);
+      formData.append('api_key', CLOUDINARY_CONFIG.apiKey);
+
+      const uploadUrl = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/auto/upload`;
+      console.log("Uploading to:", uploadUrl);
+
+      const res = await fetch(uploadUrl, {
+        method: 'POST',
+        body: formData,
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      console.log("Upload Response Status:", res.status);
+      const responseText = await res.text();
+      console.log("Upload Response Text:", responseText);
+
+      const data = JSON.parse(responseText);
+
+      if (data.secure_url) {
+        console.log("Upload Success. URL:", data.secure_url);
+        // Send the URL as the message
+        sendMessage(data.secure_url);
+      } else {
+        console.error("Upload Failed Data:", data);
+        Alert.alert("Upload Failed", "Could not upload file.");
+      }
+
+    } catch (err) {
+      console.error("Upload Error:", err);
+      Alert.alert("Error", "File upload failed: " + err.message);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleQuickAction = (actionText) => {
     sendMessage(actionText);
   };
 
-  const simulateAIResponse = (userInput) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const input = userInput.toLowerCase();
+  // ===============================
+  // Render Input Section
+  // ===============================
+  const renderInputSection = () => {
+    // If we should show submit button
+    if (showSubmitButton) {
+      return (
+        <View style={styles.submitSection}>
+          <TouchableOpacity 
+            style={styles.submitButton}
+            onPress={handleSubmitProposal}
+          >
+            <LinearGradient
+              colors={["#10B981", "#059669"]}
+              style={styles.submitButtonGradient}
+            >
+              <Ionicons name="checkmark-circle" size={24} color="white" />
+              <Text style={styles.submitButtonText}>Submit Proposal</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.editButton}
+            onPress={() => {
+              // Optionally, allow user to go back and edit
+              setShowSubmitButton(false);
+              setMessages((prev) => prev.slice(0, -1)); // Remove the last message
+            }}
+          >
+            <Text style={styles.editButtonText}>Edit Details</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
 
-        if (input.includes("residential") || input.includes("house") || input.includes("home")) {
-          resolve("Excellent choice! For residential building projects, I'll help you with:\n\n• Plot assessment and planning\n• Architectural design requirements\n• Material cost estimation\n• Timeline planning\n• Contractor recommendations\n\nWhat's the plot size you're working with?");
-        } else if (input.includes("commercial") || input.includes("business") || input.includes("office")) {
-          resolve("Great! Commercial projects require careful planning. Let me help you with:\n\n• Zoning and compliance checks\n• Space utilization planning\n• Budget estimation\n• Timeline projection\n• Vendor selection\n\nWhat type of commercial space are you planning?");
-        } else if (input.includes("renovation") || input.includes("remodel")) {
-          resolve("Renovation projects can be exciting! I can assist with:\n\n• Scope assessment\n• Cost breakdown\n• Material selection\n• Contractor matching\n• Timeline planning\n\nWhat areas are you looking to renovate?");
-        } else if (input.includes("cost") || input.includes("estimate") || input.includes("budget")) {
-          resolve("I'll help you create a detailed cost estimate! Please provide:\n\n• Project type and size\n• Location\n• Preferred materials\n• Timeline expectations\n\nThis will help me give you an accurate estimate.");
-        } else if (input.includes("plot") || input.includes("size") || input.includes("sqft") || input.includes("sq ft")) {
-          resolve("Perfect! Based on the plot size, I can help calculate:\n\n• Buildable area (FSI/FAR)\n• Estimated construction cost\n• Material requirements\n• Timeline for completion\n\nWould you like me to create a preliminary project plan?");
-        } else {
-          resolve("Hello! 👋 I'm your AI Building Assistant. I can help you with:\n\n✨ Project Planning\n📊 Cost Estimation\n🏗️ Material Selection\n⏱️ Timeline Planning\n👷 Contractor Recommendations\n\nWhat would you like to know about your construction project?");
-        }
-      }, 1500); // Slightly longer for more realistic typing effect
-    });
+    // Normal input section
+    const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
+    
+    if (lastMessage && !lastMessage.isUser && lastMessage.inputType === 'file') {
+      return (
+        <TouchableOpacity
+          style={styles.uploadButton}
+          onPress={handleFileUpload}
+          disabled={isUploading}
+        >
+          {isUploading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <>
+              <Ionicons name="cloud-upload-outline" size={20} color="#fff" />
+              <Text style={styles.uploadButtonText}>Upload Document (PDF/Image)</Text>
+            </>
+          )}
+        </TouchableOpacity>
+      );
+    }
+
+    return (
+      <>
+        <View style={styles.inputContainer}>
+          <TouchableOpacity style={styles.attachButton}>
+            <Ionicons name="add-circle-outline" size={24} color="#6B7280" />
+          </TouchableOpacity>
+
+          <TextInput
+            style={styles.chatInput}
+            placeholder="Type your message..."
+            placeholderTextColor="#9CA3AF"
+            value={inputText}
+            onChangeText={setInputText}
+            multiline={!lastMessage || !lastMessage.inputType || ['text', 'textarea'].includes(lastMessage.inputType)}
+            maxLength={500}
+            keyboardType={
+              lastMessage && lastMessage.inputType === 'number' ? 'numeric' :
+              lastMessage && lastMessage.inputType === 'phone' ? 'phone-pad' :
+              lastMessage && lastMessage.inputType === 'email' ? 'email-address' :
+              'default'
+            }
+          />
+
+          <TouchableOpacity
+            style={[styles.sendButton, !inputText.trim() && styles.sendButtonDisabled]}
+            onPress={() => sendMessage()}
+            disabled={!inputText.trim()}
+          >
+            <LinearGradient
+              colors={inputText.trim() ? ["#0066FF", "#3B82F6"] : ["#E5E7EB", "#D1D5DB"]}
+              style={styles.sendButtonGradient}
+            >
+              <Ionicons
+                name="send"
+                size={20}
+                color={inputText.trim() ? "white" : "#9CA3AF"}
+              />
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.inputFooter}>
+          <View style={styles.inputFooterLeft}>
+            <Ionicons name="shield-checkmark" size={12} color="#10B981" />
+            <Text style={styles.inputFooterText}>Secure & Private</Text>
+          </View>
+          <Text style={styles.characterCount}>{inputText.length}/500</Text>
+        </View>
+      </>
+    );
   };
 
   // ===============================
@@ -1065,7 +2395,7 @@ export default function ClientMainPage({ navigation }) {
                   {item.name || "Untitled Project"}
                 </Text>
                 <Text style={styles.projectType} numberOfLines={1}>
-                  {item.projectType?.projectTypeName || "No type specified"}
+                  {item.projectType?.projectTypeName|| item.category || "No type specified"}
                 </Text>
               </View>
             </View>
@@ -1319,54 +2649,99 @@ export default function ClientMainPage({ navigation }) {
               ) : (
                 <>
                   {messages.map((msg, index) => (
-                    <Animated.View
-                      key={msg.id}
-                      style={[
+                    <View key={msg.id} style={{ marginBottom: 16 }}>
+
+                      {/* Message Bubble + Avatar Row */}
+                      <View style={[
                         styles.messageWrapper,
                         msg.isUser ? styles.userMessageWrapper : styles.aiMessageWrapper,
-                      ]}
-                    >
-                      {!msg.isUser && (
-                        <View style={styles.aiMessageAvatar}>
-                          <LinearGradient
-                            colors={["#10B981", "#059669"]}
-                            style={styles.messageAvatar}
-                          >
-                            <Ionicons name="sparkles" size={16} color="white" />
-                          </LinearGradient>
-                        </View>
-                      )}
+                        { marginBottom: (msg.options?.length > 0 || msg.cards?.length > 0) ? 4 : 0 }
+                      ]}>
+                        {!msg.isUser && (
+                          <View style={styles.aiMessageAvatar}>
+                            <LinearGradient
+                              colors={["#10B981", "#059669"]}
+                              style={styles.messageAvatar}
+                            >
+                              <Ionicons name="sparkles" size={16} color="white" />
+                            </LinearGradient>
+                          </View>
+                        )}
 
-                      <View style={styles.messageContent}>
-                        <View
-                          style={[
-                            styles.messageBubble,
-                            msg.isUser ? styles.userMessage : styles.aiMessage,
-                          ]}
-                        >
+                        <View style={styles.messageContent}>
+                          <View
+                            style={[
+                              styles.messageBubble,
+                              msg.isUser ? styles.userMessage : styles.aiMessage,
+                            ]}
+                          >
+                            <Text style={[
+                              styles.messageText,
+                              msg.isUser ? styles.userMessageText : styles.aiMessageText
+                            ]}>
+                              {msg.text}
+                            </Text>
+                          </View>
                           <Text style={[
-                            styles.messageText,
-                            msg.isUser ? styles.userMessageText : styles.aiMessageText
+                            styles.messageTime,
+                            msg.isUser ? styles.userMessageTime : styles.aiMessageTime
                           ]}>
-                            {msg.text}
+                            {msg.timestamp}
                           </Text>
                         </View>
-                        <Text style={[
-                          styles.messageTime,
-                          msg.isUser ? styles.userMessageTime : styles.aiMessageTime
-                        ]}>
-                          {msg.timestamp}
-                        </Text>
+
+                        {msg.isUser && (
+                          <View style={styles.userMessageAvatar}>
+                            <View style={styles.messageAvatar}>
+                              <Ionicons name="person" size={16} color="#0066FF" />
+                            </View>
+                          </View>
+                        )}
                       </View>
 
-                      {msg.isUser && (
-                        <View style={styles.userMessageAvatar}>
-                          <View style={styles.messageAvatar}>
-                            <Ionicons name="person" size={16} color="#0066FF" />
-                          </View>
+                      {/* Options & Cards Container */}
+                      {!msg.isUser && (
+                        <View style={{ marginLeft: 42 }}>
+                          {msg.options?.length > 0 && (
+                            <View style={styles.optionRow}>
+                              {msg.options.map((opt, i) => (
+                                <TouchableOpacity
+                                  key={opt.value + i}
+                                  style={styles.optionBtn}
+                                  onPress={() => sendMessage(opt.value)}
+                                >
+                                  <Text style={{ color: "#2563EB", fontWeight: "600" }}>
+                                    {opt.label}
+                                  </Text>
+                                </TouchableOpacity>
+                              ))}
+                            </View>
+                          )}
+
+                          {msg.cards?.length > 0 && (
+                            <ScrollView
+                              horizontal
+                              showsHorizontalScrollIndicator={false}
+                              contentContainerStyle={{ paddingVertical: 5 }}
+                              style={{ marginTop: 8 }}
+                            >
+                              {msg.cards.map((c) => (
+                                <TouchableOpacity
+                                  key={c.id}
+                                  style={styles.templateCard}
+                                  onPress={() => sendMessage(c.id)}
+                                >
+                                  <Text style={{ fontWeight: "700", marginBottom: 4 }}>{c.title}</Text>
+                                  <Text style={{ fontSize: 12, color: "#4B5563", marginBottom: 2 }}>Size: {c.landArea}</Text>
+                                  <Text style={{ fontSize: 12, color: "#10B981", fontWeight: "600" }}>{c.budget}</Text>
+                                </TouchableOpacity>
+                              ))}
+                            </ScrollView>
+                          )}
                         </View>
                       )}
-                    </Animated.View>
+
+                    </View>
                   ))}
 
                   {isTyping && <TypingIndicator />}
@@ -1376,46 +2751,7 @@ export default function ClientMainPage({ navigation }) {
 
             {/* Enhanced Input Container */}
             <View style={styles.inputWrapper}>
-              <View style={styles.inputContainer}>
-                <TouchableOpacity style={styles.attachButton}>
-                  <Ionicons name="add-circle-outline" size={24} color="#6B7280" />
-                </TouchableOpacity>
-
-                <TextInput
-                  style={styles.chatInput}
-                  placeholder="Type your message..."
-                  placeholderTextColor="#9CA3AF"
-                  value={inputText}
-                  onChangeText={setInputText}
-                  multiline
-                  maxLength={500}
-                />
-
-                <TouchableOpacity
-                  style={[styles.sendButton, !inputText.trim() && styles.sendButtonDisabled]}
-                  onPress={() => sendMessage()}
-                  disabled={!inputText.trim()}
-                >
-                  <LinearGradient
-                    colors={inputText.trim() ? ["#0066FF", "#3B82F6"] : ["#E5E7EB", "#D1D5DB"]}
-                    style={styles.sendButtonGradient}
-                  >
-                    <Ionicons
-                      name="send"
-                      size={20}
-                      color={inputText.trim() ? "white" : "#9CA3AF"}
-                    />
-                  </LinearGradient>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.inputFooter}>
-                <View style={styles.inputFooterLeft}>
-                  <Ionicons name="shield-checkmark" size={12} color="#10B981" />
-                  <Text style={styles.inputFooterText}>Secure & Private</Text>
-                </View>
-                <Text style={styles.characterCount}>{inputText.length}/500</Text>
-              </View>
+              {renderInputSection()}
             </View>
           </Animated.View>
         </KeyboardAvoidingView>
@@ -1780,8 +3116,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 20,
-    // borderBottomLeftRadius: 20,
-    // borderBottomRightRadius: 20,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
   },
@@ -1913,12 +3247,12 @@ const styles = StyleSheet.create({
   },
 
   quickActionCard: {
-    width: (width - 130) / 3, 
+    width: (width - 80) / 3,
     backgroundColor: "white",
-    padding: 12, // Reduced padding
+    padding: 12,
     borderRadius: 14,
     alignItems: "center",
-    gap: 8, // Reduced gap
+    gap: 8,
     borderWidth: 1,
     borderColor: "#E5E7EB",
     shadowColor: "#000",
@@ -2106,6 +3440,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
 
+  uploadButton: {
+    backgroundColor: "#0066FF",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    borderRadius: 12,
+    gap: 8,
+    marginHorizontal: 4,
+  },
+
+  uploadButtonText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+
   sendButton: {
     width: 40,
     height: 40,
@@ -2148,5 +3499,79 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: "#9CA3AF",
     fontWeight: "500",
+  },
+
+  optionRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 8,
+    marginLeft: 42,
+  },
+
+  optionBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: "#EFF6FF",
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
+  },
+
+  templateCard: {
+    width: 200,
+    padding: 14,
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+    marginTop: 8,
+  },
+
+  // Submit Section Styles
+  submitSection: {
+    gap: 12,
+    paddingHorizontal: 4,
+  },
+
+  submitButton: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+
+  submitButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    gap: 10,
+  },
+
+  submitButtonText: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '700',
+  },
+
+  editButton: {
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+
+  editButtonText: {
+    color: '#6B7280',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
