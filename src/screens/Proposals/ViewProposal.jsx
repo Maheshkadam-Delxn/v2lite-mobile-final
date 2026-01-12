@@ -647,7 +647,7 @@ const ViewProposal = ({ navigation, route }) => {
   // Safe data access with fallbacks
   const projectDocuments = rawData.projectDocuments || [];
 const needsNewSiteSurvey = rawData?.needsNewSiteSurvey ?? false;
-
+console.log(rawData);
   const projectType = rawData.projectType || {};
   const description = rawData.description || 'No description provided.';
   const budget = rawData.budget || 'NA';

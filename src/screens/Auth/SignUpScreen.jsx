@@ -99,7 +99,7 @@ export default function SignUpScreen() {
     <View style={{ flex: 1, backgroundColor: '#ffffff' }}>
       <StatusBar barStyle="light-content" backgroundColor="#ffffff" />
       
-      <Header />
+    
       
       <ScrollView 
         showsVerticalScrollIndicator={false}
