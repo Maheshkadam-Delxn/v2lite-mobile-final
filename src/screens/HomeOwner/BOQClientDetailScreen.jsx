@@ -98,7 +98,7 @@ export default function BOQDetailScreen({ route, navigation }) {
                   Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
-                  status: "approved",
+                  clientApproval: "approved",
                   versionNumber: selectedVersion.versionNumber,
                 }),
               });
@@ -135,7 +135,7 @@ export default function BOQDetailScreen({ route, navigation }) {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          status: "rejected",
+          clientApproval: "rejected",
           rejectionReason: rejectionReason.trim(),
         }),
       });
@@ -489,29 +489,8 @@ export default function BOQDetailScreen({ route, navigation }) {
         </View>
 
         {/* ACTIONS - DIFFERENT FOR CLIENT VS ADMIN */}
-        {isClientView ? (
-          /* CLIENT ACTIONS */
-          <View style={styles.actionSection}>
-            <TouchableOpacity
-              style={styles.printButton}
-              onPress={handlePrint}
-            >
-              <Feather name="printer" size={20} color="#FFFFFF" />
-              <Text style={styles.actionButtonText}>Print / Save</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={styles.shareButton}
-              onPress={handleShare}
-            >
-              <Feather name="share-2" size={20} color="#FFFFFF" />
-              <Text style={styles.actionButtonText}>Share</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          /* ADMIN ACTIONS */
-          <>
-            {selectedVersion.status === "draft" && (
+      
+            {selectedVersion.clientApproval === "pending" && (
               <View style={styles.actionSection}>
                 <TouchableOpacity
                   style={styles.rejectButton}
@@ -544,9 +523,7 @@ export default function BOQDetailScreen({ route, navigation }) {
                 <Text style={styles.actionButtonText}>Add New Version</Text>
               </TouchableOpacity>
             )}
-          </>
-        )}
-
+         
         <View style={{ height: 40 }} />
       </ScrollView>
 
