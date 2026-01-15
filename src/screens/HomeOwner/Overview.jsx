@@ -9,11 +9,12 @@ import {
   Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, useIsFocused } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Svg, { Circle, G, Text as SvgText, Rect, Line } from 'react-native-svg';
 
 import Header from '@/components/Header';
+
 
 // Sub Screens
 import ProjectTimeline from '../HomeOwner/ProjectTimeline';
@@ -29,21 +30,51 @@ import FilesScreen from '../Document-Management/FileScreen';
 const Overview = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const isFocused = useIsFocused();
   const { project } = route.params || {};
 
   const [activeTab, setActiveTab] = useState('Overview');
   const [milestones, setMilestones] = useState([]);
+  const [currentRisks, setCurrentRisks] = useState([]);
+
+  /* ——— Fetch Data ——— */
+  const fetchRisks = async () => {
+    const pid = project?._id || project?.id;
+    if (!pid) return;
+
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      const response = await fetch(`${process.env.BASE_API_URL}/api/risks/project/${pid}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const json = await response.json();
+      if (json.success) {
+        setCurrentRisks(json.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch risks", error);
+    }
+  };
+
+  useEffect(() => {
+    if (isFocused) {
+      fetchRisks();
+    }
+  }, [isFocused, project]);
 
   const tabs = [
     { id: 'Overview', label: 'Overview' },
+    { id: 'Issues', label: 'Critical Issues' }, // New Tab
     { id: 'BOQ', label: 'BOQ' },
     { id: 'Plans', label: 'Plans' },
     { id: 'ProjectTimeline', label: 'Project Timeline' },
-    { id: 'BudgetTracker', label: 'Budget Track' }, 
+    { id: 'BudgetTracker', label: 'Budget Track' },
     { id: 'QualityChecks', label: 'Quality Checks' },
     { id: 'ChangeRequests', label: 'Change Request' },
     { id: 'MaterialStatus', label: 'Material Status' },
   ];
+
+  /* ------------------ MOCK DATA REMOVED (Now using imported mockRisks) ------------------ */
 
   // Enhanced static data with estimated vs actual budget comparison
   const [workProgressData] = useState({
@@ -118,10 +149,10 @@ const Overview = () => {
   ];
 
   /* ------------------ ENHANCED CIRCULAR PROGRESS WITH SVG ------------------ */
-  const EnhancedCircularProgress = ({ 
-    size = 120, 
-    progress = 0, 
-    color = '#3B82F6', 
+  const EnhancedCircularProgress = ({
+    size = 120,
+    progress = 0,
+    color = '#3B82F6',
     bgColor = '#F3F4F6',
     thickness = 8,
     showInnerCircle = false,
@@ -144,7 +175,7 @@ const Overview = () => {
             strokeWidth={thickness}
             fill="transparent"
           />
-          
+
           {/* Outer Progress Ring */}
           <Circle
             cx={size / 2}
@@ -158,7 +189,7 @@ const Overview = () => {
             fill="transparent"
             transform={`rotate(-90, ${size / 2}, ${size / 2})`}
           />
-          
+
           {/* Inner Progress Ring (if enabled) */}
           {showInnerCircle && (
             <Circle
@@ -174,7 +205,7 @@ const Overview = () => {
               transform={`rotate(-90, ${size / 2}, ${size / 2})`}
             />
           )}
-          
+
           {/* Center Text */}
           <G>
             <SvgText
@@ -206,13 +237,13 @@ const Overview = () => {
   const BudgetHistogram = ({ data, width = screenWidth - 64, height = 200 }) => {
     const maxValue = Math.max(...data.flatMap(d => [d.estimated, d.actual]));
     const barWidth = (width - 60) / data.length;
-    
+
     return (
       <View className="mt-4">
         <Text className="text-sm font-semibold text-gray-700 mb-3">
           Estimated vs Actual Budget
         </Text>
-        
+
         <View style={{ height, width }}>
           <Svg width={width} height={height}>
             {/* Grid Lines */}
@@ -236,13 +267,13 @@ const Overview = () => {
                 </SvgText>
               </React.Fragment>
             ))}
-            
+
             {/* Bars */}
             {data.map((item, index) => {
               const estimatedHeight = (item.estimated / maxValue) * (height - 60);
               const actualHeight = (item.actual / maxValue) * (height - 60);
               const x = 30 + index * barWidth;
-              
+
               return (
                 <G key={`bar-${index}`}>
                   {/* Estimated Budget Bar */}
@@ -255,7 +286,7 @@ const Overview = () => {
                     opacity={0.3}
                     rx={2}
                   />
-                  
+
                   {/* Actual Budget Bar */}
                   <Rect
                     x={x + barWidth * 0.4 + 2}
@@ -265,7 +296,7 @@ const Overview = () => {
                     fill={item.actual > item.estimated ? '#EF4444' : '#10B981'}
                     rx={2}
                   />
-                  
+
                   {/* Category Label */}
                   <SvgText
                     x={x + barWidth * 0.4}
@@ -276,7 +307,7 @@ const Overview = () => {
                   >
                     {item.category}
                   </SvgText>
-                  
+
                   {/* Value Labels */}
                   {item.actual > item.estimated ? (
                     <SvgText
@@ -304,21 +335,21 @@ const Overview = () => {
                 </G>
               );
             })}
-            
+
             {/* Legend */}
             <G>
               <Rect x={30} y={10} width={10} height={10} fill="#3B82F6" opacity={0.3} rx={2} />
               <SvgText x={45} y={18} fill="#6B7280" fontSize="10">Estimated</SvgText>
-              
+
               <Rect x={100} y={10} width={10} height={10} fill="#10B981" rx={2} />
               <SvgText x={115} y={18} fill="#6B7280" fontSize="10">Under Budget</SvgText>
-              
+
               <Rect x={200} y={10} width={10} height={10} fill="#EF4444" rx={2} />
               <SvgText x={215} y={18} fill="#6B7280" fontSize="10">Over Budget</SvgText>
             </G>
           </Svg>
         </View>
-        
+
         {/* Summary Stats */}
         <View className="flex-row justify-between mt-4">
           <View className="items-center">
@@ -336,8 +367,8 @@ const Overview = () => {
           <View className="items-center">
             <Text className="text-xs text-gray-500">Savings</Text>
             <Text className="text-sm font-bold text-purple-600">
-              QAR {(financeData.estimatedVsActual.reduce((sum, item) => sum + item.estimated, 0) - 
-                   financeData.estimatedVsActual.reduce((sum, item) => sum + item.actual, 0)) / 1000}K
+              QAR {(financeData.estimatedVsActual.reduce((sum, item) => sum + item.estimated, 0) -
+                financeData.estimatedVsActual.reduce((sum, item) => sum + item.actual, 0)) / 1000}K
             </Text>
           </View>
         </View>
@@ -348,20 +379,20 @@ const Overview = () => {
   /* ------------------ TIMELINE CHART ------------------ */
   const TimelineChart = ({ data, width = screenWidth - 64, height = 150 }) => {
     const maxValue = Math.max(...data.flatMap(d => [d.estimated, d.actual]));
-    
+
     return (
       <View className="mt-4">
         <Text className="text-sm font-semibold text-gray-700 mb-3">
           Monthly Progress Timeline
         </Text>
-        
+
         <View style={{ height, width }}>
           <Svg width={width} height={height}>
             {/* Estimated Line */}
             {data.map((item, index) => {
               const x = 40 + (index * (width - 80) / (data.length - 1));
               const y = height - 30 - ((item.estimated / maxValue) * (height - 60));
-              
+
               return (
                 <React.Fragment key={`estimated-${index}`}>
                   <Circle cx={x} cy={y} r={3} fill="#3B82F6" />
@@ -382,12 +413,12 @@ const Overview = () => {
                 </React.Fragment>
               );
             })}
-            
+
             {/* Actual Line */}
             {data.map((item, index) => {
               const x = 40 + (index * (width - 80) / (data.length - 1));
               const y = height - 30 - ((item.actual / maxValue) * (height - 60));
-              
+
               return (
                 <React.Fragment key={`actual-${index}`}>
                   <Circle cx={x} cy={y} r={4} fill={item.actual > item.estimated ? '#EF4444' : '#10B981'} />
@@ -404,7 +435,7 @@ const Overview = () => {
                 </React.Fragment>
               );
             })}
-            
+
             {/* Month Labels */}
             {data.map((item, index) => {
               const x = 40 + (index * (width - 80) / (data.length - 1));
@@ -493,13 +524,13 @@ const Overview = () => {
 
       {/* Main Progress Circle */}
       <View className="items-center py-6 px-4">
-        <EnhancedCircularProgress 
+        <EnhancedCircularProgress
           size={120}
           progress={workProgressData.completed}
           color="#3B82F6"
           thickness={8}
         />
-        
+
         <Text className="text-xs text-gray-500 mt-2">
           Overall Completion
         </Text>
@@ -610,11 +641,11 @@ const Overview = () => {
                     className="w-8 rounded-t-lg"
                     style={{
                       height: `${height}%`,
-                      backgroundColor: month.spent > 100000 
-                        ? '#EF4444' 
-                        : month.spent > 80000 
-                        ? '#F59E0B' 
-                        : '#10B981',
+                      backgroundColor: month.spent > 100000
+                        ? '#EF4444'
+                        : month.spent > 80000
+                          ? '#F59E0B'
+                          : '#10B981',
                     }}
                   />
                   <Text className="text-xs text-gray-500 mt-2">{month.month}</Text>
@@ -653,6 +684,63 @@ const Overview = () => {
   const renderTabContent = () => {
     if (activeTab !== 'Overview') {
       switch (activeTab) {
+        case 'Issues':
+          return (
+            <ScrollView style={{ flex: 1, backgroundColor: '#F9FAFB', padding: 16 }}>
+              <View style={{ backgroundColor: '#FEF2F2', padding: 12, borderRadius: 12, marginBottom: 16, flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="alert-circle" size={24} color="#EF4444" />
+                <Text style={{ marginLeft: 10, flex: 1, color: '#991B1B', fontSize: 13 }}>
+                  High-priority risks requiring immediate attention. Tap to view details.
+                </Text>
+              </View>
+
+              {currentRisks.map((risk) => (
+                <TouchableOpacity
+                  key={risk.id}
+                  onPress={() => navigation.navigate('RiskDetail', { risk: risk, isClientView: true })}
+                  style={{
+                    backgroundColor: 'white',
+                    borderRadius: 16,
+                    padding: 16,
+                    marginBottom: 12,
+                    borderLeftWidth: 4,
+                    borderLeftColor: (risk.score || 0) >= 9 ? '#EF4444' : '#F59E0B',
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 3,
+                    elevation: 2
+                  }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                    <View>
+                      <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1F2937' }}>{risk.title}</Text>
+                      <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>Score: {risk.score} • {risk.severity}</Text>
+                    </View>
+                    <View style={{
+                      paddingHorizontal: 10,
+                      paddingVertical: 4,
+                      borderRadius: 20,
+                      backgroundColor: risk.status === 'Open' ? '#EFF6FF' : '#FFFBEB'
+                    }}>
+                      <Text style={{
+                        fontSize: 12,
+                        fontWeight: '600',
+                        color: risk.status === 'Open' ? '#2563EB' : '#D97706'
+                      }}>
+                        {risk.status}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                    <Ionicons name="calendar-outline" size={14} color="#9CA3AF" />
+                    <Text style={{ fontSize: 12, color: '#6B7280' }}>{risk.date}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+              <View style={{ height: 40 }} />
+            </ScrollView>
+          );
         case 'BOQ':
           return <BOQClientScreen project={project} />;
         case 'ProjectTimeline':
@@ -732,102 +820,102 @@ const Overview = () => {
               </Text>
             </View>
 
-        {/* ------------------ TASKS PROGRESS (ENHANCED) ------------------ */}
-        <View className="mx-4 mt-4 rounded-2xl bg-white shadow-sm border border-gray-100 overflow-hidden">
-          {/* Header */}
-          <View className="flex-row items-center justify-between px-4 py-4 border-b border-gray-100">
-            <View className="flex-row items-center">
-              <View className="h-9 w-9 items-center justify-center rounded-full bg-blue-100 mr-2">
-                <Ionicons name="list-outline" size={18} color="#2563EB" />
-              </View>
-              <Text className="text-base font-bold text-gray-800">
-                Tasks Progress
-              </Text>
-            </View>
-
-            <Text className="text-xs text-gray-400">
-              {milestones.length} Tasks
-            </Text>
-          </View>
-
-          {/* Empty State */}
-          {milestones.length === 0 && (
-            <View className="py-8 items-center">
-              <Ionicons name="clipboard-outline" size={32} color="#CBD5E1" />
-              <Text className="mt-2 text-sm text-gray-400">
-                No milestones added yet
-              </Text>
-            </View>
-          )}
-
-          {/* Milestone List */}
-          {milestones.map((milestone, index) => {
-            const progress = milestone.progress || 0;
-
-            const progressColor =
-              milestone.status === 'completed'
-                ? 'bg-green-500'
-                : milestone.status === 'in_progress'
-                  ? 'bg-blue-500'
-                  : 'bg-gray-400';
-
-            const statusBadge =
-              milestone.status === 'completed'
-                ? 'bg-green-100 text-green-700'
-                : milestone.status === 'in_progress'
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'bg-gray-100 text-gray-500';
-
-            return (
-              <View
-                key={milestone._id}
-                className={`px-4 py-4 ${index !== milestones.length - 1
-                  ? 'border-b border-gray-100'
-                  : ''
-                  }`}
-              >
-                {/* Title + Status */}
-                <View className="flex-row items-start justify-between mb-2">
-                  <Text className="text-sm font-semibold text-gray-800 flex-1 pr-3">
-                    {milestone.title}
-                  </Text>
-
-                  <View className={`px-2 py-0.5 rounded-full ${statusBadge}`}>
-                    <Text className="text-xs font-semibold">
-                      {getStatusLabel(milestone.status)}
-                    </Text>
+            {/* ------------------ TASKS PROGRESS (ENHANCED) ------------------ */}
+            <View className="mx-4 mt-4 rounded-2xl bg-white shadow-sm border border-gray-100 overflow-hidden">
+              {/* Header */}
+              <View className="flex-row items-center justify-between px-4 py-4 border-b border-gray-100">
+                <View className="flex-row items-center">
+                  <View className="h-9 w-9 items-center justify-center rounded-full bg-blue-100 mr-2">
+                    <Ionicons name="list-outline" size={18} color="#2563EB" />
                   </View>
-                </View>
-
-                {/* Progress Info */}
-                <View className="flex-row items-center justify-between mb-1">
-                  <Text className="text-xs text-gray-500">
-                    Progress
-                  </Text>
-                  <Text className="text-xs font-semibold text-gray-700">
-                    {progress}%
+                  <Text className="text-base font-bold text-gray-800">
+                    Tasks Progress
                   </Text>
                 </View>
 
-                {/* Progress Bar */}
-                <View className="h-2.5 rounded-full bg-gray-200 overflow-hidden">
-                  <View
-                    className={`h-full rounded-full ${progressColor}`}
-                    style={{ width: `${progress}%` }}
-                  />
-                </View>
-
-                {/* Description */}
-                {milestone.description ? (
-                  <Text className="mt-2 text-xs text-gray-500 leading-4">
-                    {milestone.description}
-                  </Text>
-                ) : null}
+                <Text className="text-xs text-gray-400">
+                  {milestones.length} Tasks
+                </Text>
               </View>
-            );
-          })}
-        </View>
-        </View>
+
+              {/* Empty State */}
+              {milestones.length === 0 && (
+                <View className="py-8 items-center">
+                  <Ionicons name="clipboard-outline" size={32} color="#CBD5E1" />
+                  <Text className="mt-2 text-sm text-gray-400">
+                    No milestones added yet
+                  </Text>
+                </View>
+              )}
+
+              {/* Milestone List */}
+              {milestones.map((milestone, index) => {
+                const progress = milestone.progress || 0;
+
+                const progressColor =
+                  milestone.status === 'completed'
+                    ? 'bg-green-500'
+                    : milestone.status === 'in_progress'
+                      ? 'bg-blue-500'
+                      : 'bg-gray-400';
+
+                const statusBadge =
+                  milestone.status === 'completed'
+                    ? 'bg-green-100 text-green-700'
+                    : milestone.status === 'in_progress'
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'bg-gray-100 text-gray-500';
+
+                return (
+                  <View
+                    key={milestone._id}
+                    className={`px-4 py-4 ${index !== milestones.length - 1
+                      ? 'border-b border-gray-100'
+                      : ''
+                      }`}
+                  >
+                    {/* Title + Status */}
+                    <View className="flex-row items-start justify-between mb-2">
+                      <Text className="text-sm font-semibold text-gray-800 flex-1 pr-3">
+                        {milestone.title}
+                      </Text>
+
+                      <View className={`px-2 py-0.5 rounded-full ${statusBadge}`}>
+                        <Text className="text-xs font-semibold">
+                          {getStatusLabel(milestone.status)}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Progress Info */}
+                    <View className="flex-row items-center justify-between mb-1">
+                      <Text className="text-xs text-gray-500">
+                        Progress
+                      </Text>
+                      <Text className="text-xs font-semibold text-gray-700">
+                        {progress}%
+                      </Text>
+                    </View>
+
+                    {/* Progress Bar */}
+                    <View className="h-2.5 rounded-full bg-gray-200 overflow-hidden">
+                      <View
+                        className={`h-full rounded-full ${progressColor}`}
+                        style={{ width: `${progress}%` }}
+                      />
+                    </View>
+
+                    {/* Description */}
+                    {milestone.description ? (
+                      <Text className="mt-2 text-xs text-gray-500 leading-4">
+                        {milestone.description}
+                      </Text>
+                    ) : null}
+                  </View>
+                );
+              })}
+            </View>
+          </View>
         </View>
 
       </ScrollView>
