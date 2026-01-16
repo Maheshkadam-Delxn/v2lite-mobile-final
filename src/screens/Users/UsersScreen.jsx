@@ -33,13 +33,15 @@ const RolesMembersScreen = () => {
 
   // Default permissions structure - Added task module
   const defaultPermissions = {
-    indent: { create: false, read: false, update: false, delete: false },
-    boq: { create: false, read: false, update: false, delete: false },
+    indent: { create: false, read: true, update: false, delete: false },
+    boq: { create: false, read: true, update: false, delete: false },
     vendor: { create: false, read: false, update: false, delete: false },
     user: { create: false, read: false, update: false, delete: false },
     proposal: { create: false, read: false, update: false, delete: false },
     siteSurvey: { create: false, read: false, update: false, delete: false },
-    task: { create: false, read: false, update: false, delete: false } // Added task module
+    project: { create: false, read: true, update: false, delete: false },
+    plan:{ create: false, read: true, update: false, delete: false },
+    task: { create: false, read: true, update: false, delete: false ,approve:false} // Added task module
   };
 
   // Updated role form state to match API structure
@@ -109,6 +111,18 @@ const RolesMembersScreen = () => {
       key: 'task',
       label: 'Task Management',
       description: 'Manage tasks and assignments',
+      actions: ['create', 'read', 'update', 'delete','approve']
+    },
+    {
+      key: 'project',
+      label: 'project Management',
+      description: 'Manage project and actions',
+      actions: ['create', 'read', 'update', 'delete']
+    },
+     {
+      key: 'plan',
+      label: 'plan Management',
+      description: 'Manage plan and actions',
       actions: ['create', 'read', 'update', 'delete']
     }
   ];

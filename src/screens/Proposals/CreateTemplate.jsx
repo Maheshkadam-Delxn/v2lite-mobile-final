@@ -15,6 +15,7 @@ import {
   Modal,
   Animated,
 } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import { Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useSurvey } from '../../context/StoreProvider';
@@ -1587,9 +1588,11 @@ const CreateTemplate = () => {
 
             planDocuments: folderDocs.map(doc => ({
               name: doc.name,
+            
               versions: [
                 {
                   versionNumber: 1,
+                  status:"approved",
                   image: doc.thumbnail || doc.fileUrl || doc.uri || null,
                   annotations: [] // future annotations
                 }
@@ -1940,17 +1943,23 @@ const payload={...requestData , plansData:data}
 
           {/* Category */}
           <View className="mb-4">
-            <Text className="font-semibold text-sm text-black mb-2">Category *</Text>
-            <TextInput
-              className={`bg-gray-100 rounded-xl px-4 py-3.5 font-regular text-sm text-black border ${formData.category ? 'border-blue-600' : 'border-gray-300'}`}
-              placeholder="e.g., Residential, Commercial, Office"
-              placeholderTextColor="#999999"
-              value={formData.category}
-              onChangeText={(v) => updateField('category', v)}
-              editable={!isSubmitting}
-              returnKeyType="next"
-            />
-          </View>
+  <Text className="font-semibold text-sm text-black mb-2">Category *</Text>
+  <View className={`bg-gray-100 rounded-xl px-1 font-regular text-sm text-black border ${formData.category ? 'border-blue-600' : 'border-gray-300'}`}>
+    <Picker
+      selectedValue={formData.category}
+      onValueChange={(v) => updateField('category', v)}
+      enabled={!isSubmitting}
+      style={{ height: 50 }}
+    >
+      <Picker.Item label="Select a category..." value="" />
+      <Picker.Item label="Residential" value="Residential" />
+      <Picker.Item label="Commercial" value="Commercial" />
+      <Picker.Item label="Office" value="Office" />
+      <Picker.Item label="Industrial" value="Industrial" />
+      <Picker.Item label="Retail" value="Retail" />
+    </Picker>
+  </View>
+</View>
 
           {/* Description */}
           <View className="mb-4">

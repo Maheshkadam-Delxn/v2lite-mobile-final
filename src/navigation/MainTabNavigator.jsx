@@ -33,17 +33,17 @@ const MainTabNavigator = () => {
                         parsedUser.permissions.payment.view
                     )
                 );
+                console.log("Payment Access",parsedUser?.permissions);
 
             const canAccessSiteSurveys =
-                parsedUser?.role !== "admin" ||
+                parsedUser?.role !== "admin" &&
                 !!(
-                    parsedUser?.permissions?.siteSurvey &&
-                    (
+                   
                         parsedUser.permissions.siteSurvey.create ||
                         parsedUser.permissions.siteSurvey.update ||
                         parsedUser.permissions.siteSurvey.delete ||
                         parsedUser.permissions.siteSurvey.view
-                    )
+                    
                 );
 
             setSurvey(canAccessSiteSurveys);

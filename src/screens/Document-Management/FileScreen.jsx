@@ -8,6 +8,7 @@ import {
   Modal,
   TouchableWithoutFeedback,
   ActivityIndicator,
+  Alert
 } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
@@ -28,7 +29,32 @@ const FilesScreen = ({ project }) => {
   const [modalVisible, setModalVisible] = useState(false)
   const [folderName, setFolderName] = useState('')
   const [selectedParentFolder, setSelectedParentFolder] = useState(null)
+const [permissions, setPermissions] = useState(null);
+useEffect(() => {
+        const checkStorage = async () => {
+            const user = await AsyncStorage.getItem('userData');
+            const parsedUser = user ? JSON.parse(user) : null;
 
+            const canAccessPayment =
+                parsedUser?.role === "admin" ||
+                !!(
+                    parsedUser?.permissions?.payment &&
+                    (
+                        parsedUser.permissions.payment.create ||
+                        parsedUser.permissions.payment.update ||
+                        parsedUser.permissions.payment.delete ||
+                        parsedUser.permissions.payment.view
+                    )
+                );
+           
+setPermissions(parsedUser);
+          
+
+          
+        };
+
+        checkStorage();
+    }, []);
   /* -------------------- FETCH FOLDERS -------------------- */
   const fetchFolders = async () => {
     try {
@@ -36,7 +62,8 @@ const FilesScreen = ({ project }) => {
 
       // Get token from AsyncStorage
       const token = await AsyncStorage.getItem('userToken')
-      
+           
+
       if (!token) {
         console.log('No token found')
         return
@@ -166,6 +193,14 @@ const openFolder = (folder) => {
 
   /* -------------------- NAVIGATE TO ADD DOCUMENT -------------------- */
   const navigateToAddDocument = () => {
+     if (!permissions?.permissions?.plan?.create && permissions?.role !== "admin") {
+    Alert.alert(
+      "Access Denied",
+      "You do not have permission to create a plan.",
+      [{ text: "OK" }]
+    );
+    return;
+  }
     navigation.navigate('AddDocumentScreen', {
       projectId: project._id,
       parentFolderId: selectedParentFolder || parentFolderFromRoute
@@ -258,7 +293,18 @@ const openFolder = (folder) => {
       {/* Bottom Buttons */}
       <View className="absolute bottom-0 left-0 right-0 flex-row gap-3 px-5 py-5 bg-gray-100">
         <TouchableOpacity
-          onPress={() => openAddFolderModal(parentFolderFromRoute)}
+          onPress={() => {
+
+             if (!permissions?.permissions?.plan?.create && permissions?.role !== "admin") {
+    Alert.alert(
+      "Access Denied",
+      "You do not have permission to create a plan.",
+      [{ text: "OK" }]
+    );
+    return;
+  }
+            
+            openAddFolderModal(parentFolderFromRoute)}}
           className="flex-1 bg-blue-500 py-4 rounded-xl items-center justify-center flex-row"
         >
           <Icon name="folder-plus" size={20} color="white" />

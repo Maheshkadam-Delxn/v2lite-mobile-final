@@ -9,6 +9,7 @@ import {
   StyleSheet,
   SafeAreaView,
   ActivityIndicator,
+  Alert
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { Feather } from "@expo/vector-icons";
@@ -63,7 +64,32 @@ export default function BOQListScreen({ navigation: navProp, project }) {
   useEffect(() => {
     fetchBOQs();
   }, [project]);
+  const [permissions, setPermissions] = useState(null);
+useEffect(() => {
+        const checkStorage = async () => {
+            const user = await AsyncStorage.getItem('userData');
+            const parsedUser = user ? JSON.parse(user) : null;
 
+            const canAccessPayment =
+                parsedUser?.role === "admin" ||
+                !!(
+                    parsedUser?.permissions?.payment &&
+                    (
+                        parsedUser.permissions.payment.create ||
+                        parsedUser.permissions.payment.update ||
+                        parsedUser.permissions.payment.delete ||
+                        parsedUser.permissions.payment.view
+                    )
+                );
+           
+setPermissions(parsedUser);
+          
+
+          
+        };
+
+        checkStorage();
+    }, []);
   // -------------------------------------------------------------------
   // 📌 Status Badge Renderer
   // -------------------------------------------------------------------
@@ -127,7 +153,17 @@ export default function BOQListScreen({ navigation: navProp, project }) {
 
           <TouchableOpacity
             style={styles.newButton}
-            onPress={() => navigation.navigate("BOQcreateScreen", { project })}
+            onPress={() =>{ 
+
+              if (!permissions?.permissions?.boq?.create && permissions?.role !== "admin") {
+    Alert.alert(
+      "Access Denied",
+      "You do not have permission to create a boq.",
+      [{ text: "OK" }]
+    );
+    return;
+  }
+              navigation.navigate("BOQcreateScreen", { project })}}
           >
             <Feather name="plus" size={14} color="white" />
             <Text style={styles.newButtonText}>New BOQ</Text>
