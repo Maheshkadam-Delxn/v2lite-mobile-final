@@ -196,11 +196,15 @@ export default function ClientMainPage({ navigation }) {
     try {
       openSwipeRefs.current.get(id)?.close();
       openSwipeRefs.current.delete(id);
-
+ const token = await AsyncStorage.getItem('userToken')
       setDataList((prev) => prev.filter((x) => x._id !== id));
 
       await fetch(`${CLIENT_API_URL}/${id}`, {
         method: "DELETE",
+         headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
       });
     } catch (err) {
       Alert.alert("Error", "Delete failed");

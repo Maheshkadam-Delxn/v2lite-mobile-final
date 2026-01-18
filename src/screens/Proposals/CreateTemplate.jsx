@@ -1954,9 +1954,7 @@ const payload={...requestData , plansData:data}
       <Picker.Item label="Select a category..." value="" />
       <Picker.Item label="Residential" value="Residential" />
       <Picker.Item label="Commercial" value="Commercial" />
-      <Picker.Item label="Office" value="Office" />
-      <Picker.Item label="Industrial" value="Industrial" />
-      <Picker.Item label="Retail" value="Retail" />
+       
     </Picker>
   </View>
 </View>

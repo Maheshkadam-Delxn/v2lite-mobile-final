@@ -225,7 +225,7 @@ const ProjectsListScreen = () => {
   };
 
   const confirmDelete = (project) => {
-    if (!permissions?.permissions?.project?.delete) {
+    if (!permissions?.permissions?.project?.delete && permissions?.role !== "admin") {
     Alert.alert(
       "Access Denied",
       "You do not have permission to delete a project.",
