@@ -63,17 +63,17 @@ const uploadToCloudinary = async (fileUri) => {
   }
 };
 
-const IncomingPaymentModal = ({ visible, onClose, onSave, editingTransaction , project }) => {
+const IncomingPaymentModal = ({ visible, onClose, onSave, editingTransaction, project }) => {
   // Form fields state
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [uploadedDocs, setUploadedDocs] = useState([]);
-  
+
   // ✅ Separate useState hooks for each dropdown data
   const [vendorNames, setVendorNames] = useState([
- 
+
   ]);
 
   const [modeOptions, setModeOptions] = useState([
@@ -126,7 +126,7 @@ const IncomingPaymentModal = ({ visible, onClose, onSave, editingTransaction , p
 
 
 
- useEffect(() => {
+  useEffect(() => {
     const loadVendors = async () => {
       try {
 
@@ -183,16 +183,16 @@ const IncomingPaymentModal = ({ visible, onClose, onSave, editingTransaction , p
   useEffect(() => {
     if (editingTransaction && visible) {
       console.log('[IncomingPaymentModal] Initializing with edit data:', editingTransaction);
-      
+
       // Map backend data to form fields
       setAmount(editingTransaction.amount?.toString() || '');
       setDescription(editingTransaction.remarks || '');
-      
+
       // Set date if available
       if (editingTransaction.paymentDate) {
         setSelectedDate(new Date(editingTransaction.paymentDate));
       }
-      
+
       // Set selected values from transaction
       setSelectedValues({
         vendorName: editingTransaction.vendorName || '',
@@ -201,7 +201,7 @@ const IncomingPaymentModal = ({ visible, onClose, onSave, editingTransaction , p
         costCode: editingTransaction.costCode || '',
         category: editingTransaction.category || '',
       });
-      
+
       // Set uploaded documents
       setUploadedDocs(editingTransaction.documents || []);
     } else if (!visible) {
@@ -233,8 +233,8 @@ const IncomingPaymentModal = ({ visible, onClose, onSave, editingTransaction , p
   // Function to show dropdown
   const showDropdownMenu = (type) => {
     let options = [];
-    
-    switch(type) {
+
+    switch (type) {
       case 'vendorName':
         options = vendorNames;
         break;
@@ -253,27 +253,27 @@ const IncomingPaymentModal = ({ visible, onClose, onSave, editingTransaction , p
       default:
         options = [];
     }
-    
+
     setDropdownOptions(options);
     setShowDropdown(type);
   };
 
-const handleSelect = (type, item) => {
-  if (type === 'vendorName') {
-    setSelectedValues(prev => ({
-      ...prev,
-      vendorId: item.id,     // ✅ store ID
-      vendorName: item.name, // ✅ store display name
-    }));
-  } else {
-    setSelectedValues(prev => ({
-      ...prev,
-      [type]: item.name,
-    }));
-  }
+  const handleSelect = (type, item) => {
+    if (type === 'vendorName') {
+      setSelectedValues(prev => ({
+        ...prev,
+        vendorId: item.id,     // ✅ store ID
+        vendorName: item.name, // ✅ store display name
+      }));
+    } else {
+      setSelectedValues(prev => ({
+        ...prev,
+        [type]: item.name,
+      }));
+    }
 
-  setShowDropdown(null);
-};
+    setShowDropdown(null);
+  };
 
 
   // 📂 Upload Document to Cloudinary
@@ -310,7 +310,7 @@ const handleSelect = (type, item) => {
 
   // 💾 Save handler
   const handleSave = () => {
-  if (!amount || !selectedValues.vendorId) {
+    if (!amount || !selectedValues.vendorId) {
 
       Alert.alert('Missing Fields', 'Please fill Vendor Id and Amount fields.');
       return;
@@ -319,17 +319,20 @@ const handleSelect = (type, item) => {
     // Map payment mode display values to schema enum values
     const paymentModeMap = {
       'Cash': 'cash',
-      'Bank Transfer': 'bank_transfer', 
+      'Bank Transfer': 'bank_transfer',
       'UPI': 'upi',
       'Cheque': 'cheque'
     };
 
     const payload = {
       type: 'payment_in',
+      typeLabel: 'Incoming Payment', // For PDF
       amount: parseFloat(amount),
       description: description,
       vendorId: selectedValues.vendorId,
+      vendorName: selectedValues.vendorName, // For PDF
       paymentMode: paymentModeMap[selectedValues.mode] || 'cash',
+      paymentModeLabel: selectedValues.mode, // For PDF (Preserves 'Bank Transfer' etc)
       date: selectedDate.toISOString(),
       documents: uploadedDocs,
       bankName: selectedValues.bank,
@@ -389,14 +392,14 @@ const handleSelect = (type, item) => {
                 </TouchableOpacity>
               </View>
 
-              <InputField 
-                label="Amount Received" 
-                placeholder="₹25,000" 
-                value={amount} 
+              <InputField
+                label="Amount Received"
+                placeholder="₹25,000"
+                value={amount}
                 onChangeText={setAmount}
                 keyboardType="numeric"
               />
-              
+
               <InputField
                 label="Description / Remarks"
                 placeholder="Advance payment for material supply"
@@ -493,12 +496,12 @@ const handleSelect = (type, item) => {
               {/* Buttons */}
               <View style={{ flexDirection: 'row', gap: 12, marginBottom: 20 }}>
                 <TouchableOpacity
-                  style={{ 
-                    flex: 1, 
-                    backgroundColor: '#0066FF', 
-                    borderRadius: 12, 
-                    paddingVertical: 16, 
-                    alignItems: 'center' 
+                  style={{
+                    flex: 1,
+                    backgroundColor: '#0066FF',
+                    borderRadius: 12,
+                    paddingVertical: 16,
+                    alignItems: 'center'
                   }}
                   onPress={handleSave}
                 >
@@ -525,34 +528,34 @@ const handleSelect = (type, item) => {
 
           {/* Dropdown Overlay */}
           {showDropdown && (
-            <View style={{ 
-              position: 'absolute', 
-              top: 0, 
-              left: 0, 
-              right: 0, 
-              bottom: 0, 
-              backgroundColor: 'rgba(0,0,0,0.4)' 
+            <View style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.4)'
             }}>
-              <TouchableOpacity 
-                style={{ flex: 1 }} 
-                onPress={() => setShowDropdown(null)} 
+              <TouchableOpacity
+                style={{ flex: 1 }}
+                onPress={() => setShowDropdown(null)}
               />
-              <View style={{ 
-                backgroundColor: 'white', 
-                borderRadius: 16, 
-                margin: 20, 
-                maxHeight: '50%' 
+              <View style={{
+                backgroundColor: 'white',
+                borderRadius: 16,
+                margin: 20,
+                maxHeight: '50%'
               }}>
                 <FlatList
                   data={dropdownOptions}
                   keyExtractor={(item, index) => `${item.value}-${index}`}
                   renderItem={({ item }) => (
-                    <TouchableOpacity 
-                      onPress={() => handleSelect(showDropdown, item)} 
-                      style={{ 
-                        padding: 16, 
-                        borderBottomWidth: 1, 
-                        borderBottomColor: '#f0f0f0' 
+                    <TouchableOpacity
+                      onPress={() => handleSelect(showDropdown, item)}
+                      style={{
+                        padding: 16,
+                        borderBottomWidth: 1,
+                        borderBottomColor: '#f0f0f0'
                       }}
                     >
                       <Text style={{ fontSize: 16 }}>{item.name}</Text>
@@ -564,11 +567,11 @@ const handleSelect = (type, item) => {
           )}
 
           {showDatePicker && (
-            <DateTimePicker 
-              value={selectedDate} 
-              mode="date" 
-              display="spinner" 
-              onChange={onDateChange} 
+            <DateTimePicker
+              value={selectedDate}
+              mode="date"
+              display="spinner"
+              onChange={onDateChange}
             />
           )}
         </View>

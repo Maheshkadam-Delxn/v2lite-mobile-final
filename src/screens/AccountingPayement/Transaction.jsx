@@ -9,9 +9,14 @@ import {
   Alert,
   Animated,
   PanResponder,
+  Image,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { printToFileAsync } from 'expo-print';
+import { shareAsync } from 'expo-sharing';
+import * as FileSystem from 'expo-file-system/legacy';
+import { Asset } from 'expo-asset';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Import modals
@@ -39,15 +44,147 @@ const Transaction = ({ project }) => {
   const [error, setError] = useState(null);
   const [editingTransaction, setEditingTransaction] = useState(null);
 
- 
+  // --- PDF Generation Helper ---
+  const generateInvoicePDF = async (transactionData) => {
+    try {
+      // 1. Prepare Watermark Image
+      let watermarkBase64 = null;
+      try {
+        // Use Asset module for robust loading
+        const logoModule = require('../../assets/logo.png');
+        const asset = Asset.fromModule(logoModule);
 
-  
+        // Ensure asset is downloaded to local filesystem (cached)
+        await asset.downloadAsync();
+
+        const uri = asset.localUri || asset.uri;
+        console.log('Watermark URI:', uri);
+
+        if (uri) {
+          watermarkBase64 = await FileSystem.readAsStringAsync(uri, {
+            encoding: 'base64',
+          });
+          console.log('Watermark loaded successfully');
+        }
+      } catch (imgErr) {
+        console.error('Failed to load watermark image:', imgErr);
+      }
+
+      const watermarkStyle = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        opacity: 0.2; 
+        width: 50%; 
+        z-index: 1000;
+        text-align: center;
+        pointer-events: none;
+      `;
+
+      // Helper to format currency
+      const formatCurrency = (amount) => {
+        const val = parseFloat(amount);
+        return isNaN(val) ? '0.00' : val.toFixed(2);
+      };
+
+      // Helper to render row
+      const renderRow = (label, value) => `
+        <tr>
+          <td style="padding: 8px; border-bottom: 1px solid #eee; color: #666;">${label}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: 500; text-align: right;">${value || '-'}</td>
+        </tr>
+      `;
+
+      const htmlContent = `
+        <html>
+          <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
+            <style>
+              body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 40px; color: #333; position: relative; }
+              .header { text-align: center; margin-bottom: 40px; }
+              .invoice-title { font-size: 24px; font-weight: bold; color: #0066FF; margin-bottom: 5px; }
+              .invoice-meta { font-size: 14px; color: #999; }
+              
+              /* Removed background white to allow transparency, or kept white but ensure z-index of watermark is higher */
+              .section { margin-bottom: 30px; border: 1px solid #eee; border-radius: 8px; overflow: hidden; background: rgba(255,255,255,0.95); } 
+              
+              .table { width: 100%; border-collapse: collapse; }
+              .total-row td { padding: 15px 10px; font-weight: bold; font-size: 16px; background: #f8f9fa; border-top: 2px solid #ddd; }
+              .watermark-container { ${watermarkStyle} }
+              .watermark-img { width: 100%; height: auto; object-fit: contain; } 
+            </style>
+          </head>
+          <body>
+            <!-- Watermark (Overlay) -->
+            ${watermarkBase64
+          ? `<div class="watermark-container"><img src="data:image/png;base64,${watermarkBase64}" class="watermark-img" /></div>`
+          : ''
+        }
+
+            <div class="header">
+              <div class="invoice-title">TRANSACTION RECEIPT</div>
+              <div class="invoice-meta">Generated on ${new Date().toLocaleDateString()}</div>
+            </div>
+
+            <div class="section">
+              <table class="table">
+                <tbody>
+                  ${renderRow('Transaction Type', transactionData.typeLabel || transactionData.type || 'Transaction')}
+                  ${renderRow('Date', new Date(transactionData.date || transactionData.createdAt || Date.now()).toLocaleDateString())}
+                  ${renderRow('Vendor / Party', transactionData.vendorName || transactionData.partyName || 'N/A')}
+                  ${renderRow('Payment Mode', transactionData.paymentModeLabel || transactionData.paymentMode || 'N/A')}
+                  ${renderRow('Reference No.', transactionData.referenceNumber || '-')}
+                  ${renderRow('Bank Name', transactionData.bankName || '-')}
+                  ${renderRow('Cost Code', transactionData.costCode || '-')}
+                  ${renderRow('Category', transactionData.category || '-')}
+                  ${renderRow('Description', transactionData.description || transactionData.notes || '-')}
+                  ${(transactionData.documents && transactionData.documents.length > 0) ? renderRow('Attachments', `${transactionData.documents.length} File(s)`) : ''}
+                </tbody>
+              </table>
+            </div>
+
+            <div class="section">
+              <table class="table">
+                <tbody>
+                  <tr class="total-row">
+                    <td>Amount</td>
+                    <td style="text-align: right;">${formatCurrency(transactionData.amount)} INR</td>
+                  </tr>
+                  <tr class="total-row">
+                    <td style="color: #666; font-size: 14px;">Equivalent (Approx)</td>
+                    <td style="text-align: right; color: #666; font-size: 14px;">${formatCurrency(transactionData.amount * INR_TO_QAR_RATE)} QAR</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div style="text-align: center; margin-top: 50px; font-size: 12px; color: #999;">
+              <p>This document is computer generated and does not require a signature.</p>
+              <p>V2 Lite Construction Management</p>
+            </div>
+          </body>
+        </html>
+      `;
+
+      const { uri } = await printToFileAsync({ html: htmlContent });
+      await shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+
+    } catch (error) {
+      console.error('Failed to generate PDF:', error);
+      Alert.alert('PDF Error', 'Could not generate invoice PDF.');
+    }
+  };
+
+
+
+
   const fetchTransactions = useCallback(async () => {
-     setError(null);
+    setError(null);
     try {
       console.log('\n[Transactions] Fetching transactions...');
       const token = await AsyncStorage.getItem(TOKEN_KEY);
-      
+
       if (!token) {
         Alert.alert('Error', 'User not logged in. Please sign in again.');
         setIsLoading(false);
@@ -65,7 +202,7 @@ const Transaction = ({ project }) => {
       console.log('[Transactions] Response status:', response.status);
       const data = await response.json();
       console.log('[Transactions] Response JSON:', data);
-      
+
       // Ensure data is properly formatted with defensive checks
       let list = [];
       if (Array.isArray(data.data)) {
@@ -75,18 +212,18 @@ const Transaction = ({ project }) => {
       } else if (data.data && Array.isArray(data.data)) {
         list = data.data;
       }
-      
+
       // Add defensive check for each transaction
       const safeList = list.map(transaction => ({
         ...transaction,
-        type: transaction?.type || transaction?.status ||'unknown',
-        amount: transaction?.amount || transaction?.advance|| 0,
+        type: transaction?.type || transaction?.status || 'unknown',
+        amount: transaction?.amount || transaction?.advance || 0,
         status: transaction?.status || 'pending',
         vendorName: transaction?.vendorName || transaction?.vendorId?.name || '',
         createdAt: transaction?.createdAt || new Date().toISOString(),
         _id: transaction?._id || Date.now().toString(),
       }));
-      
+
       console.log('[Transactions] Processed count:', safeList.length);
       setTransactions(safeList);
     } catch (err) {
@@ -135,8 +272,8 @@ const Transaction = ({ project }) => {
 
       // Final fallback
       if (!mappedType) mappedType = 'expense';
-console.log("this is payload",formData);
-     
+      console.log("this is payload", formData);
+
       const res = await fetch(`${process.env.BASE_API_URL}/api/newTransaction`, {
         method: 'POST',
         headers: {
@@ -149,9 +286,14 @@ console.log("this is payload",formData);
       const json = await res.json().catch(() => ({}));
       // console.log('[Transactions] POST response:', json);
 
-       if (!res.ok) throw new Error(json.message || `Failed with ${res.status}`);
+      if (!res.ok) throw new Error(json.message || `Failed with ${res.status}`);
 
-      Alert.alert('Success', 'Transaction created successfully!');
+      // Auto-generate invoice
+      generateInvoicePDF(formData);
+
+      Alert.alert('Success', 'Transaction created and invoice generated!', [
+        { text: 'OK' }
+      ]);
       setShowTransactionModal(false);
       setSelectedTransactionType(null);
       setEditingTransaction(null);

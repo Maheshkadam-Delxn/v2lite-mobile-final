@@ -1,538 +1,8 @@
 
-// import React, { useState, useEffect } from 'react';
-// import {
-//   View,
-//   Text,
-//   Image,
-//   TouchableOpacity,
-//   Modal,
-//   FlatList,
-//   TouchableWithoutFeedback,
-//   Dimensions,
-//   ActivityIndicator,
-//   TextInput,
-// } from 'react-native';
-// import Header from '@/components/Header';
-// import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-// import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// const { width } = Dimensions.get('window');
-
-// const ViewDocument = ({ navigation, route }) => {
-//   const { document,folderId } = route.params;
-
-//   const [selectedVersion, setSelectedVersion] = useState(
-//     document?.versions?.[0]
-//   );
-
-//   /* ---------------- ZOOM ---------------- */
-//   const [scale, setScale] = useState(1);
-
-//   /* ---------------- ANNOTATIONS WITH HISTORY ---------------- */
-//   const [annotations, setAnnotations] = useState([]);
-//   const [history, setHistory] = useState([]); // Past states
-//   const [historyIndex, setHistoryIndex] = useState(-1); // Current position in history
-
-//   const [annotationMode, setAnnotationMode] = useState(false);
-//   const [annotationModal, setAnnotationModal] = useState(false);
-//   const [annotationText, setAnnotationText] = useState('');
-//   const [currentPoint, setCurrentPoint] = useState(null);
-
-//   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-//   const [annotationToDelete, setAnnotationToDelete] = useState(null);
-
-//   const [imageLayout, setImageLayout] = useState({ width: 1, height: 1 });
-//   const [versionModalVisible, setVersionModalVisible] = useState(false);
-//   const [imageLoading, setImageLoading] = useState(true);
-
-//   // Track if there are unsaved changes
-//   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-
-//   // Save current state to history
-//   const saveToHistory = (newAnnotations) => {
-//     setHistory((prev) => {
-//       const newHistory = prev.slice(0, historyIndex + 1);
-//       return [...newHistory, newAnnotations];
-//     });
-//     setHistoryIndex((prev) => prev + 1);
-//     setHasUnsavedChanges(true);
-//   };
-
-//   /* ---------------- UNDO / REDO ---------------- */
-//   const undo = () => {
-//     if (historyIndex > 0) {
-//       setHistoryIndex(historyIndex - 1);
-//       setAnnotations(history[historyIndex - 1]);
-//       setHasUnsavedChanges(true);
-//     }
-//   };
-
-//   const redo = () => {
-//     if (historyIndex < history.length - 1) {
-//       setHistoryIndex(historyIndex + 1);
-//       setAnnotations(history[historyIndex + 1]);
-//       setHasUnsavedChanges(true);
-//     }
-//   };
-
-//   const canUndo = historyIndex > 0;
-//   const canRedo = historyIndex < history.length - 1;
-
-//   /* ---------------- IMAGE TAP (ADD ANNOTATION) ---------------- */
-//   const handleImagePress = (event) => {
-//     if (!annotationMode) return;
-
-//     const { locationX, locationY } = event.nativeEvent;
-
-//     const x = locationX / imageLayout.width;
-//     const y = locationY / imageLayout.height;
-
-//     setCurrentPoint({ x, y });
-//     setAnnotationModal(true);
-//   };
-
-//   /* ---------------- SAVE ANNOTATION ---------------- */
-//   const saveAnnotation = () => {
-//     if (!annotationText.trim()) return;
-
-//     const newAnnotation = {
-//       id: Date.now().toString(),
-//       x: currentPoint.x,
-//       y: currentPoint.y,
-//       text: annotationText,
-//       versionId: selectedVersion._id,
-//     };
-
-//     const newAnnotations = [...annotations, newAnnotation];
-//     setAnnotations(newAnnotations);
-//     saveToHistory(newAnnotations);
-
-//     setAnnotationText('');
-//     setAnnotationModal(false);
-//     setCurrentPoint(null);
-//   };
-
-//   /* ---------------- CANCEL ANNOTATION ---------------- */
-//   const cancelAnnotation = () => {
-//     setAnnotationModal(false);
-//     setAnnotationText('');
-//     setCurrentPoint(null);
-//   };
-
-//   /* ---------------- DELETE ANNOTATION ---------------- */
-//   const openDeleteModal = (annotation) => {
-//     setAnnotationToDelete(annotation);
-//     setDeleteModalVisible(true);
-//   };
-
-//   const confirmDelete = () => {
-//     if (annotationToDelete) {
-//       const newAnnotations = annotations.filter((a) => a.id !== annotationToDelete.id);
-//       setAnnotations(newAnnotations);
-//       saveToHistory(newAnnotations);
-//     }
-//     setDeleteModalVisible(false);
-//     setAnnotationToDelete(null);
-//   };
-
-//   const cancelDelete = () => {
-//     setDeleteModalVisible(false);
-//     setAnnotationToDelete(null);
-//   };
-
-//   const versionAnnotations = annotations.filter(
-//     (a) => a.versionId === selectedVersion._id
-//   );
-
-//   /* ---------------- ZOOM CONTROLS ---------------- */
-//   const zoomIn = () => setScale((p) => Math.min(p + 0.2, 3));
-//   const zoomOut = () => setScale((p) => Math.max(p - 0.2, 1));
-//   const resetZoom = () => setScale(1);
-
-
-
-
-// const handleSave = async () => {
-//   try {
-//     const token = await AsyncStorage.getItem("userToken"); // 👈 get token
-
-//     if (!token) {
-//       alert("User not authenticated");
-//       return;
-//     }
-
-//     const payload = {
-//       documentId: document._id,
-//       versionId: selectedVersion._id,
-//       annotations: versionAnnotations.map(a => ({
-//         x: a.x,
-//         y: a.y,
-//         text: a.text,
-//       })),
-//     };
-
-//     console.log("📌 SENDING PAYLOAD ↓↓↓");
-//     console.log(JSON.stringify(payload, null, 2));
-
-//     const res = await fetch(
-//       `${process.env.BASE_API_URL}/api/plan-folders/annotations/${folderId}`,
-//       {
-//         method: "PATCH",
-//         headers: {
-//           "Content-Type": "application/json",
-//           Authorization: `Bearer ${token}`, // 🔥 PASS TOKEN
-//         },
-//         body: JSON.stringify(payload),
-//       }
-//     );
-
-//     const data = await res.json();
-
-//     if (!res.ok) {
-//       console.error("❌ Save failed:", data);
-//       alert(data.message || "Failed to save annotations");
-//       return;
-//     }
-
-//     console.log("✅ SAVE SUCCESS:", data);
-//     setHasUnsavedChanges(false);
-//     alert("Annotations saved successfully");
-//   } catch (err) {
-//     console.error("❌ Error saving annotations:", err);
-//     alert("Something went wrong");
-//   }
-// };
-
-// const fetchAnnotations = async () => {
-//   try {
-//     const token = await AsyncStorage.getItem("userToken");
-
-//     const url =
-//       `${process.env.BASE_API_URL}` +
-//       `/api/plan-folders/annotations/${folderId}/` +
-//       `?documentId=${document._id}` +
-//       `&versionId=${selectedVersion._id}`;
-
-//     console.log("📡 Fetching annotations:", url);
-
-//     const res = await fetch(url, {
-//       headers: {
-//         Authorization: `Bearer ${token}`,
-//       },
-//     });
-
-//     const data = await res.json();
-
-//     if (!res.ok) {
-//       console.error("❌ Fetch failed:", data);
-//       return;
-//     }
-
-//     const mappedAnnotations = (data.annotations || []).map(a => ({
-//       id: a._id,
-//       x: a.x,
-//       y: a.y,
-//       text: a.text,
-//       versionId: selectedVersion._id,
-//     }));
-
-//     console.log("✅ Loaded annotations:", mappedAnnotations);
-
-//     // hydrate UI
-//     setAnnotations(mappedAnnotations);
-//     setHistory([mappedAnnotations]);
-//     setHistoryIndex(0);
-//     setHasUnsavedChanges(false);
-//   } catch (err) {
-//     console.error("❌ Error fetching annotations:", err);
-//   }
-// };
-
-
- 
-// useEffect(() => {
-//   if (!selectedVersion?._id) return;
-//   fetchAnnotations();
-// }, [selectedVersion]);
-
-
-//   return (
-//     <View className="flex-1 bg-gray-50">
-//       {/* ---------------- HEADER WITH SAVE BUTTON ---------------- */}
-//       <Header
-//         title={`View Document: ${document.name}`}
-//         showBackButton
-//         backgroundColor="#0066FF"
-//         titleColor="white"
-//         iconColor="white"
-//         rightComponent={
-//           hasUnsavedChanges && (
-//             <TouchableOpacity
-//               onPress={handleSave}
-//               className="bg-white/20 px-4 py-2 rounded-full mr-3 flex-row items-center"
-//             >
-//               <Icon name="content-save" size={18} color="#fff" />
-//               <Text className="text-black ml-1 font-medium">Save</Text>
-//             </TouchableOpacity>
-//           )
-//         }
-//       />
-//       <View>
-//         <TouchableOpacity
-//               onPress={handleSave}
-//               className="bg-white/20 px-4 py-2 rounded-full mr-3 flex-row items-center"
-//             >
-//               <Icon name="content-save" size={18} color="#7b75e3ff" />
-//               <Text className="text-black ml-1 font-medium">Save</Text>
-//             </TouchableOpacity>
-//       </View>
-
-//       {/* ---------------- IMAGE ---------------- */}
-//       <View className="flex-1 justify-center items-center px-4">
-//         <View
-//           style={{
-//             width: width - 32,
-//             maxWidth: 420,
-//             aspectRatio: 16 / 9,
-//             borderRadius: 16,
-//             overflow: 'hidden',
-//             backgroundColor: '#fff',
-//             elevation: 4,
-//           }}
-//         >
-//           <TouchableWithoutFeedback onPress={handleImagePress}>
-//             <View
-//               style={{ flex: 1 }}
-//               onLayout={(e) => {
-//                 const { width, height } = e.nativeEvent.layout;
-//                 setImageLayout({ width, height });
-//               }}
-//             >
-//               {imageLoading && (
-//                 <ActivityIndicator
-//                   style={{
-//                     position: 'absolute',
-//                     top: '45%',
-//                     left: '45%',
-//                     zIndex: 10,
-//                   }}
-//                 />
-//               )}
-
-//               <View style={{ flex: 1, transform: [{ scale }] }}>
-//                 <Image
-//                   source={{ uri: selectedVersion.image }}
-//                   style={{ width: '100%', height: '100%' }}
-//                   resizeMode="contain"
-//                   onLoadEnd={() => setImageLoading(false)}
-//                 />
-
-//                 {/* ANNOTATIONS */}
-//                 {versionAnnotations.map((item) => (
-//                   <TouchableOpacity
-//                     key={item.id}
-//                     activeOpacity={0.7}
-//                     onLongPress={() => openDeleteModal(item)}
-//                     style={{
-//                       position: 'absolute',
-//                       left: item.x * imageLayout.width - 15,
-//                       top: item.y * imageLayout.height - 15,
-//                       alignItems: 'center',
-//                     }}
-//                   >
-//                     <Icon name="map-marker" size={30} color="#EF4444" />
-//                     <View className="bg-black/80 px-3 py-2 rounded-lg mt-1 max-w-[200px]">
-//                       <Text className="text-white text-xs text-center">{item.text}</Text>
-//                     </View>
-//                   </TouchableOpacity>
-//                 ))}
-//               </View>
-//             </View>
-//           </TouchableWithoutFeedback>
-//         </View>
-
-//         <Text className="mt-3 text-gray-600">
-//           Version {selectedVersion.versionNumber}
-//           {hasUnsavedChanges && <Text className="text-red-500"> • Unsaved changes</Text>}
-//         </Text>
-
-//         {annotationMode && (
-//           <View className="mt-2 flex-row items-center">
-//             <Icon name="map-marker-plus" size={16} color="#0066FF" />
-//             <Text className="text-blue-600 ml-1 text-sm">
-//               Tap on the image to add an annotation
-//             </Text>
-//           </View>
-//         )}
-//       </View>
-
-//       {/* ================= BOTTOM ACTION PANEL ================= */}
-//       <View className="flex-row justify-around items-center bg-white py-3 border-t">
-//         <ActionButton icon="undo" onPress={undo} disabled={!canUndo} />
-//         <ActionButton icon="redo" onPress={redo} disabled={!canRedo} />
-
-//         <ActionButton icon="plus" onPress={zoomIn} />
-//         <ActionButton icon="minus" onPress={zoomOut} />
-//         <ActionButton icon="crop-free" onPress={resetZoom} />
-
-//         <ActionButton
-//           icon="map-marker-plus"
-//           active={annotationMode}
-//           onPress={() => setAnnotationMode((p) => !p)}
-//         />
-//       </View>
-
-//       {/* ---------------- CHANGE VERSION ---------------- */}
-//       <View className="p-4 bg-white border-t">
-//         <TouchableOpacity
-//           onPress={() => setVersionModalVisible(true)}
-//           className="bg-blue-600 py-3 rounded-xl flex-row justify-center"
-//         >
-//           <Icon name="layers-outline" size={18} color="#fff" />
-//           <Text className="text-white ml-2 font-semibold">Change Version</Text>
-//         </TouchableOpacity>
-//       </View>
-
-//       {/* ---------------- VERSION MODAL ---------------- */}
-//       <Modal transparent visible={versionModalVisible} animationType="slide">
-//         <TouchableWithoutFeedback onPress={() => setVersionModalVisible(false)}>
-//           <View className="flex-1 bg-black/40 justify-end">
-//             <TouchableWithoutFeedback>
-//               <View className="bg-white rounded-t-3xl p-4">
-//                 <View className="flex-row justify-between items-center mb-4">
-//                   <Text className="text-lg font-semibold">Select Version</Text>
-//                   <TouchableOpacity onPress={() => setVersionModalVisible(false)}>
-//                     <Icon name="close" size={24} color="#666" />
-//                   </TouchableOpacity>
-//                 </View>
-
-//                 <FlatList
-//                   data={document.versions}
-//                   keyExtractor={(item) => item._id}
-//                   renderItem={({ item }) => (
-//                     <TouchableOpacity
-//                       onPress={() => {
-//                         setSelectedVersion(item);
-//                         setScale(1);
-//                         setVersionModalVisible(false);
-//                       }}
-//                       className="p-4 bg-gray-100 rounded-xl mb-2 flex-row items-center"
-//                     >
-//                       <Icon name="file-document-outline" size={20} color="#0066FF" />
-//                       <Text className="ml-3 font-medium">Version {item.versionNumber}</Text>
-//                       {selectedVersion._id === item._id && (
-//                         <Icon name="check-circle" size={20} color="#0066FF" className="ml-auto" />
-//                       )}
-//                     </TouchableOpacity>
-//                   )}
-//                 />
-//               </View>
-//             </TouchableWithoutFeedback>
-//           </View>
-//         </TouchableWithoutFeedback>
-//       </Modal>
-
-//       {/* ---------------- ANNOTATION INPUT MODAL ---------------- */}
-//       <Modal transparent visible={annotationModal} animationType="fade">
-//         <View className="flex-1 bg-black/50 justify-center px-6">
-//           <View className="bg-white rounded-xl p-4">
-//             <View className="flex-row justify-between items-center mb-4">
-//               <Text className="text-lg font-semibold">Add Annotation</Text>
-//               <TouchableOpacity onPress={cancelAnnotation}>
-//                 <Icon name="close" size={24} color="#666" />
-//               </TouchableOpacity>
-//             </View>
-
-//             <TextInput
-//               value={annotationText}
-//               onChangeText={setAnnotationText}
-//               placeholder="Enter your annotation text..."
-//               className="border border-gray-300 rounded-lg px-4 py-3 mb-4 text-base"
-//               placeholderTextColor="#999"
-//               onSubmitEditing={saveAnnotation}
-//               returnKeyType="done"
-//               autoFocus={true}
-//               multiline={true}
-//               numberOfLines={3}
-//             />
-
-//             <View className="flex-row justify-between">
-//               <TouchableOpacity
-//                 onPress={cancelAnnotation}
-//                 className="bg-gray-200 py-3 rounded-lg flex-1 mr-2"
-//               >
-//                 <Text className="text-gray-800 text-center font-semibold">Cancel</Text>
-//               </TouchableOpacity>
-
-//               <TouchableOpacity
-//                 onPress={saveAnnotation}
-//                 disabled={!annotationText.trim()}
-//                 className={`py-3 rounded-lg flex-1 ml-2 ${
-//                   annotationText.trim() ? 'bg-blue-600' : 'bg-blue-300'
-//                 }`}
-//               >
-//                 <Text className="text-white text-center font-semibold">Save</Text>
-//               </TouchableOpacity>
-//             </View>
-//           </View>
-//         </View>
-//       </Modal>
-
-//       {/* ---------------- DELETE CONFIRMATION MODAL ---------------- */}
-//       <Modal transparent visible={deleteModalVisible} animationType="fade">
-//         <View className="flex-1 bg-black/50 justify-center px-6">
-//           <View className="bg-white rounded-xl p-5">
-//             <Text className="text-lg font-semibold text-center mb-4">
-//               Delete Annotation?
-//             </Text>
-//             <Text className="text-gray-600 text-center mb-6">
-//               "{annotationToDelete?.text}"
-//             </Text>
-
-//             <View className="flex-row justify-between">
-//               <TouchableOpacity
-//                 onPress={cancelDelete}
-//                 className="bg-gray-200 py-3 rounded-lg flex-1 mr-2"
-//               >
-//                 <Text className="text-gray-800 text-center font-semibold">Cancel</Text>
-//               </TouchableOpacity>
-
-//               <TouchableOpacity
-//                 onPress={confirmDelete}
-//                 className="bg-red-600 py-3 rounded-lg flex-1 ml-2"
-//               >
-//                 <Text className="text-white text-center font-semibold">Delete</Text>
-//               </TouchableOpacity>
-//             </View>
-//           </View>
-//         </View>
-//       </Modal>
-//     </View>
-//   );
-// };
-
-// /* ---------------- ACTION BUTTON WITH DISABLED STATE ---------------- */
-// const ActionButton = ({ icon, onPress, active, disabled }) => (
-//   <TouchableOpacity
-//     onPress={onPress}
-//     disabled={disabled}
-//     className={`w-12 h-12 rounded-full items-center justify-center ${
-//       active ? 'bg-blue-600' : disabled ? 'bg-gray-200' : 'bg-gray-100'
-//     }`}
-//   >
-//     <Icon
-//       name={icon}
-//       size={22}
-//       color={active ? '#fff' : disabled ? '#aaa' : '#333'}
-//     />
-//   </TouchableOpacity>
-// );
-
-// export default ViewDocument;
-
-
 
 import React, { useState, useEffect, useRef } from 'react';
+
+import * as Crypto from "expo-crypto";
 import {
   View,
   Text,
@@ -555,6 +25,11 @@ import * as ImagePicker from 'expo-image-picker';
 import { Audio } from 'expo-av';
 
 const { width } = Dimensions.get('window');
+const CLOUDINARY_CONFIG = {
+  cloudName: 'dmlsgazvr',
+  apiKey: '353369352647425',
+  apiSecret: '8qcz7uAdftDVFNd6IqaDOytg_HI',
+};
 
 const ViewDocument = ({ navigation, route }) => {
   const { document, folderId } = route.params;
@@ -593,7 +68,55 @@ const ViewDocument = ({ navigation, route }) => {
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentPlayingId, setCurrentPlayingId] = useState(null);
+  const uploadToCloudinary = async ({
+    uri,
+    folder = "annotations",
+    resourceType = "image", // image | video (audio)
+  }) => {
+    const timestamp = Math.floor(Date.now() / 1000);
 
+    const paramsToSign = `folder=${folder}&timestamp=${timestamp}`;
+
+    const signature = await Crypto.digestStringAsync(
+      Crypto.CryptoDigestAlgorithm.SHA1,
+      paramsToSign + CLOUDINARY_CONFIG.apiSecret
+    );
+
+    const formData = new FormData();
+
+    formData.append("file", {
+      uri,
+      type:
+        resourceType === "video"
+          ? "audio/m4a"
+          : "image/jpeg",
+      name:
+        resourceType === "video"
+          ? "annotation.m4a"
+          : "annotation.jpg",
+    });
+
+    formData.append("api_key", CLOUDINARY_CONFIG.apiKey);
+    formData.append("timestamp", timestamp);
+    formData.append("signature", signature);
+    formData.append("folder", folder);
+
+    const res = await fetch(
+      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/${resourceType}/upload`,
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    const data = await res.json();
+
+    if (!data.secure_url) {
+      throw new Error("Cloudinary upload failed");
+    }
+
+    return data.secure_url;
+  };
   // For new annotation data
   const [annotationData, setAnnotationData] = useState({
     text: '',
@@ -645,7 +168,7 @@ const ViewDocument = ({ navigation, route }) => {
     const y = locationY / imageLayout.height;
 
     setCurrentPoint({ x, y });
-    
+
     // Reset annotation data for new annotation
     setAnnotationData({
       text: '',
@@ -653,7 +176,7 @@ const ViewDocument = ({ navigation, route }) => {
       audioUri: null,
       audioDuration: 0,
     });
-    
+
     setAnnotationModal(true);
   };
 
@@ -676,10 +199,10 @@ const ViewDocument = ({ navigation, route }) => {
   const startRecording = async () => {
     try {
       console.log('Requesting audio permissions...');
-      
+
       const permission = await Audio.requestPermissionsAsync();
       console.log('Audio permission status:', permission.status);
-      
+
       if (permission.status !== 'granted') {
         Alert.alert('Permission Required', 'Permission to access microphone is required for voice annotations!');
         return;
@@ -695,7 +218,7 @@ const ViewDocument = ({ navigation, route }) => {
       });
 
       console.log('Starting recording...');
-      
+
       const { recording } = await Audio.Recording.createAsync(
         Audio.RecordingOptionsPresets.HIGH_QUALITY
       );
@@ -720,17 +243,17 @@ const ViewDocument = ({ navigation, route }) => {
   const stopRecording = async () => {
     try {
       console.log('Stopping recording...');
-      
+
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current);
         recordingIntervalRef.current = null;
       }
 
       setIsRecording(false);
-      
+
       if (recording) {
         await recording.stopAndUnloadAsync();
-        
+
         // Reset audio mode for playback
         await Audio.setAudioModeAsync({
           allowsRecordingIOS: false,
@@ -760,76 +283,159 @@ const ViewDocument = ({ navigation, route }) => {
   };
 
   /* ---------------- AUDIO PLAYBACK FUNCTIONS ---------------- */
-  const playAudio = async (audioUri, annotationId) => {
-    try {
-      console.log('=== PLAY AUDIO DEBUG ===');
-      console.log('Audio URI:', audioUri);
-      console.log('Annotation ID:', annotationId);
-      
-      // Check if file exists
+  // const playAudio = async (audioUri, annotationId) => {
+  //   try {
+  //     console.log('=== PLAY AUDIO DEBUG ===');
+  //     console.log('Audio URI:', audioUri);
+  //     console.log('Annotation ID:', annotationId);
+
+  //     // Check if file exists
+  //     const fileInfo = await FileSystem.getInfoAsync(audioUri);
+  //     console.log('File exists:', fileInfo.exists);
+
+  //     if (!fileInfo.exists) {
+  //       Alert.alert('Audio Error', 'Audio file not found');
+  //       return;
+  //     }
+
+  //     // Stop any currently playing audio
+  //     if (soundRef.current) {
+  //       await soundRef.current.stopAsync();
+  //       await soundRef.current.unloadAsync();
+  //       soundRef.current = null;
+  //       setIsPlaying(false);
+  //     }
+
+  //     // Set audio mode for playback
+  //     await Audio.setAudioModeAsync({
+  //       allowsRecordingIOS: false,
+  //       playsInSilentModeIOS: true,
+  //       staysActiveInBackground: false,
+  //       shouldDuckAndroid: true,
+  //       playThroughEarpieceAndroid: false,
+  //     });
+
+  //     // Set loading state
+  //     setCurrentPlayingId(annotationId);
+  //     setIsPlaying(true);
+
+  //     // Load the audio file
+  //     const { sound } = await Audio.Sound.createAsync(
+  //       { uri: audioUri },
+  //       {
+  //         shouldPlay: true,
+  //         isLooping: false
+  //       },
+  //       onPlaybackStatusUpdate
+  //     );
+
+  //     soundRef.current = sound;
+
+  //     // Play the audio
+  //     await sound.playAsync();
+
+  //   } catch (err) {
+  //     console.error('=== PLAY AUDIO ERROR ===', err);
+  //     console.error('Error details:', err.message);
+  //     setIsPlaying(false);
+  //     setCurrentPlayingId(null);
+  //     Alert.alert('Playback Error', 'Failed to play audio: ' + err.message);
+  //   }
+  // };
+/* ---------------- AUDIO PLAYBACK FUNCTIONS ---------------- */
+const playAudio = async (audioUri, annotationId) => {
+  try {
+    console.log('=== PLAY AUDIO DEBUG ===');
+    console.log('Audio URI:', audioUri);
+    console.log('Annotation ID:', annotationId);
+
+    // Skip file existence check for Cloudinary/remote URLs
+    if (audioUri && audioUri.startsWith('http')) {
+      console.log('Playing Cloudinary/remote audio URL');
+      // Cloudinary URLs are remote, skip local file check
+    } else if (audioUri) {
+      // For local files only, check if they exist
       const fileInfo = await FileSystem.getInfoAsync(audioUri);
-      console.log('File exists:', fileInfo.exists);
+      console.log('Local file exists:', fileInfo.exists);
       
       if (!fileInfo.exists) {
         Alert.alert('Audio Error', 'Audio file not found');
         return;
       }
+    } else {
+      Alert.alert('Audio Error', 'No audio URL provided');
+      return;
+    }
 
-      // Stop any currently playing audio
-      if (soundRef.current) {
-        await soundRef.current.stopAsync();
-        await soundRef.current.unloadAsync();
-        soundRef.current = null;
-        setIsPlaying(false);
-      }
-
-      // Set audio mode for playback
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: false,
-        shouldDuckAndroid: true,
-        playThroughEarpieceAndroid: false,
-      });
-
-      // Set loading state
-      setCurrentPlayingId(annotationId);
-      setIsPlaying(true);
-
-      // Load the audio file
-      const { sound } = await Audio.Sound.createAsync(
-        { uri: audioUri },
-        { 
-          shouldPlay: true,
-          isLooping: false 
-        },
-        onPlaybackStatusUpdate
-      );
-
-      soundRef.current = sound;
-
-      // Play the audio
-      await sound.playAsync();
-      
-    } catch (err) {
-      console.error('=== PLAY AUDIO ERROR ===', err);
-      console.error('Error details:', err.message);
+    // Stop any currently playing audio
+    if (soundRef.current) {
+      await soundRef.current.stopAsync();
+      await soundRef.current.unloadAsync();
+      soundRef.current = null;
       setIsPlaying(false);
-      setCurrentPlayingId(null);
+    }
+
+    // Set audio mode for playback
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: false,
+      shouldDuckAndroid: true,
+      playThroughEarpieceAndroid: false,
+    });
+
+    // Set loading state
+    setCurrentPlayingId(annotationId);
+    setIsPlaying(true);
+
+    console.log('Loading audio from URI:', audioUri);
+    
+    // Load the audio file - works for both local files and Cloudinary URLs
+    const { sound } = await Audio.Sound.createAsync(
+      { uri: audioUri },
+      {
+        shouldPlay: true,
+        isLooping: false,
+        // Additional options for better compatibility
+        progressUpdateIntervalMillis: 500,
+        volume: 1.0,
+        rate: 1.0,
+        pitchCorrectionQuality: Audio.PitchCorrectionQuality.High,
+      },
+      onPlaybackStatusUpdate
+    );
+
+    soundRef.current = sound;
+
+    console.log('Audio loaded successfully, starting playback...');
+    
+    // Play the audio
+    await sound.playAsync();
+
+  } catch (err) {
+    console.error('=== PLAY AUDIO ERROR ===', err);
+    console.error('Error details:', err.message);
+    setIsPlaying(false);
+    setCurrentPlayingId(null);
+    
+    // Check for specific audio format issues
+    if (err.message.includes('format') || err.message.includes('codec')) {
+      Alert.alert('Playback Error', 'Audio format not supported. Try recording again.');
+    } else {
       Alert.alert('Playback Error', 'Failed to play audio: ' + err.message);
     }
-  };
-
+  }
+};
   const onPlaybackStatusUpdate = (status) => {
     console.log('Playback status update:', status);
-    
+
     if (status.isLoaded) {
       if (status.isPlaying) {
         setIsPlaying(true);
       } else {
         setIsPlaying(false);
       }
-      
+
       if (status.didJustFinish) {
         // Audio finished playing
         console.log('Playback finished');
@@ -841,7 +447,7 @@ const ViewDocument = ({ navigation, route }) => {
         }
       }
     }
-    
+
     if (status.error) {
       console.error('Playback error:', status.error);
       Alert.alert('Playback Error', 'Error playing audio');
@@ -917,93 +523,155 @@ const ViewDocument = ({ navigation, route }) => {
   };
 
   /* ---------------- SAVE ANNOTATION ---------------- */
+  // const saveAnnotation = async () => {
+  //   // Check if at least one type of annotation exists
+  //   const hasText = annotationData.text.trim().length > 0;
+  //   const hasImage = annotationData.imageUri !== null;
+  //   const hasAudio = annotationData.audioUri !== null;
+
+  //   if (!hasText && !hasImage && !hasAudio) {
+  //     Alert.alert('No Content', 'Please add at least one annotation (text, image, or voice)');
+  //     return;
+  //   }
+
+  //   // Clean up audio resources first
+  //   await cleanupAudio();
+
+  //   // Generate a unique ID
+  //   const annotationId = `anno_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+  //   // Prepare annotation data
+  //   const newAnnotation = {
+  //     id: annotationId,
+  //     x: currentPoint.x,
+  //     y: currentPoint.y,
+  //     text: annotationData.text.trim(),
+  //     imageUri: annotationData.imageUri,
+  //     audioUri: annotationData.audioUri,
+  //     audioDuration: annotationData.audioDuration,
+  //     versionId: selectedVersion._id,
+  //     createdAt: new Date().toISOString(),
+  //   };
+
+  //   // If there's an audio file, copy it to app directory
+  //   if (hasAudio && annotationData.audioUri) {
+  //     try {
+  //       const audioFileName = `annotation_${annotationId}.m4a`;
+  //       const audioFileUri = `${FileSystem.documentDirectory}${audioFileName}`;
+
+  //       await FileSystem.copyAsync({
+  //         from: annotationData.audioUri,
+  //         to: audioFileUri,
+  //       });
+
+  //       newAnnotation.audioUri = audioFileUri;
+  //       console.log('Audio file saved to:', audioFileUri);
+  //     } catch (err) {
+  //       console.error('Error saving audio file:', err);
+  //       Alert.alert('Save Error', 'Failed to save audio file');
+  //       return;
+  //     }
+  //   }
+
+  //   // If there's an image, copy it to app directory
+  //   if (hasImage && annotationData.imageUri) {
+  //     try {
+  //       const imageFileName = `annotation_${annotationId}.jpg`;
+  //       const imageFileUri = `${FileSystem.documentDirectory}${imageFileName}`;
+
+  //       await FileSystem.copyAsync({
+  //         from: annotationData.imageUri,
+  //         to: imageFileUri,
+  //       });
+
+  //       newAnnotation.imageUri = imageFileUri;
+  //       console.log('Image file saved to:', imageFileUri);
+  //     } catch (err) {
+  //       console.error('Error saving image file:', err);
+  //       Alert.alert('Save Error', 'Failed to save image file');
+  //       return;
+  //     }
+  //   }
+
+  //   // Add to annotations
+  //   const newAnnotations = [...annotations, newAnnotation];
+  //   setAnnotations(newAnnotations);
+  //   saveToHistory(newAnnotations);
+
+  //   // Reset states
+  //   setAnnotationData({
+  //     text: '',
+  //     imageUri: null,
+  //     audioUri: null,
+  //     audioDuration: 0,
+  //   });
+
+  //   setAnnotationModal(false);
+  //   setCurrentPoint(null);
+
+  //   Alert.alert('Success', 'Annotation saved successfully!');
+  // };
   const saveAnnotation = async () => {
-    // Check if at least one type of annotation exists
-    const hasText = annotationData.text.trim().length > 0;
-    const hasImage = annotationData.imageUri !== null;
-    const hasAudio = annotationData.audioUri !== null;
+    const hasText = annotationData.text.trim();
+    const hasImage = annotationData.imageUri;
+    const hasAudio = annotationData.audioUri;
 
     if (!hasText && !hasImage && !hasAudio) {
-      Alert.alert('No Content', 'Please add at least one annotation (text, image, or voice)');
+      Alert.alert("No Content", "Add text, image or audio");
       return;
     }
 
-    // Clean up audio resources first
-    await cleanupAudio();
+    let imageUrl = null;
+    let audioUrl = null;
 
-    // Generate a unique ID
-    const annotationId = `anno_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    try {
+      if (hasImage) {
+        imageUrl = await uploadToCloudinary({
+          uri: annotationData.imageUri,
+          folder: "annotations/images",
+          resourceType: "image",
+        });
+      }
 
-    // Prepare annotation data
+      if (hasAudio) {
+        audioUrl = await uploadToCloudinary({
+          uri: annotationData.audioUri,
+          folder: "annotations/audio",
+          resourceType: "video", // audio = video in Cloudinary
+        });
+      }
+    } catch (err) {
+      Alert.alert("Upload Failed", err.message);
+      return;
+    }
+
     const newAnnotation = {
-      id: annotationId,
+      id: `anno_${Date.now()}`,
       x: currentPoint.x,
       y: currentPoint.y,
-      text: annotationData.text.trim(),
-      imageUri: annotationData.imageUri,
-      audioUri: annotationData.audioUri,
+      text: annotationData.text,
+      imageUri: imageUrl,
+      audioUri: audioUrl,
       audioDuration: annotationData.audioDuration,
       versionId: selectedVersion._id,
       createdAt: new Date().toISOString(),
     };
 
-    // If there's an audio file, copy it to app directory
-    if (hasAudio && annotationData.audioUri) {
-      try {
-        const audioFileName = `annotation_${annotationId}.m4a`;
-        const audioFileUri = `${FileSystem.documentDirectory}${audioFileName}`;
-        
-        await FileSystem.copyAsync({
-          from: annotationData.audioUri,
-          to: audioFileUri,
-        });
-        
-        newAnnotation.audioUri = audioFileUri;
-        console.log('Audio file saved to:', audioFileUri);
-      } catch (err) {
-        console.error('Error saving audio file:', err);
-        Alert.alert('Save Error', 'Failed to save audio file');
-        return;
-      }
-    }
-
-    // If there's an image, copy it to app directory
-    if (hasImage && annotationData.imageUri) {
-      try {
-        const imageFileName = `annotation_${annotationId}.jpg`;
-        const imageFileUri = `${FileSystem.documentDirectory}${imageFileName}`;
-        
-        await FileSystem.copyAsync({
-          from: annotationData.imageUri,
-          to: imageFileUri,
-        });
-        
-        newAnnotation.imageUri = imageFileUri;
-        console.log('Image file saved to:', imageFileUri);
-      } catch (err) {
-        console.error('Error saving image file:', err);
-        Alert.alert('Save Error', 'Failed to save image file');
-        return;
-      }
-    }
-
-    // Add to annotations
     const newAnnotations = [...annotations, newAnnotation];
+    console.log('New Annotation:', newAnnotation);
     setAnnotations(newAnnotations);
     saveToHistory(newAnnotations);
 
-    // Reset states
+    setAnnotationModal(false);
+    setCurrentPoint(null);
     setAnnotationData({
-      text: '',
+      text: "",
       imageUri: null,
       audioUri: null,
       audioDuration: 0,
     });
-    
-    setAnnotationModal(false);
-    setCurrentPoint(null);
-    
-    Alert.alert('Success', 'Annotation saved successfully!');
+
+    Alert.alert("Success", "Annotation uploaded to Cloudinary");
   };
 
   /* ---------------- CANCEL ANNOTATION ---------------- */
@@ -1012,10 +680,10 @@ const ViewDocument = ({ navigation, route }) => {
     if (isRecording) {
       await stopRecording();
     }
-    
+
     // Clean up audio resources
     await cleanupAudio();
-    
+
     // Reset states
     setAnnotationData({
       text: '',
@@ -1023,7 +691,7 @@ const ViewDocument = ({ navigation, route }) => {
       audioUri: null,
       audioDuration: 0,
     });
-    
+
     setAnnotationModal(false);
     setCurrentPoint(null);
   };
@@ -1049,7 +717,7 @@ const ViewDocument = ({ navigation, route }) => {
           console.error('Error deleting audio file:', err);
         }
       }
-      
+
       if (annotationToDelete.imageUri) {
         try {
           await FileSystem.deleteAsync(annotationToDelete.imageUri);
@@ -1061,7 +729,7 @@ const ViewDocument = ({ navigation, route }) => {
       const newAnnotations = annotations.filter((a) => a.id !== annotationToDelete.id);
       setAnnotations(newAnnotations);
       saveToHistory(newAnnotations);
-      
+
       Alert.alert('Deleted', 'Annotation deleted successfully');
     }
     setDeleteModalVisible(false);
@@ -1092,19 +760,22 @@ const ViewDocument = ({ navigation, route }) => {
         return;
       }
 
-      // Prepare payload
+     
+console.log("files",versionAnnotations)
       const payload = {
         documentId: document._id,
         versionId: selectedVersion._id,
         annotations: versionAnnotations.map(a => ({
           x: a.x,
           y: a.y,
-          text: a.text,
-          hasImage: !!a.imageUri,
-          hasAudio: !!a.audioUri,
-          audioDuration: a.audioDuration,
+          text: a.text || "",
+          
+          imageUri: a.imageUri || null,   // ✅ Cloudinary image URL
+          audioUri: a.audioUri || null,   // ✅ Cloudinary audio URL
+          audioDuration: a.audioDuration || 0,
         })),
       };
+
 
       const res = await fetch(
         `${process.env.BASE_API_URL}/api/plan-folders/annotations/${folderId}`,
@@ -1213,12 +884,12 @@ const ViewDocument = ({ navigation, route }) => {
       >
         {/* Marker Icon - Simple red pin without badges */}
         <View className="relative">
-          <Icon 
-            name="map-marker" 
-            size={40} 
+          <Icon
+            name="map-marker"
+            size={40}
             color="#EF4444"  // Always red, no color coding based on content
           />
-          
+
           {/* REMOVED: Small badge icons on marker */}
         </View>
 
@@ -1233,7 +904,8 @@ const ViewDocument = ({ navigation, route }) => {
   };
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View style={{ flex: 1, backgroundColor: "#F9FAFB", position: "relative" }}>
+
       {/* ---------------- HEADER ---------------- */}
       <Header
         title={`View Document: ${document.name}`}
@@ -1241,20 +913,47 @@ const ViewDocument = ({ navigation, route }) => {
         backgroundColor="#0066FF"
         titleColor="white"
         iconColor="white"
-        rightComponent={
-          <View className="flex-row items-center">
-            {hasUnsavedChanges && (
-              <TouchableOpacity
-                onPress={handleSave}
-                className="bg-white/20 px-4 py-2 rounded-full mr-3 flex-row items-center"
-              >
-                <Icon name="content-save" size={18} color="#fff" />
-                <Text className="text-white ml-1 font-medium">Save</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        }
+
       />
+      {/* ---------------- SAVE BUTTON BELOW HEADER ---------------- */}
+      {hasUnsavedChanges && (
+        <View
+          style={{
+            paddingHorizontal: 16,
+            paddingVertical: 10,
+            backgroundColor: "#F9FAFB",
+            borderBottomWidth: 1,
+            borderBottomColor: "#E5E7EB",
+          }}
+        >
+          <TouchableOpacity
+            onPress={handleSave}
+            activeOpacity={0.85}
+            style={{
+              backgroundColor: "#2563EB",
+              paddingVertical: 14,
+              borderRadius: 12,
+              flexDirection: "row",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <Icon name="content-save" size={22} color="#fff" />
+            <Text
+              style={{
+                color: "#fff",
+                marginLeft: 10,
+                fontSize: 16,
+                fontWeight: "600",
+              }}
+            >
+              Save Changes
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+
 
       {/* ---------------- IMAGE WITH ANNOTATIONS ---------------- */}
       <View className="flex-1 justify-center items-center px-4">
@@ -1352,9 +1051,9 @@ const ViewDocument = ({ navigation, route }) => {
       </View>
 
       {/* ---------------- ANNOTATION CREATION MODAL ---------------- */}
-      <Modal 
-        transparent 
-        visible={annotationModal} 
+      <Modal
+        transparent
+        visible={annotationModal}
         animationType="fade"
         onRequestClose={cancelAnnotation}
       >
@@ -1393,7 +1092,7 @@ const ViewDocument = ({ navigation, route }) => {
                       <Text className="text-green-600 ml-2">
                         Recorded ({annotationData.audioDuration}s)
                       </Text>
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         onPress={() => {
                           if (currentPlayingId === 'new' && isPlaying) {
                             stopAudio();
@@ -1403,13 +1102,13 @@ const ViewDocument = ({ navigation, route }) => {
                         }}
                         className="ml-auto bg-green-100 p-2 rounded-full"
                       >
-                        <Icon 
-                          name={currentPlayingId === 'new' && isPlaying ? "pause" : "play"} 
-                          size={20} 
-                          color="#10B981" 
+                        <Icon
+                          name={currentPlayingId === 'new' && isPlaying ? "pause" : "play"}
+                          size={20}
+                          color="#10B981"
                         />
                       </TouchableOpacity>
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         onPress={() => setAnnotationData(prev => ({ ...prev, audioUri: null, audioDuration: 0 }))}
                         className="ml-2 bg-red-100 p-2 rounded-full"
                       >
@@ -1422,7 +1121,7 @@ const ViewDocument = ({ navigation, route }) => {
                       <Text className="text-red-600 ml-2 font-medium">
                         Recording... {recordingDuration}s
                       </Text>
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         onPress={stopRecording}
                         className="ml-auto bg-red-100 p-2 rounded-full"
                       >
@@ -1430,7 +1129,7 @@ const ViewDocument = ({ navigation, route }) => {
                       </TouchableOpacity>
                     </View>
                   ) : (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       onPress={startRecording}
                       className="flex-1 flex-row items-center bg-blue-50 p-3 rounded-lg"
                     >
@@ -1451,7 +1150,7 @@ const ViewDocument = ({ navigation, route }) => {
                       className="w-full h-48 rounded-lg mb-2"
                       resizeMode="cover"
                     />
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       onPress={() => setAnnotationData(prev => ({ ...prev, imageUri: null }))}
                       className="absolute top-2 right-2 bg-black/70 p-2 rounded-full"
                     >
@@ -1459,7 +1158,7 @@ const ViewDocument = ({ navigation, route }) => {
                     </TouchableOpacity>
                   </View>
                 ) : (
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     onPress={pickImage}
                     className="border-2 border-dashed border-gray-300 rounded-lg p-6 items-center"
                   >
@@ -1482,11 +1181,10 @@ const ViewDocument = ({ navigation, route }) => {
                 <TouchableOpacity
                   onPress={saveAnnotation}
                   disabled={!annotationData.text && !annotationData.imageUri && !annotationData.audioUri}
-                  className={`py-3 rounded-lg flex-1 ml-2 ${
-                    annotationData.text || annotationData.imageUri || annotationData.audioUri
+                  className={`py-3 rounded-lg flex-1 ml-2 ${annotationData.text || annotationData.imageUri || annotationData.audioUri
                       ? 'bg-blue-600'
                       : 'bg-blue-300'
-                  }`}
+                    }`}
                 >
                   <Text className="text-white text-center font-semibold">Save Annotation</Text>
                 </TouchableOpacity>
@@ -1497,9 +1195,9 @@ const ViewDocument = ({ navigation, route }) => {
       </Modal>
 
       {/* ---------------- VIEW ANNOTATION DETAILS MODAL ---------------- */}
-      <Modal 
-        transparent 
-        visible={viewAnnotationModal} 
+      <Modal
+        transparent
+        visible={viewAnnotationModal}
         animationType="fade"
         onRequestClose={closeViewAnnotationModal}
       >
@@ -1532,16 +1230,16 @@ const ViewDocument = ({ navigation, route }) => {
                       <View className="bg-green-50 p-4 rounded-lg">
                         <View className="flex-row items-center justify-between">
                           <View className="flex-row items-center">
-                            <Icon 
-                              name="microphone" 
-                              size={24} 
-                              color="#10B981" 
+                            <Icon
+                              name="microphone"
+                              size={24}
+                              color="#10B981"
                             />
                             <Text className="text-green-700 ml-3 font-medium">
                               Audio Recording ({selectedAnnotation.audioDuration}s)
                             </Text>
                           </View>
-                          <TouchableOpacity 
+                          <TouchableOpacity
                             onPress={() => {
                               if (currentPlayingId === selectedAnnotation.id && isPlaying) {
                                 stopAudio();
@@ -1551,10 +1249,10 @@ const ViewDocument = ({ navigation, route }) => {
                             }}
                             className="bg-green-100 p-3 rounded-full"
                           >
-                            <Icon 
-                              name={currentPlayingId === selectedAnnotation.id && isPlaying ? "pause" : "play"} 
-                              size={22} 
-                              color="#10B981" 
+                            <Icon
+                              name={currentPlayingId === selectedAnnotation.id && isPlaying ? "pause" : "play"}
+                              size={22}
+                              color="#10B981"
                             />
                           </TouchableOpacity>
                         </View>
@@ -1614,9 +1312,9 @@ const ViewDocument = ({ navigation, route }) => {
       </Modal>
 
       {/* ---------------- VERSION MODAL ---------------- */}
-      <Modal 
-        transparent 
-        visible={versionModalVisible} 
+      <Modal
+        transparent
+        visible={versionModalVisible}
         animationType="slide"
         onRequestClose={() => setVersionModalVisible(false)}
       >
@@ -1641,9 +1339,8 @@ const ViewDocument = ({ navigation, route }) => {
                         setScale(1);
                         setVersionModalVisible(false);
                       }}
-                      className={`p-4 rounded-xl mb-2 flex-row items-center ${
-                        selectedVersion._id === item._id ? 'bg-blue-50 border border-blue-200' : 'bg-gray-100'
-                      }`}
+                      className={`p-4 rounded-xl mb-2 flex-row items-center ${selectedVersion._id === item._id ? 'bg-blue-50 border border-blue-200' : 'bg-gray-100'
+                        }`}
                     >
                       <Icon name="file-document-outline" size={20} color="#0066FF" />
                       <Text className="ml-3 font-medium">Version {item.versionNumber}</Text>
@@ -1660,9 +1357,9 @@ const ViewDocument = ({ navigation, route }) => {
       </Modal>
 
       {/* ---------------- DELETE CONFIRMATION MODAL ---------------- */}
-      <Modal 
-        transparent 
-        visible={deleteModalVisible} 
+      <Modal
+        transparent
+        visible={deleteModalVisible}
         animationType="fade"
         onRequestClose={cancelDelete}
       >
@@ -1702,9 +1399,8 @@ const ActionButton = ({ icon, onPress, active, disabled }) => (
   <TouchableOpacity
     onPress={onPress}
     disabled={disabled}
-    className={`w-12 h-12 rounded-full items-center justify-center ${
-      active ? 'bg-blue-600' : disabled ? 'bg-gray-200' : 'bg-gray-100'
-    }`}
+    className={`w-12 h-12 rounded-full items-center justify-center ${active ? 'bg-blue-600' : disabled ? 'bg-gray-200' : 'bg-gray-100'
+      }`}
   >
     <Icon
       name={icon}
