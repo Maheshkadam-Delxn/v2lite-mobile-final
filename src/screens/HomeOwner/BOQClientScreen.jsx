@@ -119,9 +119,7 @@ const BOQClientScreen = () => {
     </View>
   );
 
-  // -------------------------------------------------------------------
-  // 📌 BOQ Card Component
-  // -------------------------------------------------------------------
+  
   const BOQCard = ({ boq }) => (
     <TouchableOpacity
       style={styles.card}

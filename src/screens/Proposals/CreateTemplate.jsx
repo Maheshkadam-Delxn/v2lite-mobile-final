@@ -1553,10 +1553,11 @@ const CreateTemplate = () => {
           structuralType: boq.structuralType?.trim() || '',
           foundationType: boq.foundationType?.trim() || '',
           boqVersion: (boq.boqVersion || []).map(version => ({
-            versionNumber: version.versionNumber || 1,
+            versionNumber: 1,
             createdAt: version.createdAt || new Date().toISOString(),
             materials: version.materials || [],
             status: version.status || 'draft',
+            contractorApproval:"approved",
             rejectionReason: version.rejectionReason || '',
             laborCost: Number(version.laborCost) || 0,
             totalMaterialCost: Number(version.totalMaterialCost) || 0,
@@ -1568,7 +1569,7 @@ const CreateTemplate = () => {
         planData: formData.planData,
 
       };
-
+console.log("📥 Preparing to submit the following data:\n", JSON.stringify(requestData, null, 2));
 
       const transformPlanDataForBackend = (planData) => {
 
@@ -1614,7 +1615,7 @@ const payload={...requestData , plansData:data}
 
 
      
-      console.log("📤 Submitting data:", payload);
+      // console.log("📤 Submitting data:", payload);
 
       // TODO: Uncomment API call
       const response = await fetch(
