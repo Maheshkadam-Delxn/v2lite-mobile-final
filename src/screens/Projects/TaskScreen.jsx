@@ -271,7 +271,33 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
     setTempEndDate(subtask.endDate ? new Date(subtask.endDate) : new Date());
     setShowSubtaskModal(true);
   };
-  
+  const [permissions, setPermissions] = useState(null);
+useEffect(() => {
+        const checkStorage = async () => {
+            const user = await AsyncStorage.getItem('userData');
+            const parsedUser = user ? JSON.parse(user) : null;
+
+            const canAccessPayment =
+                parsedUser?.role === "admin" ||
+                !!(
+                    parsedUser?.permissions?.payment &&
+                    (
+                        parsedUser.permissions.payment.create ||
+                        parsedUser.permissions.payment.update ||
+                        parsedUser.permissions.payment.delete ||
+                        parsedUser.permissions.payment.view
+                    )
+                );
+           
+setPermissions(parsedUser);
+console.log("Permissions set in MilestoneScreen:", parsedUser);
+          
+
+          
+        };
+
+        checkStorage();
+    }, []);
   // Create new milestone (POST API) - Updated to include subtasks
   const handleCreateMilestone = async () => {
     if (!newMilestone.title.trim()) {
@@ -499,7 +525,17 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.addButton}
-              onPress={() => setShowNewMilestoneModal(true)}
+              onPress={() =>{
+                  if (!permissions?.permissions?.task?.create && permissions?.role !== "admin") {
+    Alert.alert(
+      "Access Denied",
+      "You do not have permission to create a task.",
+      [{ text: "OK" }]
+    );
+    return;
+  }
+
+                setShowNewMilestoneModal(true)}}
               disabled={loading || refreshing}
             >
               <Ionicons name="add" size={24} color="white" />

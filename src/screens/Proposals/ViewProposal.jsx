@@ -908,8 +908,9 @@ const ViewProposal = ({ navigation, route }) => {
     try {
       const requestBody = {
         status: nextStatus,
-        budget: approvedBudget, // Update with final budget
-        updatedAt: new Date().toISOString()
+        budget: approvedBudget,
+      
+        startDate: new Date().toISOString()
       };
 
       const token = await AsyncStorage.getItem('userToken');

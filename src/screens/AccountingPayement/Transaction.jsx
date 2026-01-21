@@ -50,37 +50,24 @@ const Transaction = ({ project }) => {
       // 1. Prepare Watermark Image
       let watermarkBase64 = null;
       try {
-        // Use Asset module for robust loading
         const logoModule = require('../../assets/logo.png');
-        const asset = Asset.fromModule(logoModule);
+        // Load asset
+        const [asset] = await Asset.loadAsync(logoModule);
 
-        // Ensure asset is downloaded to local filesystem (cached)
+        // Ensure asset is downloaded (crucial for some expo versions)
         await asset.downloadAsync();
 
+        // Ensure we have a local URI
         const uri = asset.localUri || asset.uri;
-        console.log('Watermark URI:', uri);
 
         if (uri) {
           watermarkBase64 = await FileSystem.readAsStringAsync(uri, {
             encoding: 'base64',
           });
-          console.log('Watermark loaded successfully');
         }
       } catch (imgErr) {
         console.error('Failed to load watermark image:', imgErr);
       }
-
-      const watermarkStyle = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        opacity: 0.2; 
-        width: 50%; 
-        z-index: 1000;
-        text-align: center;
-        pointer-events: none;
-      `;
 
       // Helper to format currency
       const formatCurrency = (amount) => {
@@ -88,80 +75,325 @@ const Transaction = ({ project }) => {
         return isNaN(val) ? '0.00' : val.toFixed(2);
       };
 
-      // Helper to render row
-      const renderRow = (label, value) => `
-        <tr>
-          <td style="padding: 8px; border-bottom: 1px solid #eee; color: #666;">${label}</td>
-          <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: 500; text-align: right;">${value || '-'}</td>
-        </tr>
-      `;
-
       const htmlContent = `
+        <!DOCTYPE html>
         <html>
           <head>
             <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
             <style>
-              body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 40px; color: #333; position: relative; }
-              .header { text-align: center; margin-bottom: 40px; }
-              .invoice-title { font-size: 24px; font-weight: bold; color: #0066FF; margin-bottom: 5px; }
-              .invoice-meta { font-size: 14px; color: #999; }
+              body { 
+                font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif; 
+                padding: 0; 
+                margin: 0;
+                color: #1F2937; 
+                -webkit-print-color-adjust: exact;
+                background-color: #FFFFFF;
+              }
               
-              /* Removed background white to allow transparency, or kept white but ensure z-index of watermark is higher */
-              .section { margin-bottom: 30px; border: 1px solid #eee; border-radius: 8px; overflow: hidden; background: rgba(255,255,255,0.95); } 
+              .page-container {
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 40px;
+                position: relative;
+                min-height: 100vh;
+                box-sizing: border-box;
+                background: transparent; /* Changed to transparent to show watermark if it was behind */
+                z-index: 2;
+              }
+
+              /* Watermark Styling */
+              .watermark-container {
+                position: absolute; /* Changed from fixed to absolute */
+                top: 35%; /* Slightly higher */
+                left: 50%;
+                transform: translate(-50%, -50%);
+                opacity: 0.5;
+                width: 40%;
+                z-index: 1; /* Low z-index but positive */
+                pointer-events: none;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+              }
+              .watermark-img {
+                width: 100%;
+                height: auto;
+                object-fit: contain;
+              }
               
-              .table { width: 100%; border-collapse: collapse; }
-              .total-row td { padding: 15px 10px; font-weight: bold; font-size: 16px; background: #f8f9fa; border-top: 2px solid #ddd; }
-              .watermark-container { ${watermarkStyle} }
-              .watermark-img { width: 100%; height: auto; object-fit: contain; } 
+              /* Ensure content is above watermark */
+              .content-layer {
+                position: relative;
+                z-index: 5;
+              }
+
+              /* Header Styling */
+              .header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 60px;
+                padding-bottom: 20px;
+                border-bottom: 2px solid #E5E7EB;
+                position: relative;
+              }
+              
+              .company-info h1 {
+                font-size: 28px;
+                font-weight: 800;
+                color: #111827;
+                margin: 0 0 8px 0;
+                letter-spacing: -0.5px;
+              }
+              .company-info p {
+                font-size: 13px;
+                color: #6B7280;
+                margin: 0;
+              }
+
+              .invoice-details {
+                text-align: right;
+              }
+              .invoice-tag {
+                background: #0066FF;
+                color: white;
+                padding: 6px 12px;
+                border-radius: 6px;
+                font-size: 12px;
+                font-weight: 600;
+                text-transform: uppercase;
+                display: inline-block;
+                margin-bottom: 8px;
+              }
+              .invoice-date {
+                font-size: 13px;
+                color: #6B7280;
+                font-weight: 500;
+              }
+
+              /* Content Styling */
+              .content-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 40px;
+                margin-bottom: 40px;
+                position: relative;
+                z-index: 1;
+              }
+
+              .info-group h3 {
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                color: #9CA3AF;
+                margin: 0 0 8px 0;
+                font-weight: 600;
+              }
+              .info-group p {
+                font-size: 15px;
+                color: #111827;
+                font-weight: 500;
+                margin: 0;
+                line-height: 1.4;
+              }
+
+              /* Table Styling */
+              .details-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 40px;
+                position: relative;
+                z-index: 1;
+                background: rgba(255,255,255,0.8); /* Slight glass effect over watermark */
+              }
+              
+              .details-table th {
+                text-align: left;
+                padding: 12px 0;
+                border-bottom: 2px solid #E5E7EB;
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                color: #6B7280;
+                font-weight: 600;
+              }
+              
+              .details-table td {
+                padding: 16px 0;
+                border-bottom: 1px solid #F3F4F6;
+                font-size: 14px;
+                color: #374151;
+              }
+              
+              .details-table td.label {
+                font-weight: 500;
+                color: #4B5563;
+                width: 40%;
+              }
+              .details-table td.value {
+                text-align: right;
+                font-weight: 600;
+                color: #111827;
+              }
+
+              /* Amount Board */
+              .amount-board {
+                background: #F9FAFB;
+                border-radius: 12px;
+                padding: 24px;
+                margin-top: 20px;
+                border: 1px solid #E5E7EB;
+                position: relative;
+                z-index: 1;
+              }
+              
+              .amount-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 12px;
+              }
+              .amount-row:last-child {
+                margin-bottom: 0;
+                padding-top: 12px;
+                border-top: 1px solid #E5E7EB;
+              }
+              
+              .amount-label {
+                font-size: 14px;
+                color: #6B7280;
+                font-weight: 500;
+              }
+              .amount-value {
+                font-size: 16px;
+                font-weight: 600;
+                color: #111827;
+              }
+              .total-label {
+                font-size: 16px;
+                font-weight: 700;
+                color: #111827;
+              }
+              .total-value {
+                font-size: 24px;
+                font-weight: 800;
+                color: #0066FF;
+              }
+
+              /* Footer */
+              .footer {
+                margin-top: 80px;
+                text-align: center;
+                padding-top: 24px;
+                border-top: 1px solid #E5E7EB;
+                position: relative;
+                z-index: 1;
+              }
+              .footer p {
+                font-size: 12px;
+                color: #9CA3AF;
+                margin: 4px 0;
+              }
+              .footer-brand {
+                font-weight: 600;
+                color: #4B5563;
+                margin-bottom: 8px !important;
+              }
             </style>
           </head>
           <body>
-            <!-- Watermark (Overlay) -->
-            ${watermarkBase64
-          ? `<div class="watermark-container"><img src="data:image/png;base64,${watermarkBase64}" class="watermark-img" /></div>`
-          : ''
+            <div class="page-container">
+              <!-- Watermark -->
+              ${watermarkBase64 ?
+          `<div class="watermark-container">
+                   <img src="data:image/png;base64,${watermarkBase64}" class="watermark-img" />
+                 </div>` : ''
         }
 
-            <div class="header">
-              <div class="invoice-title">TRANSACTION RECEIPT</div>
-              <div class="invoice-meta">Generated on ${new Date().toLocaleDateString()}</div>
-            </div>
+              <!-- Header -->
+              <div class="header">
+                <div class="company-info">
+                  <h1>TRANSACTION</h1>
+                  <p>Receipt & Document Record</p>
+                </div>
+                <div class="invoice-details">
+                  <span class="invoice-tag">${(transactionData.typeLabel || transactionData.type || 'Transaction').toUpperCase()}</span>
+                  <div class="invoice-date">${new Date(transactionData.date || transactionData.createdAt || Date.now()).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                </div>
+              </div>
 
-            <div class="section">
-              <table class="table">
+              <!-- Key Info Grid -->
+              <div class="content-grid">
+                <div class="info-group">
+                  <h3>Pay To / Vendor</h3>
+                  <p>${transactionData.vendorName || transactionData.partyName || transactionData.vendorId?.name || 'N/A'}</p>
+                </div>
+                <div class="info-group">
+                  <h3>Payment Method</h3>
+                  <p>${transactionData.paymentModeLabel || transactionData.paymentMode || 'N/A'}</p>
+                </div>
+              </div>
+
+              <!-- Detailed Table -->
+              <table class="details-table">
+                <thead>
+                  <tr>
+                    <th>Description</th>
+                    <th style="text-align: right;">Details</th>
+                  </tr>
+                </thead>
                 <tbody>
-                  ${renderRow('Transaction Type', transactionData.typeLabel || transactionData.type || 'Transaction')}
-                  ${renderRow('Date', new Date(transactionData.date || transactionData.createdAt || Date.now()).toLocaleDateString())}
-                  ${renderRow('Vendor / Party', transactionData.vendorName || transactionData.partyName || 'N/A')}
-                  ${renderRow('Payment Mode', transactionData.paymentModeLabel || transactionData.paymentMode || 'N/A')}
-                  ${renderRow('Reference No.', transactionData.referenceNumber || '-')}
-                  ${renderRow('Bank Name', transactionData.bankName || '-')}
-                  ${renderRow('Cost Code', transactionData.costCode || '-')}
-                  ${renderRow('Category', transactionData.category || '-')}
-                  ${renderRow('Description', transactionData.description || transactionData.notes || '-')}
-                  ${(transactionData.documents && transactionData.documents.length > 0) ? renderRow('Attachments', `${transactionData.documents.length} File(s)`) : ''}
+                  <tr>
+                    <td class="label">Reference No.</td>
+                    <td class="value">${transactionData.referenceNumber || '-'}</td>
+                  </tr>
+                  <tr>
+                    <td class="label">Bank Name</td>
+                    <td class="value">${transactionData.bankName || '-'}</td>
+                  </tr>
+                  <tr>
+                    <td class="label">Cost Code</td>
+                    <td class="value">${transactionData.costCode || '-'}</td>
+                  </tr>
+                  <tr>
+                    <td class="label">Category</td>
+                    <td class="value">${transactionData.category || '-'}</td>
+                  </tr>
+                  <tr>
+                    <td class="label">Description / Notes</td>
+                    <td class="value">${transactionData.description || transactionData.notes || '-'}</td>
+                  </tr>
+                  ${(transactionData.documents && transactionData.documents.length > 0) ? `
+                  <tr>
+                    <td class="label">Attachments</td>
+                    <td class="value">${transactionData.documents.length} File(s) Attached</td>
+                  </tr>` : ''}
                 </tbody>
               </table>
-            </div>
 
-            <div class="section">
-              <table class="table">
-                <tbody>
-                  <tr class="total-row">
-                    <td>Amount</td>
-                    <td style="text-align: right;">${formatCurrency(transactionData.amount)} INR</td>
-                  </tr>
-                  <tr class="total-row">
-                    <td style="color: #666; font-size: 14px;">Equivalent (Approx)</td>
-                    <td style="text-align: right; color: #666; font-size: 14px;">${formatCurrency(transactionData.amount * INR_TO_QAR_RATE)} QAR</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+              <!-- Financial Summary -->
+              <div class="amount-board">
+                <div class="amount-row">
+                  <span class="total-label">Total Amount (INR)</span>
+                  <span class="total-value">₹ ${formatCurrency(transactionData.amount)}</span>
+                </div>
+                <div class="amount-row">
+                  <span class="amount-label">Exchange Rate</span>
+                  <span class="amount-value">1 INR = ${INR_TO_QAR_RATE} QAR</span>
+                </div>
+                <div class="amount-row">
+                  <span class="amount-label">Equivalent Amount (QAR)</span>
+                  <span class="amount-value" style="color: #059669;">﷼ ${formatCurrency(transactionData.amount * INR_TO_QAR_RATE)}</span>
+                </div>
+              </div>
 
-            <div style="text-align: center; margin-top: 50px; font-size: 12px; color: #999;">
-              <p>This document is computer generated and does not require a signature.</p>
-              <p>V2 Lite Construction Management</p>
+              <!-- Footer -->
+              <div class="footer">
+                <p class="footer-brand">V2 Lite Construction Management</p>
+                <p>This is a computer-generated document and does not require a physical signature.</p>
+                <p>Generated via V2 Lite App • ${new Date().toLocaleTimeString()}</p>
+              </div>
             </div>
           </body>
         </html>
@@ -476,6 +708,7 @@ const Transaction = ({ project }) => {
                 transaction={transaction}
                 onDelete={() => handleDeleteTransaction(transaction._id)}
                 onEdit={() => handleEditTransaction(transaction)}
+                onDownload={() => generateInvoicePDF(transaction)}
               />
             ))
           )}
@@ -587,7 +820,7 @@ const Transaction = ({ project }) => {
 // ---------------------------------------------------------------------
 // Swipeable Transaction Card Component
 // ---------------------------------------------------------------------
-const SwipeableTransactionCard = ({ transaction, onDelete, onEdit }) => {
+const SwipeableTransactionCard = ({ transaction, onDelete, onEdit, onDownload }) => {
   const swipeAnim = useState(new Animated.Value(0))[0];
   const [showActions, setShowActions] = useState(false);
 
@@ -635,7 +868,7 @@ const SwipeableTransactionCard = ({ transaction, onDelete, onEdit }) => {
         }}
         {...panResponder.panHandlers}>
         <TouchableOpacity onPress={resetPosition} activeOpacity={0.9}>
-          <TransactionCard transaction={transaction} />
+          <TransactionCard transaction={transaction} onDownload={onDownload} />
         </TouchableOpacity>
       </Animated.View>
 
@@ -700,7 +933,7 @@ const Stat = ({ label, value, color }) => (
   </View>
 );
 
-const TransactionCard = ({ transaction }) => {
+const TransactionCard = ({ transaction, onDownload }) => {
   // Safely get transaction type with default
   const transactionType = transaction?.type || 'unknown';
   const isIncoming = transactionType.includes('in');
@@ -771,6 +1004,7 @@ const TransactionCard = ({ transaction }) => {
             paddingHorizontal: 10,
             paddingVertical: 4,
             borderRadius: 6,
+            marginBottom: 6,
           }}>
           <Text
             style={{
@@ -781,6 +1015,16 @@ const TransactionCard = ({ transaction }) => {
             {transaction?.status || 'pending'}
           </Text>
         </View>
+
+        {/* Download Icon */}
+        <TouchableOpacity
+          onPress={onDownload}
+          style={{
+            padding: 4,
+            marginTop: 4,
+          }}>
+          <Feather name="download" size={18} color="#0066FF" />
+        </TouchableOpacity>
       </View>
     </View>
   );

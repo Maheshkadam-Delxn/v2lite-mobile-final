@@ -488,6 +488,14 @@ const MilestoneTasksScreen = () => {
 
   // Handle delete subtask
   const handleDeleteSubtask = async (taskId) => {
+     if (!permissions?.permissions?.task?.delete && permissions?.role !== "admin") {
+    Alert.alert(
+      "Access Denied",
+      "You do not have permission to delete a task.",
+      [{ text: "OK" }]
+    );
+    return;
+  }
     const milestoneId = milestoneData?.id || milestoneData?._id;
     if (!milestoneId) {
       Alert.alert("Error", "Milestone ID is missing");
@@ -559,6 +567,14 @@ const MilestoneTasksScreen = () => {
 
   // Handle edit subtask
   const handleEditSubtask = (taskId) => {
+     if (!permissions?.permissions?.task?.update && permissions?.role !== "admin") {
+    Alert.alert(
+      "Access Denied",
+      "You do not have permission to update a task.",
+      [{ text: "OK" }]
+    );
+    return;
+  }
     const task = allTasks.find(t => (t._id || t.id) === taskId);
     if (!task) return;
     setCurrentSubtask({
@@ -711,9 +727,43 @@ const MilestoneTasksScreen = () => {
     setTempStartDate(new Date());
     setTempEndDate(new Date());
   };
+const [permissions, setPermissions] = useState(null);
+useEffect(() => {
+        const checkStorage = async () => {
+            const user = await AsyncStorage.getItem('userData');
+            const parsedUser = user ? JSON.parse(user) : null;
 
+            const canAccessPayment =
+                parsedUser?.role === "admin" ||
+                !!(
+                    parsedUser?.permissions?.payment &&
+                    (
+                        parsedUser.permissions.payment.create ||
+                        parsedUser.permissions.payment.update ||
+                        parsedUser.permissions.payment.delete ||
+                        parsedUser.permissions.payment.view
+                    )
+                );
+           
+setPermissions(parsedUser);
+          
+
+          
+        };
+
+        checkStorage();
+    }, []);
   // Open add modal
   const openAddSubtask = () => {
+      if (!permissions?.permissions?.task?.create && permissions?.role !== "admin") {
+    Alert.alert(
+      "Access Denied",
+      "You do not have permission to create a task.",
+      [{ text: "OK" }]
+    );
+    return;
+  }
+
     resetSubtaskForm();
     setEditingTaskId(null);
     setShowSubtaskModal(true);
@@ -825,7 +875,16 @@ const MilestoneTasksScreen = () => {
         <View style={styles.taskActionsRow}>
           <TouchableOpacity
             style={[styles.toggleButton, item.status === 'completed' && styles.toggleCompleted]}
-            onPress={() => handleToggleCompletion(taskId)}
+            onPress={() => {
+               if (!permissions?.permissions?.task?.approve && permissions?.role !== "admin") {
+    Alert.alert(
+      "Access Denied",
+      "You do not have permission to action a task.",
+      [{ text: "OK" }]
+    );
+    return;
+  }
+              handleToggleCompletion(taskId)}}
           >
             <Ionicons 
               name={item.status === 'completed' ? 'checkmark-circle' : 'radio-button-off'} 
@@ -835,7 +894,17 @@ const MilestoneTasksScreen = () => {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.editButton}
-            onPress={() => handleEditSubtask(taskId)}
+            onPress={() => {
+              console.log('Permissions:', permissions);
+               if (!permissions?.permissions?.task?.update && permissions?.role !== "admin") {
+    Alert.alert(
+      "Access Denied",
+      "You do not have permission to update a task.",
+      [{ text: "OK" }]
+    );
+    return;
+  }
+              handleEditSubtask(taskId)}}
           >
             <Feather name="edit-2" size={16} color="#0066FF" />
           </TouchableOpacity>

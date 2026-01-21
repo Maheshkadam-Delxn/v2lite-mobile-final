@@ -158,7 +158,7 @@ const ViewDetailsScreen = () => {
             <SectionContainer title="Basic Project Details">
               <View style={styles.detailList}>
                 <DetailRow label="Project Name" value={project?.name} />
-                <DetailRow label="Project Type" value={project.projectType?.name} />
+                <DetailRow label="Project Type" value={project.projectType?.projectTypeName || project.category} />
                
                 <DetailRow label="Location" value={project.location} />
                 <DetailRow label="Start Date" value={formatter(project.startDate)} />
