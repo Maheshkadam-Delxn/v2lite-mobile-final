@@ -868,9 +868,9 @@ export default function ClientMainPage({ navigation }) {
             )}
           </View>
 
-          <TouchableOpacity style={styles.addButton} onPress={handleAddProject}>
+          {/* <TouchableOpacity style={styles.addButton} onPress={handleAddProject}>
             <Ionicons name="add" size={28} color="white" />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           <TouchableOpacity style={styles.aiButton} onPress={openAIModal}>
             <LinearGradient

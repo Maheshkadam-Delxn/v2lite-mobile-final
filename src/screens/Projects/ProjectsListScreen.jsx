@@ -414,7 +414,7 @@ const handleAddProject = () => {
                 style={styles.projectImage}
                 resizeMode="cover"
               />
-            ) : project.raw.projectType.image!==""?(
+            ) : project.raw.projectType && project.raw.projectType.image!==""?(
               <Image
                 source={{ uri: project.raw.projectType.image }}
                 style={styles.projectImage}

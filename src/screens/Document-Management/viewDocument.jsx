@@ -2042,37 +2042,76 @@ const ViewDocument = ({ navigation, route }) => {
   // ──────────────────────────────
   //         AUDIO FUNCTIONS
   // ──────────────────────────────
-  const startRecording = async () => {
-    try {
-      const { status } = await Audio.requestPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission Required', 'Microphone permission is required');
-        return;
-      }
+  // const startRecording = async () => {
+  //   try {
+  //     const { status } = await Audio.requestPermissionsAsync();
+  //     if (status !== 'granted') {
+  //       Alert.alert('Permission Required', 'Microphone permission is required');
+  //       return;
+  //     }
 
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-      });
+  //     await Audio.setAudioModeAsync({
+  //       allowsRecordingIOS: true,
+  //       playsInSilentModeIOS: true,
+  //     });
 
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
+  //     const { recording } = await Audio.Recording.createAsync(
+  //       Audio.RecordingOptionsPresets.HIGH_QUALITY
+  //     );
 
-      setRecording(recording);
-      setIsRecording(true);
-      setRecordingDuration(0);
+  //     setRecording(recording);
+  //     setIsRecording(true);
+  //     setRecordingDuration(0);
 
-      recordingIntervalRef.current = setInterval(() => {
-        setRecordingDuration(prev => prev + 1);
-      }, 1000);
+  //     recordingIntervalRef.current = setInterval(() => {
+  //       setRecordingDuration(prev => prev + 1);
+  //     }, 1000);
 
-      await recording.startAsync();
-    } catch (err) {
-      console.error('Recording start failed', err);
-      Alert.alert('Error', 'Failed to start recording');
+  //     await recording.startAsync();
+  //   } catch (err) {
+  //     console.error('Recording start failed', err);
+  //     Alert.alert('Error', 'Failed to start recording');
+  //   }
+  // };
+const startRecording = async () => {
+  try {
+    // Stop any playing audio first
+    if (soundRef.current) {
+      await soundRef.current.stopAsync();
+      await soundRef.current.unloadAsync();
+      soundRef.current = null;
     }
-  };
+
+    const { status } = await Audio.requestPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Microphone permission is required');
+      return;
+    }
+
+    // ✅ SAFE audio mode (NO interruptionMode)
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: true,
+      playsInSilentModeIOS: true,
+    });
+
+    const { recording } = await Audio.Recording.createAsync(
+      Audio.RecordingOptionsPresets.HIGH_QUALITY
+    );
+
+    setRecording(recording);
+    setIsRecording(true);
+    setRecordingDuration(0);
+
+    recordingIntervalRef.current = setInterval(() => {
+      setRecordingDuration(prev => prev + 1);
+    }, 1000);
+
+  } catch (err) {
+    console.error('Recording start failed', err);
+    Alert.alert('Error', 'Failed to start recording');
+  }
+};
+
 
   const stopRecording = async () => {
     try {
