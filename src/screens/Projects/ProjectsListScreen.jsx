@@ -153,6 +153,8 @@ const ProjectsListScreen = () => {
         
         const mapped = filtered.map(mapItemToProject);
         setProjects(mapped);
+        // console.log("Fetched Projects:", JSON.stringify(mapped, null, 2));
+        // console.log(mapped.raw)
        
       
       }
@@ -403,15 +405,22 @@ const handleAddProject = () => {
         });
       }}>
       <View style={styles.card}>
+       
         <View style={styles.cardHeader}>
           <View style={styles.imageContainer}>
             {project.raw.projectImages && project.raw.projectImages !== '' ? (
               <Image
-                source={{ uri: project.raw.projectImages }}
+                source={{ uri: project.raw.projectImages  }}
                 style={styles.projectImage}
                 resizeMode="cover"
               />
-            ) : (
+            ) : project.raw.projectType.image!==""?(
+              <Image
+                source={{ uri: project.raw.projectType.image }}
+                style={styles.projectImage}
+                resizeMode="cover"
+                />
+            ): (
               <View style={styles.imagePlaceholder}>
                 <Ionicons name="image-outline" size={24} color="#D1D5DB" />
               </View>

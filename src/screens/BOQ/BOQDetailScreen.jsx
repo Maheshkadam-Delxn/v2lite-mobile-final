@@ -221,7 +221,7 @@ export default function BOQDetailScreen({ route, navigation }) {
 
   return (
     <View style={styles.container}>
-      <Header />
+      <Header title={"BOQ Details"} showBackButton={true} />
       
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* HEADER CARD */}
@@ -301,7 +301,8 @@ export default function BOQDetailScreen({ route, navigation }) {
               Materials (v{selectedVersion.versionNumber})
             </Text>
           </View>
-          
+          <Text>    {selectedVersion.contractorApproval}</Text>
+      
           {selectedVersion.materials.map((m, i) => (
             <View key={i} style={styles.materialCard}>
               <View style={styles.materialHeader}>
@@ -366,7 +367,7 @@ export default function BOQDetailScreen({ route, navigation }) {
         </View>
 
         {/* ACTIONS */}
-        {selectedVersion.contractorApproval === "draft" && (
+        {selectedVersion.contractorApproval === "pending" && (
           <View style={styles.actionSection}>
             <TouchableOpacity
               style={styles.rejectButton}
