@@ -139,6 +139,104 @@ export default function ClientMainPage({ navigation }) {
     { id: 2, icon: "business-outline", text: "Commercial", color: "#10B981" },
   ];
 
+  // Admin Chat State
+  const [adminChatModalVisible, setAdminChatModalVisible] = useState(false);
+  const [selectedProjectForChat, setSelectedProjectForChat] = useState(null);
+  const [adminChatMessages, setAdminChatMessages] = useState([]);
+  const [adminChatInput, setAdminChatInput] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+
+  // Project Tabs Data for Suggestions
+  const PROJECT_TABS = [
+    { id: 'Overview', label: 'Overview', keyword: 'overview', icon: 'home-outline' },
+    { id: 'Issues', label: 'Issues', keyword: 'issues', icon: 'alert-circle-outline' },
+    { id: 'BOQ', label: 'BOQ', keyword: 'boq', icon: 'document-text-outline' },
+    { id: 'Plans', label: 'Plans', keyword: 'plans', icon: 'layers-outline' },
+    { id: 'ProjectTimeline', label: 'Timeline', keyword: 'timeline', icon: 'calendar-outline' },
+    { id: 'BudgetTracker', label: 'Budget', keyword: 'budget', icon: 'cash-outline' },
+    { id: 'QualityChecks', label: 'Quality', keyword: 'quality', icon: 'checkmark-circle-outline' },
+    { id: 'ChangeRequests', label: 'Changes', keyword: 'changes', icon: 'swap-horizontal-outline' },
+    { id: 'MaterialStatus', label: 'Materials', keyword: 'materials', icon: 'cube-outline' },
+  ];
+
+  const handleAdminChatInput = (text) => {
+    setAdminChatInput(text);
+
+    // Check if user is typing a keyword starting with @
+    const match = text.match(/@(\w*)$/);
+    if (match) {
+      const query = match[1].toLowerCase();
+      const filtered = PROJECT_TABS.filter(tab =>
+        tab.keyword.toLowerCase().startsWith(query) ||
+        tab.label.toLowerCase().startsWith(query)
+      );
+      setSuggestions(filtered);
+    } else {
+      setSuggestions([]);
+    }
+  };
+
+  const handleSuggestionSelect = (tab) => {
+    // Replace the @query with the full @keyword
+    const newText = adminChatInput.replace(/@(\w*)$/, `@${tab.keyword} `);
+    setAdminChatInput(newText);
+    setSuggestions([]);
+  };
+
+  const openAdminChat = (project) => {
+    setSelectedProjectForChat(project);
+    setAdminChatModalVisible(true);
+    // TODO: Fetch existing chat history for this project
+    setAdminChatMessages([
+      { id: 1, text: `Hello! How can we help you with ${project.name}?`, isUser: false, time: 'Now' }
+    ]);
+  };
+
+  const closeAdminChat = () => {
+    setAdminChatModalVisible(false);
+    setSelectedProjectForChat(null);
+    setAdminChatMessages([]);
+    setSuggestions([]);
+  };
+
+  const sendAdminChatMessage = () => {
+    if (!adminChatInput.trim()) return;
+
+    const lowerInput = adminChatInput.toLowerCase();
+
+    // generalized Navigation Logic using PROJECT_TABS
+    const targetTab = PROJECT_TABS.find(tab => lowerInput.includes(`@${tab.keyword}`));
+
+    if (targetTab) {
+      console.log(`Keyword @${targetTab.keyword} detected! Navigating to ${targetTab.label}...`);
+
+      // Close the modal
+      setAdminChatModalVisible(false);
+      setSelectedProjectForChat(null);
+      setAdminChatMessages([]);
+      setAdminChatInput("");
+      setSuggestions([]);
+
+      // Navigate to Project Overview -> Target Tab
+      navigation.navigate("Overview", {
+        project: selectedProjectForChat,
+        initialTab: targetTab.id
+      });
+      return;
+    }
+
+    const newMessage = {
+      id: Date.now(),
+      text: adminChatInput,
+      isUser: true,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    setAdminChatMessages(prev => [...prev, newMessage]);
+    setAdminChatInput(prev => ""); // Clear input
+    setSuggestions([]);
+    // TODO: Send to backend
+  };
+
   // ===============================
   // Fetch Data
   // ===============================
@@ -196,12 +294,12 @@ export default function ClientMainPage({ navigation }) {
     try {
       openSwipeRefs.current.get(id)?.close();
       openSwipeRefs.current.delete(id);
- const token = await AsyncStorage.getItem('userToken')
+      const token = await AsyncStorage.getItem('userToken')
       setDataList((prev) => prev.filter((x) => x._id !== id));
 
       await fetch(`${CLIENT_API_URL}/${id}`, {
         method: "DELETE",
-         headers: {
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         }
@@ -748,82 +846,109 @@ export default function ClientMainPage({ navigation }) {
     const statusColors = getStatusColor(item.status);
 
     return (
-      <Swipeable
-        ref={(ref) => ref && openSwipeRefs.current.set(item._id, ref)}
-        renderRightActions={(progress, dragX) =>
-          renderRightActions(progress, dragX, item)
-        }
-        onSwipeableWillOpen={() => {
-          openSwipeRefs.current.forEach((ref, id) => {
-            if (id !== item._id) ref?.close();
-          });
-        }}
-      >
-        <TouchableOpacity
-          style={styles.card}
-          activeOpacity={0.7}
-          onPress={() => navigation.navigate('Overview', { project: item })}
+      <View style={{ marginBottom: 20 }}>
+        <Swipeable
+          ref={(ref) => ref && openSwipeRefs.current.set(item._id, ref)}
+          renderRightActions={(progress, dragX) =>
+            renderRightActions(progress, dragX, item)
+          }
+          onSwipeableWillOpen={() => {
+            openSwipeRefs.current.forEach((ref, id) => {
+              if (id !== item._id) ref?.close();
+            });
+          }}
+          containerStyle={{ overflow: 'visible' }} // Allow shadow to show if outside
         >
-          <View style={styles.cardHeader}>
-            <View style={styles.cardHeaderLeft}>
-              <View style={styles.projectIconContainer}>
-                <Ionicons name="briefcase" size={20} color="#0066FF" />
-              </View>
-              <View style={styles.cardHeaderText}>
-                <Text style={styles.projectName} numberOfLines={1}>
-                  {item.name || "Untitled Project"}
-                </Text>
-                <Text style={styles.projectType} numberOfLines={1}>
-                  {item.projectType?.projectTypeName || item.category || "No type specified"}
-                </Text>
-              </View>
-            </View>
-            <TouchableOpacity style={styles.moreButton}>
-              <Ionicons name="ellipsis-horizontal" size={20} color="#6B7280" />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.cardBody}>
-            <View style={styles.infoRow}>
-              <View style={styles.infoIconContainer}>
-                <Ionicons name="location" size={18} color="#EF4444" />
-              </View>
-              <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>Location</Text>
-                <Text style={styles.infoValue} numberOfLines={1}>
-                  {item.location || "Not specified"}
+          <TouchableOpacity
+            style={styles.card}
+            activeOpacity={0.9}
+            onPress={() => navigation.navigate('Overview', { project: item })}
+          >
+            {/* Top Row: Type & Status */}
+            <View style={styles.cardTopRow}>
+              <View style={styles.projectTypeBadge}>
+                <Text style={styles.projectTypeText}>
+                  {item.projectType?.projectTypeName || item.category || "General"}
                 </Text>
               </View>
-            </View>
-
-            <View style={styles.divider} />
-
-            <View style={styles.footerRow}>
               <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
                 <View style={[styles.statusDot, { backgroundColor: statusColors.dot }]} />
                 <Text style={[styles.statusText, { color: statusColors.text }]}>
                   {item.status || "Active"}
                 </Text>
               </View>
+            </View>
 
-              <View style={styles.dateContainer}>
-                <Ionicons name="calendar-outline" size={14} color="#9CA3AF" />
-                <Text style={styles.dateText}>
-                  {item.createdAt
+            {/* Main Content */}
+            <View style={styles.cardContent}>
+              <View style={styles.projectIconContainer}>
+                {item.projectImage ? (
+                  <Image
+                    source={{ uri: item.projectImage }}
+                    style={styles.projectImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <LinearGradient
+                    colors={['#EFF6FF', '#DBEAFE']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.projectIconGradient}
+                  >
+                    <Ionicons name="business" size={24} color="#2563EB" />
+                  </LinearGradient>
+                )}
+              </View>
+
+              <View style={styles.cardMainInfo}>
+                <Text style={styles.projectName} numberOfLines={1}>
+                  {item.name || "Untitled Project"}
+                </Text>
+                <View style={styles.locationRow}>
+                  <Ionicons name="location-outline" size={14} color="#6B7280" />
+                  <Text style={styles.locationText} numberOfLines={1}>
+                    {item.location || "No location set"}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Divider */}
+            <View style={styles.cardDivider} />
+
+            {/* Footer */}
+            <View style={styles.cardFooter}>
+              <View style={styles.footerItem}>
+                <Ionicons name="calendar-clear-outline" size={14} color="#9CA3AF" />
+                <Text style={styles.footerText}>
+                  Created: {item.createdAt
                     ? new Date(item.createdAt).toLocaleDateString('en-US', {
                       month: 'short',
                       day: 'numeric',
                       year: 'numeric'
                     })
-                    : 'No date'}
+                    : 'N/A'}
                 </Text>
               </View>
-            </View>
-          </View>
 
-          <View style={[styles.cardAccent, { backgroundColor: statusColors.dot }]} />
-        </TouchableOpacity>
-      </Swipeable>
+              <View style={styles.cardActions}>
+                <TouchableOpacity
+                  style={styles.chatBtn}
+                  onPress={() => openAdminChat(item)}
+                >
+                  <Ionicons name="chatbubble-ellipses-outline" size={16} color="#0066FF" />
+                  <Text style={styles.chatBtnText}>Chat</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.viewDetailsBtn}>
+                  <Text style={styles.viewDetailsText}>View Details</Text>
+                  <Ionicons name="chevron-forward" size={14} color="#2563EB" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </Swipeable>
+      </View>
     );
   };
 
@@ -868,9 +993,9 @@ export default function ClientMainPage({ navigation }) {
             )}
           </View>
 
-          <TouchableOpacity style={styles.addButton} onPress={handleAddProject}>
+          {/* <TouchableOpacity style={styles.addButton} onPress={handleAddProject}>
             <Ionicons name="add" size={28} color="white" />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           <TouchableOpacity style={styles.aiButton} onPress={openAIModal}>
             <LinearGradient
@@ -1140,7 +1265,111 @@ export default function ClientMainPage({ navigation }) {
           </Animated.View>
         </KeyboardAvoidingView>
       </Modal>
-    </GestureHandlerRootView>
+
+      {/* Admin Chat Modal */}
+      <Modal
+        visible={adminChatModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={closeAdminChat}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.adminChatContainer}>
+
+            {/* Header */}
+            <View style={styles.adminChatHeader}>
+              <View>
+                <Text style={styles.adminChatTitle}>Chat with Admin</Text>
+                <Text style={styles.adminChatSubtitle}>
+                  {selectedProjectForChat?.name || "Project Support"}
+                </Text>
+              </View>
+              <TouchableOpacity onPress={closeAdminChat} style={styles.closeButtonLight}>
+                <Ionicons name="close" size={24} color="#111827" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Messages */}
+            <ScrollView
+              style={styles.chatList}
+              contentContainerStyle={{ padding: 16 }}
+              keyboardShouldPersistTaps="handled"
+            >
+              {adminChatMessages.map((msg, idx) => (
+                <View
+                  key={msg.id || idx}
+                  style={[
+                    styles.chatBubbleContainer,
+                    msg.isUser ? styles.chatBubbleRight : styles.chatBubbleLeft
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.chatBubble,
+                      msg.isUser ? styles.chatBubbleUser : styles.chatBubbleAdmin
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.chatBubbleText,
+                        msg.isUser ? styles.chatTextUser : styles.chatTextAdmin
+                      ]}
+                    >
+                      {msg.text}
+                    </Text>
+                  </View>
+                  <Text style={styles.chatTime}>{msg.time}</Text>
+                </View>
+              ))}
+            </ScrollView>
+
+            {/* 🔥 Keyboard-safe Input */}
+            <KeyboardAvoidingView
+              behavior={Platform.OS === "ios" ? "padding" : "padding"}
+              keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+            >
+              {/* Suggestions List */}
+              {suggestions.length > 0 && (
+                <View style={styles.suggestionsContainer}>
+                  <ScrollView keyboardShouldPersistTaps="handled">
+                    {suggestions.map((item) => (
+                      <TouchableOpacity
+                        key={item.id}
+                        style={styles.suggestionItem}
+                        onPress={() => handleSuggestionSelect(item)}
+                      >
+                        <View style={styles.suggestionIcon}>
+                          <Ionicons name={item.icon} size={18} color="#0066FF" />
+                        </View>
+                        <View>
+                          <Text style={styles.suggestionLabel}>{item.label}</Text>
+                          <Text style={styles.suggestionKeyword}>@{item.keyword}</Text>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+
+              <View style={styles.adminChatInputContainer}>
+                <TextInput
+                  style={styles.adminChatInput}
+                  placeholder="Type a message... (Type @ for options)"
+                  value={adminChatInput}
+                  onChangeText={handleAdminChatInput}
+                />
+                <TouchableOpacity onPress={sendAdminChatMessage} style={styles.adminChatSendBtn}>
+                  <Ionicons name="send" size={20} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            </KeyboardAvoidingView>
+
+          </View>
+        </View>
+      </Modal>
+
+
+    </GestureHandlerRootView >
   );
 }
 
@@ -1249,131 +1478,43 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: "#FFFFFF",
     borderRadius: 16,
-    marginBottom: 14,
-    overflow: "hidden",
+    // marginBottom handled by wrapper
     borderWidth: 1,
-    borderColor: "#F3F4F6",
-    borderLeftWidth: 4,
-    borderLeftColor: "#0066FF",
+    borderColor: "#E5E7EB",
+    overflow: "hidden", // clip content
   },
 
-  cardAccent: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 4,
-  },
-
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+  cardTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 12,
+    marginBottom: 12,
   },
 
-  cardHeaderLeft: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
+  projectTypeBadge: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
 
-  projectIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: "#EFF6FF",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  cardHeaderText: {
-    flex: 1,
-    gap: 2,
-  },
-
-  projectName: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#111827",
-  },
-
-  projectType: {
-    fontSize: 13,
-    color: "#6B7280",
-    fontWeight: "500",
-  },
-
-  moreButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#F9FAFB",
-  },
-
-  cardBody: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    gap: 12,
-  },
-
-  infoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-
-  infoIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: "#FEF2F2",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  infoContent: {
-    flex: 1,
-    gap: 2,
-  },
-
-  infoLabel: {
-    fontSize: 12,
-    color: "#9CA3AF",
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-
-  infoValue: {
-    fontSize: 14,
-    color: "#111827",
-    fontWeight: "600",
-  },
-
-  divider: {
-    height: 1,
-    backgroundColor: "#F3F4F6",
-    marginVertical: 4,
-  },
-
-  footerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+  projectTypeText: {
+    fontSize: 11,
+    color: '#4B5563',
+    fontWeight: '600',
+    textTransform: 'uppercase',
   },
 
   statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 6,
     gap: 6,
   },
 
@@ -1384,27 +1525,133 @@ const styles = StyleSheet.create({
   },
 
   statusText: {
-    fontSize: 12,
-    fontWeight: "700",
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
   },
 
-  dateContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+  cardContent: {
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginBottom: 16,
+  },
+
+  projectIconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+
+  projectImage: {
+    width: '100%',
+    height: '100%',
+  },
+
+  projectIconGradient: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  cardMainInfo: {
+    flex: 1,
+    justifyContent: 'center',
+    gap: 4,
+  },
+
+  projectName: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111827',
+    letterSpacing: -0.4,
+    lineHeight: 24,
+  },
+
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 6,
   },
 
-  dateText: {
+  locationText: {
+    fontSize: 14,
+    color: '#6B7280',
+    flex: 1,
+    fontWeight: '500',
+  },
+
+  cardDivider: {
+    height: 1,
+    backgroundColor: '#F3F4F6',
+  },
+
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    backgroundColor: '#FAFAFA',
+  },
+
+  footerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+
+  footerText: {
+    fontSize: 13,
+    color: '#6B7280',
+    fontWeight: '500',
+  },
+
+  cardActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+
+  chatBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    backgroundColor: '#EFF6FF',
+    borderRadius: 8,
+  },
+
+  chatBtnText: {
     fontSize: 12,
-    color: "#9CA3AF",
-    fontWeight: "500",
+    color: '#0066FF',
+    fontWeight: '600',
+  },
+
+  viewDetailsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+
+  viewDetailsText: {
+    fontSize: 13,
+    color: '#2563EB',
+    fontWeight: '600',
   },
 
   // Delete Action
   deleteAction: {
     justifyContent: "center",
     alignItems: "flex-end",
-    marginBottom: 14,
+    // marginBottom removed as spacing is handled by card wrapper
   },
 
   deleteBtn: {
@@ -1413,8 +1660,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#EF4444",
     justifyContent: "center",
     alignItems: "center",
-    borderTopRightRadius: 16,
-    borderBottomRightRadius: 16,
+    borderTopRightRadius: 20, // Match updated card radius
+    borderBottomRightRadius: 20,
     gap: 6,
   },
 
@@ -1957,5 +2204,177 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     fontSize: 15,
     fontWeight: '600',
+  },
+  editButtonText: {
+    color: '#6B7280',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+
+  // Admin Chat Modal Styles
+  adminChatContainer: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: "80%",
+    flex: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 20,
+    overflow: 'hidden',
+  },
+
+  adminChatHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F3F4F6",
+    backgroundColor: "#fff",
+  },
+
+  adminChatTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#111827",
+  },
+
+  adminChatSubtitle: {
+    fontSize: 13,
+    color: "#6B7280",
+  },
+
+  closeButtonLight: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#F3F4F6",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  chatList: {
+    flex: 1,
+    backgroundColor: "#F9FAFB",
+  },
+
+  chatBubbleContainer: {
+    marginBottom: 12,
+    maxWidth: "80%",
+  },
+
+  chatBubbleRight: {
+    alignSelf: "flex-end",
+    alignItems: "flex-end",
+  },
+
+  chatBubbleLeft: {
+    alignSelf: "flex-start",
+    alignItems: "flex-start",
+  },
+
+  chatBubble: {
+    padding: 12,
+    borderRadius: 16,
+    marginBottom: 4,
+  },
+
+  chatBubbleUser: {
+    backgroundColor: "#0066FF",
+    borderBottomRightRadius: 4,
+  },
+
+  chatBubbleAdmin: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderBottomLeftRadius: 4,
+  },
+
+  chatBubbleText: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+
+  chatTextUser: {
+    color: "#FFFFFF",
+  },
+
+  chatTextAdmin: {
+    color: "#111827",
+  },
+
+  chatTime: {
+    fontSize: 10,
+    color: "#9CA3AF",
+  },
+
+  adminChatInputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+    backgroundColor: "#fff",
+    gap: 10,
+
+  },
+
+  adminChatInput: {
+    flex: 1,
+    backgroundColor: "#F3F4F6",
+    borderRadius: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: "#111827",
+  },
+
+  suggestionsContainer: {
+    maxHeight: 180,
+    backgroundColor: "#FFFFFF",
+    borderTopWidth: 1,
+    borderTopColor: "#F3F4F6",
+  },
+
+  suggestionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F9FAFB',
+  },
+
+  suggestionIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#EFF6FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+
+  suggestionLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+
+  suggestionKeyword: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
+
+  adminChatSendBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#0066FF",
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

@@ -185,7 +185,7 @@ const Overview = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const isFocused = useIsFocused();
-  const { project } = route.params || {};
+  const { project, initialTab } = route.params || {};
 
   const [activeTab, setActiveTab] = useState('Overview');
   const [milestones, setMilestones] = useState([]);
@@ -261,6 +261,12 @@ const Overview = () => {
       console.error("Failed to fetch risks", error);
     }
   };
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   useEffect(() => {
     if (isFocused) {
@@ -680,7 +686,7 @@ const Overview = () => {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
         <Header title="Project Overview" showBackButton />
-        
+
         {/* Tab Navigation Skeleton */}
         <View style={{ backgroundColor: COLORS.surface, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: COLORS.border }}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12 }}>
@@ -760,7 +766,7 @@ const Overview = () => {
             <Ionicons name="file-tray-outline" size={56} color={COLORS.primary} />
           </View>
           <Text style={{ fontSize: 24, fontWeight: '700', color: COLORS.text, marginBottom: 12, textAlign: 'center' }}>
-          Project is Under Approval
+            Project is Under Approval
           </Text>
           <Text style={{ fontSize: 15, color: COLORS.textSecondary, textAlign: 'center', marginBottom: 32, lineHeight: 22 }}>
             Please wait until the project is approved to view the overview and manage milestones.

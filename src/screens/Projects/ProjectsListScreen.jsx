@@ -14,6 +14,8 @@ import {
   Dimensions,
   Animated,
   StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -57,6 +59,104 @@ const ProjectsListScreen = () => {
   });
   const [selectAll, setSelectAll] = useState(false);
 
+  // Chat State
+  const [adminChatModalVisible, setAdminChatModalVisible] = useState(false);
+  const [selectedProjectForChat, setSelectedProjectForChat] = useState(null);
+  const [adminChatMessages, setAdminChatMessages] = useState([]);
+  const [adminChatInput, setAdminChatInput] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+
+  // Project Tabs Data for Suggestions (Admin View)
+  const PROJECT_TABS = [
+    { id: 'Details', label: 'Details', keyword: 'details', icon: 'information-circle-outline' },
+    { id: 'Sites', label: 'Sites', keyword: 'sites', icon: 'map-outline' },
+    { id: 'BOQ', label: 'BOQ', keyword: 'boq', icon: 'document-text-outline' },
+    { id: 'Plans', label: 'Plans', keyword: 'plans', icon: 'layers-outline' },
+    { id: 'Task', label: 'Tasks', keyword: 'tasks', icon: 'checkbox-outline' },
+    { id: 'Transaction', label: 'Transactions', keyword: 'transactions', icon: 'cash-outline' },
+    { id: 'Material', label: 'Materials', keyword: 'materials', icon: 'cube-outline' },
+    { id: 'Attendance', label: 'Attendance', keyword: 'attendance', icon: 'people-outline' },
+    { id: 'Issues', label: 'Issues', keyword: 'issues', icon: 'alert-circle-outline' },
+    { id: 'Reports', label: 'Reports', keyword: 'reports', icon: 'bar-chart-outline' },
+  ];
+
+  const handleAdminChatInput = (text) => {
+    setAdminChatInput(text);
+
+    // Check if user is typing a keyword starting with @
+    const match = text.match(/@(\w*)$/);
+    if (match) {
+      const query = match[1].toLowerCase();
+      const filtered = PROJECT_TABS.filter(tab =>
+        tab.keyword.toLowerCase().startsWith(query) ||
+        tab.label.toLowerCase().startsWith(query)
+      );
+      setSuggestions(filtered);
+    } else {
+      setSuggestions([]);
+    }
+  };
+
+  const handleSuggestionSelect = (tab) => {
+    // Replace the @query with the full @keyword
+    const newText = adminChatInput.replace(/@(\w*)$/, `@${tab.keyword} `);
+    setAdminChatInput(newText);
+    setSuggestions([]);
+  };
+
+  const openAdminChat = (project) => {
+    setSelectedProjectForChat(project);
+    setAdminChatModalVisible(true);
+    // Mock initial message
+    setAdminChatMessages([
+      { id: 1, text: `Chat initiated for ${project.name}.`, isUser: false, time: 'Now' }
+    ]);
+  };
+
+  const closeAdminChat = () => {
+    setAdminChatModalVisible(false);
+    setSelectedProjectForChat(null);
+    setAdminChatMessages([]);
+    setSuggestions([]);
+  };
+
+  const sendAdminChatMessage = () => {
+    if (!adminChatInput.trim()) return;
+
+    const lowerInput = adminChatInput.toLowerCase();
+
+    // generalized Navigation Logic using PROJECT_TABS
+    const targetTab = PROJECT_TABS.find(tab => lowerInput.includes(`@${tab.keyword}`));
+
+    if (targetTab) {
+      console.log(`Keyword @${targetTab.keyword} detected! Navigating to ${targetTab.label}...`);
+
+      // Close the modal
+      setAdminChatModalVisible(false);
+      setSelectedProjectForChat(null);
+      setAdminChatMessages([]);
+      setAdminChatInput("");
+      setSuggestions([]);
+
+      // Navigate to Project Details -> Target Tab
+      navigation.navigate("ViewDetails", {
+        project: selectedProjectForChat.raw || selectedProjectForChat,
+        initialTab: targetTab.id
+      });
+      return;
+    }
+
+    const newMessage = {
+      id: Date.now(),
+      text: adminChatInput,
+      isUser: true,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    setAdminChatMessages(prev => [...prev, newMessage]);
+    setAdminChatInput(prev => ""); // Clear input
+    setSuggestions([]);
+  };
+
   const sortOptions = ['Default', 'Start Date', 'Budget', 'Progress'];
   const teamOptions = ['Project Manager', 'Consultant', 'Contractor'];
   const projectTypeOptions = ['Villas', 'Interior', 'Commercial Building', 'Residential Complex'];
@@ -97,10 +197,10 @@ const ProjectsListScreen = () => {
     const dueDateRaw = item.dueDate || item.deadline || item.endDate || item.due || item.createdAt;
     const dueDate = dueDateRaw
       ? new Date(dueDateRaw).toLocaleDateString('en-GB', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric',
-        })
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      })
       : '—';
     const status = item.status || (item.isActive ? 'In Progress' : 'Completed') || 'Unknown';
     const progress = typeof item.progress === 'number' ? item.progress : item.percentage || 0;
@@ -150,13 +250,13 @@ const ProjectsListScreen = () => {
             item.status !== "Initialize" && item.status !== "Rejected"
         );
 
-        
+
         const mapped = filtered.map(mapItemToProject);
         setProjects(mapped);
         // console.log("Fetched Projects:", JSON.stringify(mapped, null, 2));
         // console.log(mapped.raw)
-       
-      
+
+
       }
     } catch (err) {
       console.error('[Projects] fetch error:', err);
@@ -178,7 +278,7 @@ const ProjectsListScreen = () => {
       } else {
         fetchProjects(false);
       }
-      
+
       return () => {
         openSwipeableRefs.current.forEach((ref) => ref?.close());
         openSwipeableRefs.current.clear();
@@ -194,13 +294,13 @@ const ProjectsListScreen = () => {
   // Delete project
   const deleteProject = async (projectId) => {
     if (!permissions?.permissions?.project?.delete && permissions?.role !== "admin") {
-    Alert.alert(
-      "Access Denied",
-      "You do not have permission to delete a project.",
-      [{ text: "OK" }]
-    );
-    return;
-  }
+      Alert.alert(
+        "Access Denied",
+        "You do not have permission to delete a project.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
     try {
       const token = await AsyncStorage.getItem(TOKEN_KEY);
 
@@ -228,13 +328,13 @@ const ProjectsListScreen = () => {
 
   const confirmDelete = (project) => {
     if (!permissions?.permissions?.project?.delete && permissions?.role !== "admin") {
-    Alert.alert(
-      "Access Denied",
-      "You do not have permission to delete a project.",
-      [{ text: "OK" }]
-    );
-    return;
-  }
+      Alert.alert(
+        "Access Denied",
+        "You do not have permission to delete a project.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
     Alert.alert('Delete Project', `Are you sure you want to delete "${project.name}"?`, [
       {
         text: 'Cancel',
@@ -313,45 +413,45 @@ const ProjectsListScreen = () => {
       team: Object.keys(assignedTeam).filter((k) => assignedTeam[k]),
       types: Object.keys(projectType).filter((k) => projectType[k]),
     };
-  
+
     closeFilter();
   };
 
   const [permissions, setPermissions] = useState({});
-useEffect(() => {
-        const checkStorage = async () => {
-            const user = await AsyncStorage.getItem('userData');
-            const parsedUser = user ? JSON.parse(user) : null;
+  useEffect(() => {
+    const checkStorage = async () => {
+      const user = await AsyncStorage.getItem('userData');
+      const parsedUser = user ? JSON.parse(user) : null;
 
-            const canAccessPayment =
-                parsedUser?.role === "admin" ||
-                !!(
-                    parsedUser?.permissions?.payment &&
-                    (
-                        parsedUser.permissions.payment.create ||
-                        parsedUser.permissions.payment.update ||
-                        parsedUser.permissions.payment.delete ||
-                        parsedUser.permissions.payment.view
-                    )
-                );
-                console.log("Payment Access",parsedUser);
-setPermissions(parsedUser);
-            // const canAccessSiteSurveys =
-            //     parsedUser?.role !== "admin" &&
-            //     !!(
-                   
-            //             parsedUser.permissions.siteSurvey.create ||
-            //             parsedUser.permissions.siteSurvey.update ||
-            //             parsedUser.permissions.siteSurvey.delete ||
-            //             parsedUser.permissions.siteSurvey.view
-                    
-            //     );
+      const canAccessPayment =
+        parsedUser?.role === "admin" ||
+        !!(
+          parsedUser?.permissions?.payment &&
+          (
+            parsedUser.permissions.payment.create ||
+            parsedUser.permissions.payment.update ||
+            parsedUser.permissions.payment.delete ||
+            parsedUser.permissions.payment.view
+          )
+        );
+      console.log("Payment Access", parsedUser);
+      setPermissions(parsedUser);
+      // const canAccessSiteSurveys =
+      //     parsedUser?.role !== "admin" &&
+      //     !!(
 
-          
-        };
+      //             parsedUser.permissions.siteSurvey.create ||
+      //             parsedUser.permissions.siteSurvey.update ||
+      //             parsedUser.permissions.siteSurvey.delete ||
+      //             parsedUser.permissions.siteSurvey.view
 
-        checkStorage();
-    }, []);
+      //     );
+
+
+    };
+
+    checkStorage();
+  }, []);
   // Search filtering
   const filteredProjects = useMemo(() => {
     const q = (searchQuery || '').trim().toLowerCase();
@@ -365,18 +465,18 @@ setPermissions(parsedUser);
   }, [projects, searchQuery]);
 
   // Navigation handlers
-const handleAddProject = () => {
-  if (!permissions?.permissions?.project?.create  && permissions?.role !== "admin") {
-    Alert.alert(
-      "Access Denied",
-      "You do not have permission to create a project.",
-      [{ text: "OK" }]
-    );
-    return;
-  }
+  const handleAddProject = () => {
+    if (!permissions?.permissions?.project?.create && permissions?.role !== "admin") {
+      Alert.alert(
+        "Access Denied",
+        "You do not have permission to create a project.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
 
-  navigation.navigate('CreateProjectScreen');
-};
+    navigation.navigate('CreateProjectScreen');
+  };
 
   const handleViewDetails = (project) => {
     navigation.navigate('ViewDetails', { project: project.raw || project });
@@ -405,22 +505,22 @@ const handleAddProject = () => {
         });
       }}>
       <View style={styles.card}>
-       
+
         <View style={styles.cardHeader}>
           <View style={styles.imageContainer}>
             {project.raw.projectImages && project.raw.projectImages !== '' ? (
               <Image
-                source={{ uri: project.raw.projectImages  }}
+                source={{ uri: project.raw.projectImages }}
                 style={styles.projectImage}
                 resizeMode="cover"
               />
-            ) : project.raw.projectType.image!==""?(
+            ) : project.raw.projectType && project.raw.projectType.image !== "" ? (
               <Image
                 source={{ uri: project.raw.projectType.image }}
                 style={styles.projectImage}
                 resizeMode="cover"
-                />
-            ): (
+              />
+            ) : (
               <View style={styles.imagePlaceholder}>
                 <Ionicons name="image-outline" size={24} color="#D1D5DB" />
               </View>
@@ -438,6 +538,14 @@ const handleAddProject = () => {
               </Text>
             </View>
           </View>
+
+          {/* Top Right Chat Button */}
+          <TouchableOpacity
+            style={styles.headerChatBtn}
+            onPress={() => openAdminChat(project)}
+          >
+            <Ionicons name="chatbubble-ellipses-outline" size={20} color="#0066FF" />
+          </TouchableOpacity>
         </View>
 
         {/* Due Date & Status */}
@@ -464,8 +572,8 @@ const handleAddProject = () => {
         </View>
 
         {/* View Details */}
-        <TouchableOpacity 
-          style={styles.detailsButton} 
+        <TouchableOpacity
+          style={styles.detailsButton}
           onPress={() => handleViewDetails(project)}
           activeOpacity={0.7}>
           <Text style={styles.detailsButtonText}>View Details</Text>
@@ -529,24 +637,24 @@ const handleAddProject = () => {
         <View style={styles.skeletonCardHeader}>
           <Animated.View style={[styles.skeletonImage, { opacity: shimmerOpacity }]} />
           <View style={styles.skeletonHeaderInfo}>
-            <Animated.View 
+            <Animated.View
               style={[
-                styles.skeletonTextLine, 
+                styles.skeletonTextLine,
                 { width: '70%', height: 18, marginBottom: 8, opacity: shimmerOpacity }
-              ]} 
+              ]}
             />
             <View style={styles.skeletonLocationRow}>
-              <Animated.View 
+              <Animated.View
                 style={[
-                  styles.skeletonIcon, 
+                  styles.skeletonIcon,
                   { width: 14, height: 14, opacity: shimmerOpacity }
-                ]} 
+                ]}
               />
-              <Animated.View 
+              <Animated.View
                 style={[
-                  styles.skeletonTextLine, 
+                  styles.skeletonTextLine,
                   { width: '80%', height: 14, marginLeft: 6, opacity: shimmerOpacity }
-                ]} 
+                ]}
               />
             </View>
           </View>
@@ -554,67 +662,67 @@ const handleAddProject = () => {
 
         <View style={styles.skeletonMetaRow}>
           <View style={styles.skeletonDueDateContainer}>
-            <Animated.View 
+            <Animated.View
               style={[
-                styles.skeletonIcon, 
+                styles.skeletonIcon,
                 { width: 16, height: 16, opacity: shimmerOpacity }
-              ]} 
+              ]}
             />
-            <Animated.View 
+            <Animated.View
               style={[
-                styles.skeletonTextLine, 
+                styles.skeletonTextLine,
                 { width: 100, height: 14, marginLeft: 6, opacity: shimmerOpacity }
-              ]} 
+              ]}
             />
           </View>
-          <Animated.View 
+          <Animated.View
             style={[
-              styles.skeletonBadge, 
+              styles.skeletonBadge,
               { width: 90, height: 28, opacity: shimmerOpacity }
-            ]} 
+            ]}
           />
         </View>
 
         <View style={styles.skeletonProgressSection}>
           <View style={styles.skeletonProgressHeader}>
-            <Animated.View 
+            <Animated.View
               style={[
-                styles.skeletonTextLine, 
+                styles.skeletonTextLine,
                 { width: 60, height: 12, opacity: shimmerOpacity }
-              ]} 
+              ]}
             />
-            <Animated.View 
+            <Animated.View
               style={[
-                styles.skeletonTextLine, 
+                styles.skeletonTextLine,
                 { width: 35, height: 12, opacity: shimmerOpacity }
-              ]} 
+              ]}
             />
           </View>
           <View style={styles.skeletonProgressBar}>
-            <Animated.View 
+            <Animated.View
               style={[
-                styles.skeletonProgressFill, 
-                { 
+                styles.skeletonProgressFill,
+                {
                   width: `${(index % 4) * 20 + 40}%`,
-                  opacity: shimmerOpacity 
+                  opacity: shimmerOpacity
                 }
-              ]} 
+              ]}
             />
           </View>
         </View>
 
         <View style={styles.skeletonDetailsButton}>
-          <Animated.View 
+          <Animated.View
             style={[
-              styles.skeletonTextLine, 
+              styles.skeletonTextLine,
               { width: 100, height: 14, opacity: shimmerOpacity }
-            ]} 
+            ]}
           />
-          <Animated.View 
+          <Animated.View
             style={[
-              styles.skeletonIcon, 
+              styles.skeletonIcon,
               { width: 20, height: 20, opacity: shimmerOpacity }
-            ]} 
+            ]}
           />
         </View>
       </Animated.View>
@@ -729,10 +837,10 @@ const handleAddProject = () => {
                     style={styles.checkboxRow}
                     activeOpacity={0.7}>
                     <View style={styles.checkboxLabelContainer}>
-                      <Ionicons 
-                        name={team === 'Project Manager' ? 'person-outline' : team === 'Consultant' ? 'briefcase-outline' : 'construct-outline'} 
-                        size={20} 
-                        color="#6B7280" 
+                      <Ionicons
+                        name={team === 'Project Manager' ? 'person-outline' : team === 'Consultant' ? 'briefcase-outline' : 'construct-outline'}
+                        size={20}
+                        color="#6B7280"
                       />
                       <Text style={styles.checkboxLabel}>{team}</Text>
                     </View>
@@ -857,8 +965,8 @@ const handleAddProject = () => {
                     : 'Create your first project to get started'}
                 </Text>
                 {!searchQuery && (
-                  <TouchableOpacity 
-                    style={styles.emptyStateButton} 
+                  <TouchableOpacity
+                    style={styles.emptyStateButton}
                     onPress={handleAddProject}
                     activeOpacity={0.7}>
                     <Ionicons name="add-circle-outline" size={20} color="#0066FF" />
@@ -875,6 +983,108 @@ const handleAddProject = () => {
         </ScrollView>
 
         <FilterBottomSheet />
+
+        {/* Admin Chat Modal */}
+        <Modal
+          visible={adminChatModalVisible}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={closeAdminChat}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.adminChatContainer}>
+
+              {/* Header */}
+              <View style={styles.adminChatHeader}>
+                <View>
+                  <Text style={styles.adminChatTitle}>Chat with Admin</Text>
+                  <Text style={styles.adminChatSubtitle}>
+                    {selectedProjectForChat?.name || "Project Support"}
+                  </Text>
+                </View>
+                <TouchableOpacity onPress={closeAdminChat} style={styles.closeButtonLight}>
+                  <Ionicons name="close" size={24} color="#111827" />
+                </TouchableOpacity>
+              </View>
+
+              {/* Messages */}
+              <ScrollView
+                style={styles.chatList}
+                contentContainerStyle={{ padding: 16 }}
+                keyboardShouldPersistTaps="handled"
+              >
+                {adminChatMessages.map((msg, idx) => (
+                  <View
+                    key={msg.id || idx}
+                    style={[
+                      styles.chatBubbleContainer,
+                      msg.isUser ? styles.chatBubbleRight : styles.chatBubbleLeft
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.chatBubble,
+                        msg.isUser ? styles.chatBubbleUser : styles.chatBubbleAdmin
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.chatBubbleText,
+                          msg.isUser ? styles.chatTextUser : styles.chatTextAdmin
+                        ]}
+                      >
+                        {msg.text}
+                      </Text>
+                    </View>
+                    <Text style={styles.chatTime}>{msg.time}</Text>
+                  </View>
+                ))}
+              </ScrollView>
+
+              {/* 🔥 Keyboard-safe Input */}
+              <KeyboardAvoidingView
+                behavior={Platform.OS === "ios" ? "padding" : "padding"}
+                keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+              >
+                {/* Suggestions List */}
+                {suggestions.length > 0 && (
+                  <View style={styles.suggestionsContainer}>
+                    <ScrollView keyboardShouldPersistTaps="handled">
+                      {suggestions.map((item) => (
+                        <TouchableOpacity
+                          key={item.id}
+                          style={styles.suggestionItem}
+                          onPress={() => handleSuggestionSelect(item)}
+                        >
+                          <View style={styles.suggestionIcon}>
+                            <Ionicons name={item.icon} size={18} color="#0066FF" />
+                          </View>
+                          <View>
+                            <Text style={styles.suggestionLabel}>{item.label}</Text>
+                            <Text style={styles.suggestionKeyword}>@{item.keyword}</Text>
+                          </View>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
+
+                <View style={styles.adminChatInputContainer}>
+                  <TextInput
+                    style={styles.adminChatInput}
+                    placeholder="Type a message... (Type @ for options)"
+                    value={adminChatInput}
+                    onChangeText={handleAdminChatInput}
+                  />
+                  <TouchableOpacity onPress={sendAdminChatMessage} style={styles.adminChatSendBtn}>
+                    <Ionicons name="send" size={20} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+              </KeyboardAvoidingView>
+
+            </View>
+          </View>
+        </Modal>
       </View>
     </GestureHandlerRootView>
   );
@@ -1439,6 +1649,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },
+
+  headerChatBtn: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: '#EFF6FF',
+    padding: 8,
+    borderRadius: 20,
+  },
   resetButtonText: {
     fontSize: 15,
     fontWeight: '600',
@@ -1459,10 +1678,157 @@ const styles = StyleSheet.create({
     color: 'white',
     fontFamily: 'Urbanist-SemiBold',
   },
+
+  // Admin Chat Modal Styles
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  adminChatContainer: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: "80%",
+    flex: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 20,
+    overflow: 'hidden',
+  },
+  adminChatHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F3F4F6",
+    backgroundColor: "#fff",
+  },
+  adminChatTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#111827",
+  },
+  adminChatSubtitle: {
+    fontSize: 13,
+    color: "#6B7280",
+  },
+  closeButtonLight: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#F3F4F6",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  chatList: {
+    flex: 1,
+    backgroundColor: "#F9FAFB",
+  },
+  chatBubbleContainer: {
+    marginBottom: 12,
+    maxWidth: "80%",
+  },
+  chatBubbleRight: {
+    alignSelf: "flex-end",
+    alignItems: "flex-end",
+  },
+  chatBubbleLeft: {
+    alignSelf: "flex-start",
+    alignItems: "flex-start",
+  },
+  chatBubble: {
+    padding: 12,
+    borderRadius: 16,
+    marginBottom: 4,
+  },
+  chatBubbleUser: {
+    backgroundColor: "#0066FF",
+    borderBottomRightRadius: 4,
+  },
+  chatBubbleAdmin: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderBottomLeftRadius: 4,
+  },
+  chatBubbleText: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  chatTextUser: {
+    color: "#FFFFFF",
+  },
+  chatTextAdmin: {
+    color: "#111827",
+  },
+  chatTime: {
+    fontSize: 10,
+    color: "#9CA3AF",
+  },
+  adminChatInputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+    backgroundColor: "#fff",
+    gap: 10,
+  },
+  adminChatInput: {
+    flex: 1,
+    backgroundColor: "#F3F4F6",
+    borderRadius: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: "#111827",
+  },
+  adminChatSendBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#0066FF",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  suggestionsContainer: {
+    maxHeight: 180,
+    backgroundColor: "#FFFFFF",
+    borderTopWidth: 1,
+    borderTopColor: "#F3F4F6",
+  },
+  suggestionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F9FAFB',
+  },
+  suggestionIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#EFF6FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  suggestionLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  suggestionKeyword: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
 });
 
 export default ProjectsListScreen;
 
 
 
- 
