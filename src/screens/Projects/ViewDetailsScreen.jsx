@@ -30,16 +30,16 @@ const API_URL = `${process.env.BASE_API_URL}`;
 const ViewDetailsScreen = () => {
   const route = useRoute();
   const navigation = useNavigation();
-  const { project } = route.params || {};
-  console.log("ProjectData",project);
-  const [activeTab, setActiveTab] = useState('Details');
+  const { project, initialTab } = route.params || {};
+  console.log("ProjectData", project);
+  const [activeTab, setActiveTab] = useState(initialTab || 'Details');
   const [activeView, setActiveView] = useState('Calendar');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [siteData,setSiteData]=useState();
-// console.log("asdfasdfasdf",project);
+  const [siteData, setSiteData] = useState();
+  // console.log("asdfasdfasdf",project);
   const handleBack = () => navigation.goBack();
-  
+
   const handleEdit = () => {
     console.log('Edit project:', project?.id);
     navigation.navigate('CreateProjectScreen');
@@ -49,11 +49,11 @@ const ViewDetailsScreen = () => {
 
   const handleTabSelect = (tab) => {
     setActiveTab(tab);
-   
+
   };
- const fetchSurveys = async (isRefreshing = false) => {
+  const fetchSurveys = async (isRefreshing = false) => {
     try {
-    
+
       const token = await AsyncStorage.getItem("userToken");
       const data = await AsyncStorage.getItem("userData");
       const parsed = JSON.parse(data);
@@ -65,35 +65,35 @@ const ViewDetailsScreen = () => {
       });
       const json = await res.json();
       if (json.success) {
-       
-        console.log("data",json);
+
+        console.log("data", json);
         setSiteData(json);
         // setFilteredSurveys(filterdata);
       }
     } catch (err) {
       console.log("Error fetching surveys:", err);
-    } 
+    }
   };
 
-  useEffect(()=>{
+  useEffect(() => {
     fetchSurveys()
-  },[project]);
+  }, [project]);
 
   const tabs = [
     { id: 'Details', label: 'Details' },
-     { id: 'Sites', label: 'Sites' },
-      { id: 'BOQ', label: 'BOQ' },
-      { id: 'Plans', label: 'Plans' },
+    { id: 'Sites', label: 'Sites' },
+    { id: 'BOQ', label: 'BOQ' },
+    { id: 'Plans', label: 'Plans' },
     { id: 'Task', label: 'Task' },
     { id: 'Transaction', label: 'Transaction' },
     // { id: 'Files', label: 'Files' },
-   
-   
+
+
     { id: 'Material', label: 'Material' },
     { id: 'Attendance', label: 'Attendance' },
-    { id: 'Issues', label: 'Issues'},
-    { id: 'Reports', label: 'Reports'},
-    
+    { id: 'Issues', label: 'Issues' },
+    { id: 'Reports', label: 'Reports' },
+
   ];
 
   const viewTabs = [
@@ -115,39 +115,39 @@ const ViewDetailsScreen = () => {
       <Text style={styles.detailValue}>{value}</Text>
     </View>
   );
- const formatter = (value) => {
-  if (!value) return "—";
+  const formatter = (value) => {
+    if (!value) return "—";
 
-  // Check if date
-  const date = new Date(value);
-  if (!isNaN(date.getTime())) {
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = date.toLocaleString("en-US", { month: "short" }); // Dec
-    const year = date.getFullYear();
+    // Check if date
+    const date = new Date(value);
+    if (!isNaN(date.getTime())) {
+      const day = String(date.getDate()).padStart(2, "0");
+      const month = date.toLocaleString("en-US", { month: "short" }); // Dec
+      const year = date.getFullYear();
 
-    return `${day} ${month} ${year}`; // → "10 Dec 2025"
-  }
+      return `${day} ${month} ${year}`; // → "10 Dec 2025"
+    }
 
-  // Boolean
-  if (typeof value === "boolean") {
-    return value ? "Yes" : "No";
-  }
+    // Boolean
+    if (typeof value === "boolean") {
+      return value ? "Yes" : "No";
+    }
 
-  // Array
-  if (Array.isArray(value)) {
-    return value.length > 0 ? value.join(", ") : "None";
-  }
+    // Array
+    if (Array.isArray(value)) {
+      return value.length > 0 ? value.join(", ") : "None";
+    }
 
-  // Object (e.g., location)
-  if (typeof value === "object") {
-    return Object.values(value)
-      .filter((v) => v !== null && v !== undefined && v !== "")
-      .join(", ") || "—";
-  }
+    // Object (e.g., location)
+    if (typeof value === "object") {
+      return Object.values(value)
+        .filter((v) => v !== null && v !== undefined && v !== "")
+        .join(", ") || "—";
+    }
 
-  // Others → string
-  return String(value);
-};
+    // Others → string
+    return String(value);
+  };
 
   // Render Tab Content
   const renderTabContent = () => {
@@ -159,16 +159,16 @@ const ViewDetailsScreen = () => {
               <View style={styles.detailList}>
                 <DetailRow label="Project Name" value={project?.name} />
                 <DetailRow label="Project Type" value={project.projectType?.projectTypeName || project.category} />
-               
+
                 <DetailRow label="Location" value={project.location} />
                 <DetailRow label="Start Date" value={formatter(project.startDate)} />
                 <DetailRow label="End Date" value={formatter(project.endDate)} />
-                <DetailRow label="Project Status" value={project.status}/>
-                  <DetailRow label="Project Budget" value={project.budget}/>
+                <DetailRow label="Project Status" value={project.status} />
+                <DetailRow label="Project Budget" value={project.budget} />
               </View>
             </SectionContainer>
-        
-       
+
+
             <SectionContainer title="Client Information">
               <View style={styles.detailList}>
                 <DetailRow label="Client Name" value={project.clientName} />
@@ -178,7 +178,7 @@ const ViewDetailsScreen = () => {
             </SectionContainer>
           </>
         );
-      
+
       case 'Task':
         // Render the TaskScreen component inline
         return <TaskScreen project={project} />;
@@ -191,34 +191,34 @@ const ViewDetailsScreen = () => {
         // Render the PaymentsTransaction component inline
         return <FilesScreen project={project} />;
 
-          case 'Sites':
-   
+      case 'Sites':
+
         return <ApproveSurveyScreen project={siteData} />;
 
-        //   case 'Files':
-        // // Render the PaymentsTransaction component inline
-        // // return <PlansScreen project={project} />;
-        // return <PlansTab/>
+      //   case 'Files':
+      // // Render the PaymentsTransaction component inline
+      // // return <PlansScreen project={project} />;
+      // return <PlansTab/>
 
-        case 'BOQ':
-          return <BOQListScreen navigation={navigation} project={project}/>;
-        // return <CreateBOQDraftScreen/>;
-          case 'Material':
+      case 'BOQ':
+        return <BOQListScreen navigation={navigation} project={project} />;
+      // return <CreateBOQDraftScreen/>;
+      case 'Material':
         // Render the PaymentsTransaction component inline
         return <MaterialsListScreen project={project} />;
 
-          case 'Attendance':
+      case 'Attendance':
         // Render the PaymentsTransaction component inline
         return <AttendanceScreen project={project} />;
 
-             case 'Issues':
+      case 'Issues':
         // Render the PaymentsTransaction component inline
         return <RiskCategoriesScreen project={project} />;
 
-           case 'Reports':
+      case 'Reports':
         // Render the PaymentsTransaction component inline
         return <ReportssListScreen project={project} />;
-      
+
       default:
         return null;
     }
@@ -267,16 +267,16 @@ const ViewDetailsScreen = () => {
       <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
         <View style={styles.content}>{renderTabContent()}</View>
       </ScrollView>
-     
+
     </View>
   );
 };
 
 // Updated Styles
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#f9fafb' 
+  container: {
+    flex: 1,
+    backgroundColor: '#f9fafb'
   },
   scrollView: {
     flex: 1,
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
   },
   mainTabTextActive: { color: 'white' },
   mainTabTextInactive: { color: '#4b5563' },
-  content: { 
+  content: {
     paddingHorizontal: 0,
     flex: 1,
   },
