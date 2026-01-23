@@ -26,7 +26,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 
 // Import Header component
 import Header from '../../components/Header';
-import { SnagService } from '../../services/SnagService';
+
 
 const BASE_URL = `${process.env.BASE_API_URL}/api`;
 const MILESTONE_BY_ID = (milestoneId) => `${BASE_URL}/milestones/${milestoneId}`;
@@ -47,8 +47,8 @@ const MilestoneTasksScreen = () => {
     return sunday;
   });
   const [selectedDate, setSelectedDate] = useState(new Date());
-const [previewImage, setPreviewImage] = useState(null);
-const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   const [allTasks, setAllTasks] = useState([]);
   const [filteredTasks, setFilteredTasks] = useState([]);
@@ -56,10 +56,10 @@ const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [tasksError, setTasksError] = useState(null);
   const [currentProgress, setCurrentProgress] = useState(initialMilestone?.progress || 0);
   const [milestoneData, setMilestoneData] = useState(initialMilestone);
-const [showAttachmentModal, setShowAttachmentModal] = useState(false);
-const [selectedTaskForCompletion, setSelectedTaskForCompletion] = useState(null);
-const [completionImage, setCompletionImage] = useState(null);
-const [uploadingImage, setUploadingImage] = useState(false);
+  const [showAttachmentModal, setShowAttachmentModal] = useState(false);
+  const [selectedTaskForCompletion, setSelectedTaskForCompletion] = useState(null);
+  const [completionImage, setCompletionImage] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Members states for user selection in modal
   const [members, setMembers] = useState([]);
@@ -603,69 +603,69 @@ const [uploadingImage, setUploadingImage] = useState(false);
     setShowSubtaskModal(true);
   };
 
-const handleToggleCompletion = async (taskId) => {
-  const task = allTasks.find(t => (t._id || t.id) === taskId);
-  if (!task) return;
+  const handleToggleCompletion = async (taskId) => {
+    const task = allTasks.find(t => (t._id || t.id) === taskId);
+    if (!task) return;
 
-  // If already completed → allow normal toggle
-  if (task.isCompleted) {
-    proceedWithCompletion(taskId, true);
-    return;
-  }
-
-  // Open attachment modal
-  setSelectedTaskForCompletion(task);
-  setCompletionImage(null);
-  setShowAttachmentModal(true);
-};
-const pickCompletionImage = async () => {
-  const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ImagePicker.MediaTypeOptions.Images,
-    quality: 0.7,
-  });
-
-  if (!result.canceled) {
-    setCompletionImage(result.assets[0]);
-  }
-};
-const confirmCompletionWithImage = async () => {
-  if (!completionImage) {
-    Alert.alert("Image Required", "Please attach an image to complete the task.");
-    return;
-  }
-
-  setUploadingImage(true);
-
-  try {
-    // 🔼 Upload image to Cloudinary
-    const uploadResult = await uploadToCloudinary(completionImage.uri);
-
-    if (!uploadResult.success) {
-      Alert.alert("Upload Failed", uploadResult.error || "Image upload failed");
+    // If already completed → allow normal toggle
+    if (task.isCompleted) {
+      proceedWithCompletion(taskId, true);
       return;
     }
 
-    const imageUrl = uploadResult.url;
-
-    // ✅ Proceed with completion & attach image
-    await proceedWithCompletion(
-      selectedTaskForCompletion._id || selectedTaskForCompletion.id,
-      true,
-      imageUrl
-    );
-
-    setShowAttachmentModal(false);
-    setSelectedTaskForCompletion(null);
+    // Open attachment modal
+    setSelectedTaskForCompletion(task);
     setCompletionImage(null);
+    setShowAttachmentModal(true);
+  };
+  const pickCompletionImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.7,
+    });
 
-    Alert.alert("Success", "Task completed with image proof!");
-  } catch (err) {
-    console.error(err);
-    Alert.alert("Error", "Failed to complete task");
-  } finally {
-    setUploadingImage(false);
-  }
-};
+    if (!result.canceled) {
+      setCompletionImage(result.assets[0]);
+    }
+  };
+  const confirmCompletionWithImage = async () => {
+    if (!completionImage) {
+      Alert.alert("Image Required", "Please attach an image to complete the task.");
+      return;
+    }
+
+    setUploadingImage(true);
+
+    try {
+      // 🔼 Upload image to Cloudinary
+      const uploadResult = await uploadToCloudinary(completionImage.uri);
+
+      if (!uploadResult.success) {
+        Alert.alert("Upload Failed", uploadResult.error || "Image upload failed");
+        return;
+      }
+
+      const imageUrl = uploadResult.url;
+
+      // ✅ Proceed with completion & attach image
+      await proceedWithCompletion(
+        selectedTaskForCompletion._id || selectedTaskForCompletion.id,
+        true,
+        imageUrl
+      );
+
+      setShowAttachmentModal(false);
+      setSelectedTaskForCompletion(null);
+      setCompletionImage(null);
+
+      Alert.alert("Success", "Task completed with image proof!");
+    } catch (err) {
+      console.error(err);
+      Alert.alert("Error", "Failed to complete task");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
 
   // Proceed with completion after delay check
@@ -690,8 +690,8 @@ const confirmCompletionWithImage = async () => {
             endDate: t.endDate,
             assignedTo: t.assignedTo,
             attachments: completionImageUrl
-        ? [...(t.attachments || []), completionImageUrl]
-        : t.attachments || [],
+              ? [...(t.attachments || []), completionImageUrl]
+              : t.attachments || [],
           };
         } else {
           return {
@@ -705,7 +705,7 @@ const confirmCompletionWithImage = async () => {
             attachments: t.attachments || [],
           };
         }
-      });  
+      });
 
       const body = {
         subtasks: apiSubtasks,
@@ -842,205 +842,205 @@ const confirmCompletionWithImage = async () => {
   }, [initialMilestone, projectId]);
 
   // UI Components - Enhanced ActivityCard with delay indicator
-const ActivityCard = ({ item, taskId }) => {
-  if (!item) return null;
+  const ActivityCard = ({ item, taskId }) => {
+    if (!item) return null;
 
-  const formattedStartDate = item.startDate
-    ? new Date(item.startDate).toLocaleDateString('en-US', { 
-        month: 'short', 
+    const formattedStartDate = item.startDate
+      ? new Date(item.startDate).toLocaleDateString('en-US', {
+        month: 'short',
         day: 'numeric',
         year: 'numeric'
       })
-    : 'No start date';
+      : 'No start date';
 
-  const formattedEndDate = item.endDate
-    ? new Date(item.endDate).toLocaleDateString('en-US', { 
-        month: 'short', 
+    const formattedEndDate = item.endDate
+      ? new Date(item.endDate).toLocaleDateString('en-US', {
+        month: 'short',
         day: 'numeric',
         year: 'numeric'
       })
-    : 'No end date';
+      : 'No end date';
 
-  // Get assignee names
-  const getAssigneeNames = () => {
-    if (!item.assignedTo || item.assignedTo.length === 0) {
-      return "No assignees";
-    }
-    
-    const assigneeNames = item.assignedTo.map(assigneeId => {
-      const member = members.find(m => 
-        String(m._id) === String(assigneeId) || 
-        String(m.id) === String(assigneeId)
-      );
-      return member?.name || member?.fullName || "Unknown";
-    });
-    
-    return assigneeNames.slice(0, 2).join(", ") + 
-           (item.assignedTo.length > 2 ? ` +${item.assignedTo.length - 2}` : "");
-  };
+    // Get assignee names
+    const getAssigneeNames = () => {
+      if (!item.assignedTo || item.assignedTo.length === 0) {
+        return "No assignees";
+      }
 
-  return (
-    <View style={[
-      styles.activityCard, 
-      item.isDelayed && styles.delayedTaskCard,
-      item.isCompleted && styles.completedTaskCard
-    ]}>
-      {/* Header Row with Title and Status */}
-      <View style={styles.cardHeader}>
-        <View style={styles.titleContainer}>
-          <Text style={[
-            styles.activityTitle,
-            item.isCompleted && styles.completedTitle
-          ]}>
-            {item.title}
-          </Text>
-          
-          {/* Priority Badge */}
-          {item.priority && item.priority !== 'Medium' && (
-            <View style={[
-              styles.priorityBadge,
-              item.priority === 'High' ? styles.priorityHigh :
-              item.priority === 'Low' ? styles.priorityLow : null
+      const assigneeNames = item.assignedTo.map(assigneeId => {
+        const member = members.find(m =>
+          String(m._id) === String(assigneeId) ||
+          String(m.id) === String(assigneeId)
+        );
+        return member?.name || member?.fullName || "Unknown";
+      });
+
+      return assigneeNames.slice(0, 2).join(", ") +
+        (item.assignedTo.length > 2 ? ` +${item.assignedTo.length - 2}` : "");
+    };
+
+    return (
+      <View style={[
+        styles.activityCard,
+        item.isDelayed && styles.delayedTaskCard,
+        item.isCompleted && styles.completedTaskCard
+      ]}>
+        {/* Header Row with Title and Status */}
+        <View style={styles.cardHeader}>
+          <View style={styles.titleContainer}>
+            <Text style={[
+              styles.activityTitle,
+              item.isCompleted && styles.completedTitle
             ]}>
-              <Text style={[
-                styles.priorityText,
-                item.priority === 'High' ? styles.textHigh :
-                item.priority === 'Low' ? styles.textLow : styles.textMedium
+              {item.title}
+            </Text>
+
+            {/* Priority Badge */}
+            {item.priority && item.priority !== 'Medium' && (
+              <View style={[
+                styles.priorityBadge,
+                item.priority === 'High' ? styles.priorityHigh :
+                  item.priority === 'Low' ? styles.priorityLow : null
               ]}>
-                {item.priority}
-              </Text>
-            </View>
-          )}
-        </View>
-        
-        {/* Completion Toggle */}
-        <TouchableOpacity 
-          style={styles.completionButton}
-          onPress={() => handleToggleCompletion(taskId)}
-        >
-          <Ionicons
-            name={item.isCompleted ? 'checkmark-circle' : 'radio-button-off'}
-            size={24}
-            color={item.isCompleted ? '#10B981' : '#D1D5DB'}
-          />
-        </TouchableOpacity>
-      </View>
+                <Text style={[
+                  styles.priorityText,
+                  item.priority === 'High' ? styles.textHigh :
+                    item.priority === 'Low' ? styles.textLow : styles.textMedium
+                ]}>
+                  {item.priority}
+                </Text>
+              </View>
+            )}
+          </View>
 
-      {/* Description */}
-      {item.description && item.description.trim() && (
-        <Text style={[
-          styles.activityDesc,
-          item.isCompleted && styles.completedDesc
-        ]}>
-          {item.description}
-        </Text>
-      )}
-
-      {/* Delay Banner */}
-      {item.isDelayed && !item.isCompleted && (
-        <View style={styles.delayBanner}>
-          <Ionicons name="alert-circle" size={16} color="#DC2626" />
-          <Text style={styles.delayBannerText}>
-            Delayed by {item.delayDays} day{item.delayDays !== 1 ? 's' : ''}
-          </Text>
+          {/* Completion Toggle */}
+          <TouchableOpacity
+            style={styles.completionButton}
+            onPress={() => handleToggleCompletion(taskId)}
+          >
+            <Ionicons
+              name={item.isCompleted ? 'checkmark-circle' : 'radio-button-off'}
+              size={24}
+              color={item.isCompleted ? '#10B981' : '#D1D5DB'}
+            />
+          </TouchableOpacity>
         </View>
-      )}
 
-      {/* Dates Row */}
-      <View style={styles.datesRow}>
-        <View style={styles.dateItem}>
-          <Ionicons name="calendar-outline" size={14} color="#6B7280" />
-          <Text style={styles.dateLabel}>Start:</Text>
-          <Text style={styles.dateValue}>{formattedStartDate}</Text>
-        </View>
-        
-        <View style={styles.separator} />
-        
-        <View style={styles.dateItem}>
-          <Ionicons name="flag-outline" size={14} color="#6B7280" />
-          <Text style={styles.dateLabel}>Due:</Text>
+        {/* Description */}
+        {item.description && item.description.trim() && (
           <Text style={[
-            styles.dateValue,
-            item.isDelayed && styles.delayedDate
+            styles.activityDesc,
+            item.isCompleted && styles.completedDesc
           ]}>
-            {formattedEndDate}
+            {item.description}
           </Text>
+        )}
+
+        {/* Delay Banner */}
+        {item.isDelayed && !item.isCompleted && (
+          <View style={styles.delayBanner}>
+            <Ionicons name="alert-circle" size={16} color="#DC2626" />
+            <Text style={styles.delayBannerText}>
+              Delayed by {item.delayDays} day{item.delayDays !== 1 ? 's' : ''}
+            </Text>
+          </View>
+        )}
+
+        {/* Dates Row */}
+        <View style={styles.datesRow}>
+          <View style={styles.dateItem}>
+            <Ionicons name="calendar-outline" size={14} color="#6B7280" />
+            <Text style={styles.dateLabel}>Start:</Text>
+            <Text style={styles.dateValue}>{formattedStartDate}</Text>
+          </View>
+
+          <View style={styles.separator} />
+
+          <View style={styles.dateItem}>
+            <Ionicons name="flag-outline" size={14} color="#6B7280" />
+            <Text style={styles.dateLabel}>Due:</Text>
+            <Text style={[
+              styles.dateValue,
+              item.isDelayed && styles.delayedDate
+            ]}>
+              {formattedEndDate}
+            </Text>
+          </View>
         </View>
+
+        {/* Assignees */}
+        <View style={styles.assigneesRow}>
+          <Ionicons name="people-outline" size={14} color="#6B7280" />
+          <Text style={styles.assigneesText}>{getAssigneeNames()}</Text>
+        </View>
+
+        {/* ✅ ATTACHMENTS PREVIEW */}
+        {item.isCompleted && Array.isArray(item.attachments) && item.attachments.length > 0 && (
+          <View style={styles.attachmentsContainer}>
+            <Text style={styles.attachmentsTitle}>
+              <Ionicons name="images-outline" size={14} color="#4B5563" />
+              <Text style={{ marginLeft: 4 }}>Proof of Completion ({item.attachments.length})</Text>
+            </Text>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.attachmentsScroll}
+            >
+              {item.attachments.map((url, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => {
+                    setPreviewImage(url);
+                    setShowPreviewModal(true);
+                  }}
+                  style={styles.attachmentWrapper}
+                >
+                  <Image
+                    source={{ uri: url }}
+                    style={styles.attachmentImage}
+                    resizeMode="cover"
+                  />
+                  <View style={styles.attachmentOverlay}>
+                    <Ionicons name="expand-outline" size={16} color="white" />
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* Action Buttons */}
+        {!item.isCompleted && (
+          <View style={styles.actionButtons}>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.editButton]}
+              onPress={() => handleEditSubtask(taskId)}
+            >
+              <Ionicons name="create-outline" size={16} color="#0066FF" />
+              <Text style={styles.editButtonText}>Edit</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionButton, styles.deleteButton]}
+              onPress={() => handleDeleteSubtask(taskId)}
+            >
+              <Ionicons name="trash-outline" size={16} color="#DC2626" />
+              <Text style={styles.deleteButtonText}>Delete</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Completed Status Badge */}
+        {item.isCompleted && (
+          <View style={styles.completedBadge}>
+            <Ionicons name="checkmark-circle" size={14} color="#10B981" />
+            <Text style={styles.completedBadgeText}>Completed</Text>
+          </View>
+        )}
       </View>
-
-      {/* Assignees */}
-      <View style={styles.assigneesRow}>
-        <Ionicons name="people-outline" size={14} color="#6B7280" />
-        <Text style={styles.assigneesText}>{getAssigneeNames()}</Text>
-      </View>
-
-      {/* ✅ ATTACHMENTS PREVIEW */}
-      {item.isCompleted && Array.isArray(item.attachments) && item.attachments.length > 0 && (
-        <View style={styles.attachmentsContainer}>
-          <Text style={styles.attachmentsTitle}>
-            <Ionicons name="images-outline" size={14} color="#4B5563" />
-            <Text style={{ marginLeft: 4 }}>Proof of Completion ({item.attachments.length})</Text>
-          </Text>
-          
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            style={styles.attachmentsScroll}
-          >
-            {item.attachments.map((url, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={() => {
-                  setPreviewImage(url);
-                  setShowPreviewModal(true);
-                }}
-                style={styles.attachmentWrapper}
-              >
-                <Image 
-                  source={{ uri: url }} 
-                  style={styles.attachmentImage} 
-                  resizeMode="cover"
-                />
-                <View style={styles.attachmentOverlay}>
-                  <Ionicons name="expand-outline" size={16} color="white" />
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-      )}
-
-      {/* Action Buttons */}
-      {!item.isCompleted && (
-        <View style={styles.actionButtons}>
-          <TouchableOpacity 
-            style={[styles.actionButton, styles.editButton]}
-            onPress={() => handleEditSubtask(taskId)}
-          >
-            <Ionicons name="create-outline" size={16} color="#0066FF" />
-            <Text style={styles.editButtonText}>Edit</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.actionButton, styles.deleteButton]}
-            onPress={() => handleDeleteSubtask(taskId)}
-          >
-            <Ionicons name="trash-outline" size={16} color="#DC2626" />
-            <Text style={styles.deleteButtonText}>Delete</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Completed Status Badge */}
-      {item.isCompleted && (
-        <View style={styles.completedBadge}>
-          <Ionicons name="checkmark-circle" size={14} color="#10B981" />
-          <Text style={styles.completedBadgeText}>Completed</Text>
-        </View>
-      )}
-    </View>
-  );
-};
+    );
+  };
 
 
   const ScheduleCard = ({ item }) => {
@@ -1575,65 +1575,65 @@ const ActivityCard = ({ item, taskId }) => {
         </View>
       </Modal>
       <Modal visible={showAttachmentModal} transparent animationType="fade">
-  <View style={styles.alertOverlay}>
-    <View style={styles.alertContainer}>
-      <Text style={styles.alertTitle}>Attach Completion Image</Text>
+        <View style={styles.alertOverlay}>
+          <View style={styles.alertContainer}>
+            <Text style={styles.alertTitle}>Attach Completion Image</Text>
 
-      <TouchableOpacity
-        style={styles.createButton}
-        onPress={pickCompletionImage}
-      >
-        <Text style={styles.createButtonText}>
-          {completionImage ? "Change Image" : "Select Image"}
-        </Text>
-      </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.createButton}
+              onPress={pickCompletionImage}
+            >
+              <Text style={styles.createButtonText}>
+                {completionImage ? "Change Image" : "Select Image"}
+              </Text>
+            </TouchableOpacity>
 
-      {completionImage && (
-        <Text style={{ marginTop: 10, color: '#10B981', textAlign: 'center' }}>
-          Image attached ✔
-        </Text>
-      )}
+            {completionImage && (
+              <Text style={{ marginTop: 10, color: '#10B981', textAlign: 'center' }}>
+                Image attached ✔
+              </Text>
+            )}
 
-      <View style={{ flexDirection: 'row', marginTop: 20, gap: 12 }}>
-        <TouchableOpacity
-          style={styles.cancelButton}
-          onPress={() => setShowAttachmentModal(false)}
-        >
-          <Text style={styles.cancelButtonText}>Cancel</Text>
-        </TouchableOpacity>
+            <View style={{ flexDirection: 'row', marginTop: 20, gap: 12 }}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setShowAttachmentModal(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[
-            styles.createButton,
-            !completionImage && styles.createButtonDisabled
-          ]}
-          onPress={confirmCompletionWithImage}
-          disabled={!completionImage || uploadingImage}
-        >
-          <Text style={styles.createButtonText}>
-            {uploadingImage ? "Uploading..." : "Complete Task"}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  </View>
-</Modal>
-<Modal visible={showPreviewModal} transparent animationType="fade">
-  <View style={styles.previewOverlay}>
-    <TouchableOpacity
-      style={styles.previewClose}
-      onPress={() => setShowPreviewModal(false)}
-    >
-      <Ionicons name="close" size={30} color="#fff" />
-    </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.createButton,
+                  !completionImage && styles.createButtonDisabled
+                ]}
+                onPress={confirmCompletionWithImage}
+                disabled={!completionImage || uploadingImage}
+              >
+                <Text style={styles.createButtonText}>
+                  {uploadingImage ? "Uploading..." : "Complete Task"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+      <Modal visible={showPreviewModal} transparent animationType="fade">
+        <View style={styles.previewOverlay}>
+          <TouchableOpacity
+            style={styles.previewClose}
+            onPress={() => setShowPreviewModal(false)}
+          >
+            <Ionicons name="close" size={30} color="#fff" />
+          </TouchableOpacity>
 
-    <Image
-      source={{ uri: previewImage }}
-      style={styles.previewImage}
-      resizeMode="contain"
-    />
-  </View>
-</Modal>
+          <Image
+            source={{ uri: previewImage }}
+            style={styles.previewImage}
+            resizeMode="contain"
+          />
+        </View>
+      </Modal>
 
     </View>
   );
@@ -1655,48 +1655,48 @@ const styles = StyleSheet.create({
     marginTop: 80,
   },
   attachmentsContainer: {
-  marginTop: 12,
-},
+    marginTop: 12,
+  },
 
-attachmentsTitle: {
-  fontFamily: 'Urbanist-SemiBold',
-  fontSize: 13,
-  color: '#374151',
-  marginBottom: 6,
-},
+  attachmentsTitle: {
+    fontFamily: 'Urbanist-SemiBold',
+    fontSize: 13,
+    color: '#374151',
+    marginBottom: 6,
+  },
 
-attachmentImageWrapper: {
-  marginRight: 10,
-  borderRadius: 8,
-  overflow: 'hidden',
-  borderWidth: 1,
-  borderColor: '#E5E7EB',
-},
+  attachmentImageWrapper: {
+    marginRight: 10,
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
 
-attachmentImage: {
-  width: 80,
-  height: 80,
-  backgroundColor: '#F3F4F6',
-},
+  attachmentImage: {
+    width: 80,
+    height: 80,
+    backgroundColor: '#F3F4F6',
+  },
 
-previewOverlay: {
-  flex: 1,
-  backgroundColor: 'rgba(0,0,0,0.95)',
-  justifyContent: 'center',
-  alignItems: 'center',
-},
+  previewOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 
-previewImage: {
-  width: '100%',
-  height: '80%',
-},
+  previewImage: {
+    width: '100%',
+    height: '80%',
+  },
 
-previewClose: {
-  position: 'absolute',
-  top: 50,
-  right: 20,
-  zIndex: 10,
-},
+  previewClose: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 10,
+  },
 
   errorTitle: {
     fontFamily: 'Urbanist-Bold',
@@ -1901,249 +1901,249 @@ previewClose: {
   },
 
   // Activity Card Styles with Delay Indicators
- // Add these styles to your existing StyleSheet
-activityCard: {
-  backgroundColor: '#FFFFFF',
-  borderRadius: 16,
-  padding: 16,
-  marginBottom: 12,
-  borderWidth: 1,
-  borderColor: '#F3F4F6',
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 1 },
-  shadowOpacity: 0.05,
-  shadowRadius: 2,
-  elevation: 1,
-},
-delayedTaskCard: {
-  borderLeftWidth: 4,
-  borderLeftColor: '#DC2626',
-  backgroundColor: '#FFF5F5',
-},
-completedTaskCard: {
-  backgroundColor: '#F9FAFB',
-  borderColor: '#E5E7EB',
-},
-cardHeader: {
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'flex-start',
-  marginBottom: 12,
-},
-titleContainer: {
-  flex: 1,
-  flexDirection: 'row',
-  alignItems: 'center',
-  flexWrap: 'wrap',
-  marginRight: 8,
-},
-activityTitle: {
-  fontFamily: 'Urbanist-SemiBold',
-  fontSize: 16,
-  color: '#111827',
-  marginRight: 8,
-  flexShrink: 1,
-},
-completedTitle: {
-  color: '#6B7280',
+  // Add these styles to your existing StyleSheet
+  activityCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  delayedTaskCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#DC2626',
+    backgroundColor: '#FFF5F5',
+  },
+  completedTaskCard: {
+    backgroundColor: '#F9FAFB',
+    borderColor: '#E5E7EB',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  titleContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    marginRight: 8,
+  },
+  activityTitle: {
+    fontFamily: 'Urbanist-SemiBold',
+    fontSize: 16,
+    color: '#111827',
+    marginRight: 8,
+    flexShrink: 1,
+  },
+  completedTitle: {
+    color: '#6B7280',
 
-},
-priorityBadge: {
-  paddingHorizontal: 8,
-  paddingVertical: 4,
-  borderRadius: 6,
-  alignSelf: 'flex-start',
-},
-priorityHigh: { 
-  backgroundColor: '#FEE2E2' 
-},
-priorityLow: { 
-  backgroundColor: '#ECFDF5' 
-},
-priorityText: {
-  fontFamily: 'Urbanist-Medium',
-  fontSize: 11,
-},
-textHigh: { 
-  color: '#DC2626' 
-},
-textMedium: { 
-  color: '#D97706' 
-},
-textLow: { 
-  color: '#10B981' 
-},
-completionButton: {
-  padding: 4,
-},
-activityDesc: {
-  fontFamily: 'Urbanist-Regular',
-  fontSize: 14,
-  color: '#6B7280',
-  lineHeight: 20,
-  marginBottom: 12,
-},
-completedDesc: {
-  color: '#9CA3AF',
-},
-delayBanner: {
-  backgroundColor: '#FEE2E2',
-  paddingHorizontal: 12,
-  paddingVertical: 8,
-  borderRadius: 8,
-  flexDirection: 'row',
-  alignItems: 'center',
-  marginBottom: 12,
-  borderWidth: 1,
-  borderColor: '#FECACA',
-},
-delayBannerText: {
-  fontFamily: 'Urbanist-SemiBold',
-  fontSize: 13,
-  color: '#DC2626',
-  marginLeft: 6,
-},
-datesRow: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  backgroundColor: '#F9FAFB',
-  padding: 12,
-  borderRadius: 8,
-  marginBottom: 8,
-},
-dateItem: {
-  flex: 1,
-  flexDirection: 'row',
-  alignItems: 'center',
-},
-separator: {
-  width: 1,
-  height: 20,
-  backgroundColor: '#E5E7EB',
-  marginHorizontal: 12,
-},
-dateLabel: {
-  fontFamily: 'Urbanist-Medium',
-  fontSize: 12,
-  color: '#6B7280',
-  marginLeft: 6,
-  marginRight: 4,
-},
-dateValue: {
-  fontFamily: 'Urbanist-SemiBold',
-  fontSize: 13,
-  color: '#111827',
-},
-delayedDate: {
-  color: '#DC2626',
-},
-assigneesRow: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  marginBottom: 12,
-  paddingHorizontal: 4,
-},
-assigneesText: {
-  fontFamily: 'Urbanist-Regular',
-  fontSize: 13,
-  color: '#6B7280',
-  marginLeft: 6,
-  flex: 1,
-},
-attachmentsContainer: {
-  marginTop: 8,
-  marginBottom: 12,
-  paddingTop: 12,
-  borderTopWidth: 1,
-  borderTopColor: '#F3F4F6',
-},
-attachmentsTitle: {
-  fontFamily: 'Urbanist-SemiBold',
-  fontSize: 13,
-  color: '#4B5563',
-  marginBottom: 8,
-  flexDirection: 'row',
-  alignItems: 'center',
-},
-attachmentsScroll: {
-  marginHorizontal: -4,
-},
-attachmentWrapper: {
-  position: 'relative',
-  marginRight: 10,
-  borderRadius: 8,
-  overflow: 'hidden',
-  borderWidth: 1,
-  borderColor: '#E5E7EB',
-},
-attachmentImage: {
-  width: 80,
-  height: 80,
-  backgroundColor: '#F3F4F6',
-},
-attachmentOverlay: {
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  backgroundColor: 'rgba(0,0,0,0.3)',
-  justifyContent: 'center',
-  alignItems: 'center',
-},
-actionButtons: {
-  flexDirection: 'row',
-  justifyContent: 'flex-end',
-  gap: 12,
-  marginTop: 12,
-  paddingTop: 12,
-  borderTopWidth: 1,
-  borderTopColor: '#F3F4F6',
-},
-actionButton: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  paddingHorizontal: 12,
-  paddingVertical: 6,
-  borderRadius: 8,
-  borderWidth: 1,
-},
-editButton: {
-  borderColor: '#0066FF',
-  backgroundColor: '#EFF6FF',
-},
-deleteButton: {
-  borderColor: '#DC2626',
-  backgroundColor: '#FEF2F2',
-},
-editButtonText: {
-  fontFamily: 'Urbanist-Medium',
-  fontSize: 13,
-  color: '#0066FF',
-  marginLeft: 4,
-},
-deleteButtonText: {
-  fontFamily: 'Urbanist-Medium',
-  fontSize: 13,
-  color: '#DC2626',
-  marginLeft: 4,
-},
-completedBadge: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  alignSelf: 'flex-start',
-  backgroundColor: '#ECFDF5',
-  paddingHorizontal: 10,
-  paddingVertical: 6,
-  borderRadius: 6,
-  marginTop: 8,
-},
-completedBadgeText: {
-  fontFamily: 'Urbanist-SemiBold',
-  fontSize: 12,
-  color: '#10B981',
-  marginLeft: 4,
-},
+  },
+  priorityBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+  },
+  priorityHigh: {
+    backgroundColor: '#FEE2E2'
+  },
+  priorityLow: {
+    backgroundColor: '#ECFDF5'
+  },
+  priorityText: {
+    fontFamily: 'Urbanist-Medium',
+    fontSize: 11,
+  },
+  textHigh: {
+    color: '#DC2626'
+  },
+  textMedium: {
+    color: '#D97706'
+  },
+  textLow: {
+    color: '#10B981'
+  },
+  completionButton: {
+    padding: 4,
+  },
+  activityDesc: {
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 14,
+    color: '#6B7280',
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  completedDesc: {
+    color: '#9CA3AF',
+  },
+  delayBanner: {
+    backgroundColor: '#FEE2E2',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  delayBannerText: {
+    fontFamily: 'Urbanist-SemiBold',
+    fontSize: 13,
+    color: '#DC2626',
+    marginLeft: 6,
+  },
+  datesRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  dateItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  separator: {
+    width: 1,
+    height: 20,
+    backgroundColor: '#E5E7EB',
+    marginHorizontal: 12,
+  },
+  dateLabel: {
+    fontFamily: 'Urbanist-Medium',
+    fontSize: 12,
+    color: '#6B7280',
+    marginLeft: 6,
+    marginRight: 4,
+  },
+  dateValue: {
+    fontFamily: 'Urbanist-SemiBold',
+    fontSize: 13,
+    color: '#111827',
+  },
+  delayedDate: {
+    color: '#DC2626',
+  },
+  assigneesRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  assigneesText: {
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 13,
+    color: '#6B7280',
+    marginLeft: 6,
+    flex: 1,
+  },
+  attachmentsContainer: {
+    marginTop: 8,
+    marginBottom: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  attachmentsTitle: {
+    fontFamily: 'Urbanist-SemiBold',
+    fontSize: 13,
+    color: '#4B5563',
+    marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  attachmentsScroll: {
+    marginHorizontal: -4,
+  },
+  attachmentWrapper: {
+    position: 'relative',
+    marginRight: 10,
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  attachmentImage: {
+    width: 80,
+    height: 80,
+    backgroundColor: '#F3F4F6',
+  },
+  attachmentOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  editButton: {
+    borderColor: '#0066FF',
+    backgroundColor: '#EFF6FF',
+  },
+  deleteButton: {
+    borderColor: '#DC2626',
+    backgroundColor: '#FEF2F2',
+  },
+  editButtonText: {
+    fontFamily: 'Urbanist-Medium',
+    fontSize: 13,
+    color: '#0066FF',
+    marginLeft: 4,
+  },
+  deleteButtonText: {
+    fontFamily: 'Urbanist-Medium',
+    fontSize: 13,
+    color: '#DC2626',
+    marginLeft: 4,
+  },
+  completedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    marginTop: 8,
+  },
+  completedBadgeText: {
+    fontFamily: 'Urbanist-SemiBold',
+    fontSize: 12,
+    color: '#10B981',
+    marginLeft: 4,
+  },
   delayedTaskCard: {
     borderLeftWidth: 4,
     borderLeftColor: '#DC2626',

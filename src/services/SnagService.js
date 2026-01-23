@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE_URL = process.env.BASE_API_URL || 'http://10.126.190.174:3000'; // Fallback for dev
+const BASE_URL = process.env.BASE_API_URL || 'http://172.31.246.205:3000'; // Fallback for dev
 const API_URL = `${BASE_URL}/api/snags`;
 
 const getHeaders = async () => {
@@ -109,6 +109,26 @@ export const SnagService = {
             return json;
         } catch (error) {
             console.error('[SnagService] updateSnag error:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Get Users list for assignment
+     */
+    getUsers: async () => {
+        try {
+            const token = await AsyncStorage.getItem('userToken');
+            const response = await fetch(`${BASE_URL}/api/admin/users`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const json = await response.json();
+            if (!response.ok) {
+                throw new Error(json.message || 'Failed to fetch users');
+            }
+            return json;
+        } catch (error) {
+            console.error('[SnagService] getUsers error:', error);
             throw error;
         }
     },

@@ -17,11 +17,12 @@ import { Picker } from '@react-native-picker/picker'; // Using standard picker
 import Header from '../../components/Header';
 import CustomInput from '../../components/Inputfield'; // Check if this path is correct based on export
 import { SnagService, SNAG_CATEGORIES, SNAG_SEVERITIES } from '../../services/SnagService';
+import { uploadToCloudinary } from '../../utils/cloudinary';
 
 const CreateSnagScreen = () => {
     const navigation = useNavigation();
     const route = useRoute();
-    const { projectId, milestoneId } = route.params || {};
+    const { projectId } = route.params || {};
 
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -109,20 +110,25 @@ const CreateSnagScreen = () => {
 
         setLoading(true);
         try {
-            // TODO: Upload photos here and get URLs.
-            // For now, sending URIs. The backend might reject this if it expects valid HTTP URLs.
-            // We will assume a mock upload for now or that backend accepts data URIs if we implemented it.
-            // Given the constraints, I will proceed with sending the array.
+            // Upload photos to Cloudinary
+            const uploadedUrls = [];
+            for (const uri of photos) {
+                const result = await uploadToCloudinary(uri);
+                if (result.success) {
+                    uploadedUrls.push(result.url);
+                } else {
+                    throw new Error(`Failed to upload photo: ${result.error}`);
+                }
+            }
 
             const payload = {
                 projectId,
-                milestoneId, // Optional
                 title,
                 description,
                 category,
                 location,
                 severity,
-                photos,
+                photos: uploadedUrls,
             };
 
             await SnagService.createSnag(payload);

@@ -14,12 +14,11 @@ import { Ionicons } from '@expo/vector-icons';
 import Header from '../../components/Header'; // Assuming this path based on folder structure
 import { SnagService } from '../../services/SnagService';
 
-const SnagListScreen = ({ projectId: propProjectId, milestoneId: propMilestoneId }) => {
+const SnagListScreen = ({ projectId: propProjectId }) => {
     const navigation = useNavigation();
     const route = useRoute();
     const params = route.params || {};
     const projectId = propProjectId || params.projectId;
-    const milestoneId = propMilestoneId || params.milestoneId;
 
     const [snags, setSnags] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -35,7 +34,6 @@ const SnagListScreen = ({ projectId: propProjectId, milestoneId: propMilestoneId
         try {
             const params = {};
             if (projectId) params.projectId = projectId;
-            if (milestoneId) params.milestoneId = milestoneId;
             if (statusFilter) params.status = statusFilter;
 
             const response = await SnagService.getSnags(params);
@@ -47,7 +45,7 @@ const SnagListScreen = ({ projectId: propProjectId, milestoneId: propMilestoneId
             setLoading(false);
             setRefreshing(false);
         }
-    }, [projectId, milestoneId, statusFilter]);
+    }, [projectId, statusFilter]);
 
     useFocusEffect(
         useCallback(() => {
@@ -166,7 +164,7 @@ const SnagListScreen = ({ projectId: propProjectId, milestoneId: propMilestoneId
             {/* FAB to Create Snag */}
             <TouchableOpacity
                 className="absolute bottom-6 right-6 w-14 h-14 bg-blue-600 rounded-full justify-center items-center shadow-lg shadow-blue-300"
-                onPress={() => navigation.navigate('CreateSnagScreen', { projectId, milestoneId })}
+                onPress={() => navigation.navigate('CreateSnagScreen', { projectId })}
             >
                 <Ionicons name="add" size={30} color="white" />
             </TouchableOpacity>

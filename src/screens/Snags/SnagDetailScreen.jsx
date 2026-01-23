@@ -19,6 +19,7 @@ import { Picker } from '@react-native-picker/picker'; // For assigning user
 
 import Header from '../../components/Header';
 import { SnagService } from '../../services/SnagService';
+import { uploadToCloudinary } from '../../utils/cloudinary';
 
 const SnagDetailScreen = () => {
     const navigation = useNavigation();
@@ -70,15 +71,7 @@ const SnagDetailScreen = () => {
         }
         setLoadingUsers(true);
         try {
-            const token = await AsyncStorage.getItem('userToken');
-            // Leveraging the endpoint found in UsersScreen, defaulting to /api/admin/users
-            // Note: non-admin might fail here if RBAC is strict on this endpoint. 
-            // If it fails, we might mock or rely on pre-loaded data.
-            // Assuming Managers have access or there is a general list endpoint.
-            const response = await fetch(`${process.env.BASE_API_URL}/api/admin/users`, { // Using endpoint from UsersScreen
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            const json = await response.json();
+            const json = await SnagService.getUsers();
             if (json.data) {
                 setUsers(json.data);
                 setShowAssignModal(true);
@@ -134,10 +127,16 @@ const SnagDetailScreen = () => {
         }
         setUpdating(true);
         try {
+            // Upload to Cloudinary
+            const result = await uploadToCloudinary(resolutionPhoto);
+            if (!result.success) {
+                throw new Error(result.error || 'Failed to upload photo');
+            }
+
             // Send photo uri array as per req
             await SnagService.updateSnag(snagId, {
                 status: 'fixed',
-                resolutionPhotos: [resolutionPhoto] // In real app, upload first
+                resolutionPhotos: [result.url]
             });
             setShowResolveModal(false);
             fetchSnagDetails();
@@ -234,7 +233,7 @@ const SnagDetailScreen = () => {
                             <Text className="font-bold text-gray-900 mb-3">Photos</Text>
                             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                                 {snag.photos.map((photo, index) => (
-                                    <TouchableOpacity key={index} onPress={() => Linking.openURL(photo).catch(() => { })}>
+                                    <TouchableOpacity key={index} onPress={() => navigation.navigate('ImagePreview', { imageSource: photo, planTitle: snag.title })}>
                                         <Image
                                             source={{ uri: photo }}
                                             className="w-32 h-32 rounded-lg mr-3 bg-gray-100"
@@ -265,7 +264,7 @@ const SnagDetailScreen = () => {
                             <Text className="font-bold text-gray-900 mb-3">Resolution Proof</Text>
                             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                                 {snag.resolutionPhotos.map((photo, index) => (
-                                    <TouchableOpacity key={index} onPress={() => Linking.openURL(photo).catch(() => { })}>
+                                    <TouchableOpacity key={index} onPress={() => navigation.navigate('ImagePreview', { imageSource: photo, planTitle: 'Resolution Proof' })}>
                                         <Image
                                             source={{ uri: photo }}
                                             className="w-32 h-32 rounded-lg mr-3 bg-green-50 border border-green-100"
@@ -290,7 +289,7 @@ const SnagDetailScreen = () => {
                         )}
 
                         {/* Assignee Actions (or Admin acting as assignee for testing) */}
-                        {(snag.status === 'assigned') && (
+                        {(snag.status === 'assigned' && (currentUser?._id === snag.assignedTo?._id || isAdminOrManager)) && (
                             <TouchableOpacity
                                 className="bg-yellow-500 py-3 rounded-xl items-center"
                                 onPress={() => setShowResolveModal(true)}
