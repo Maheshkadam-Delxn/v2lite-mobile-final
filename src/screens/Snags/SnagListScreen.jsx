@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Header from '../../components/Header'; // Assuming this path based on folder structure
 import { SnagService } from '../../services/SnagService';
 
-const SnagListScreen = ({ projectId: propProjectId }) => {
+const SnagListScreen = ({ projectId: propProjectId, showHeader = true, isClient = false }) => {
     const navigation = useNavigation();
     const route = useRoute();
     const params = route.params || {};
@@ -36,8 +36,21 @@ const SnagListScreen = ({ projectId: propProjectId }) => {
             if (projectId) params.projectId = projectId;
             if (statusFilter) params.status = statusFilter;
 
+            console.log('[SnagList] Fetching snags with params:', params);
             const response = await SnagService.getSnags(params);
-            setSnags(response.data || []);
+            let fetchedSnags = response.data || [];
+            console.log(`[SnagList] Fetched ${fetchedSnags.length} snags for status: ${statusFilter || 'all'}`);
+
+            // If "All" tab (empty filter), exclude 'closed' snags as per user req
+            if (statusFilter === '') {
+                fetchedSnags = fetchedSnags.filter(s => s.status !== 'closed');
+            }
+
+            if (fetchedSnags.length > 0) {
+                console.log('[SnagList] Actual Statuses found:', fetchedSnags.map(s => s.status));
+            }
+
+            setSnags(fetchedSnags);
         } catch (err) {
             console.error(err);
             setError('Failed to load snags');
@@ -117,12 +130,14 @@ const SnagListScreen = ({ projectId: propProjectId }) => {
 
     return (
         <View className="flex-1 bg-gray-50">
-            <Header
-                title="Snags"
-                showBackButton={true}
-            // rightIcon="filter-outline"
-            // onRightIconPress={() => {}} // TODO: Implement advanced filters if needed
-            />
+            {showHeader && (
+                <Header
+                    title="Snags"
+                    showBackButton={true}
+                // rightIcon="filter-outline"
+                // onRightIconPress={() => {}} // TODO: Implement advanced filters if needed
+                />
+            )}
 
             {/* Filter Tabs - Simple status filter */}
             <View className="flex-row px-4 py-3 bg-white shadow-sm space-x-2">
@@ -138,11 +153,12 @@ const SnagListScreen = ({ projectId: propProjectId }) => {
                 >
                     <Text className={`text-sm ${statusFilter === 'open' ? 'text-white' : 'text-gray-600'}`}>Open</Text>
                 </TouchableOpacity>
+
                 <TouchableOpacity
-                    onPress={() => setStatusFilter('fixed')}
-                    className={`px-3 py-1.5 rounded-full ${statusFilter === 'fixed' ? 'bg-blue-600' : 'bg-gray-100'}`}
+                    onPress={() => setStatusFilter('closed')}
+                    className={`px-3 py-1.5 rounded-full ${statusFilter === 'closed' ? 'bg-blue-600' : 'bg-gray-100'}`}
                 >
-                    <Text className={`text-sm ${statusFilter === 'fixed' ? 'text-white' : 'text-gray-600'}`}>Fixed</Text>
+                    <Text className={`text-sm ${statusFilter === 'closed' ? 'text-white' : 'text-gray-600'}`}>Closed</Text>
                 </TouchableOpacity>
             </View>
 
@@ -161,13 +177,15 @@ const SnagListScreen = ({ projectId: propProjectId }) => {
                 />
             )}
 
-            {/* FAB to Create Snag */}
-            <TouchableOpacity
-                className="absolute bottom-6 right-6 w-14 h-14 bg-blue-600 rounded-full justify-center items-center shadow-lg shadow-blue-300"
-                onPress={() => navigation.navigate('CreateSnagScreen', { projectId })}
-            >
-                <Ionicons name="add" size={30} color="white" />
-            </TouchableOpacity>
+            {/* FAB to Create Snag - Hide for Client */}
+            {!isClient && (
+                <TouchableOpacity
+                    className="absolute bottom-6 right-6 w-14 h-14 bg-blue-600 rounded-full justify-center items-center shadow-lg shadow-blue-300"
+                    onPress={() => navigation.navigate('CreateSnagScreen', { projectId })}
+                >
+                    <Ionicons name="add" size={30} color="white" />
+                </TouchableOpacity>
+            )}
         </View>
     );
 };

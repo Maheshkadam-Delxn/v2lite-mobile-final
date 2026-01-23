@@ -19,7 +19,7 @@ import PlansScreen from '@/screens/Design-Management/PlansScreen';
 import MaterialsListScreen from '@/screens/Materials/MaterialsListScreen';
 import AttendanceScreen from '@/screens/Attendance/AttendaceScreen';
 import RiskCategoriesScreen from '@/screens/Issues/RiskCategoriesScreen';
-import ReportssListScreen from '@/screens/Reports/ReportsListScreen'
+
 import FilesScreen from '@/screens/Document-Management/FileScreen';
 import PlansTab from '@/screens/plans/planscreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -94,7 +94,6 @@ const ViewDetailsScreen = () => {
     { id: 'Material', label: 'Material' },
     { id: 'Attendance', label: 'Attendance' },
     { id: 'Issues', label: 'Issues' },
-    { id: 'Reports', label: 'Reports' },
     { id: 'Snags', label: 'Snags' },
     { id: 'Progress', label: 'Progress' },
   ];
@@ -219,15 +218,13 @@ const ViewDetailsScreen = () => {
         // Render the PaymentsTransaction component inline
         return <RiskCategoriesScreen project={project} />;
 
-      case 'Reports':
-        // Render the PaymentsTransaction component inline
-        return <ReportssListScreen project={project} />;
+
 
       case 'Snags':
-        return <SnagListScreen projectId={project._id} />;
+        return <SnagListScreen projectId={project._id} showHeader={false} />;
 
       case 'Progress':
-        return <WorkProgressListScreen projectId={project._id} />;
+        return <WorkProgressListScreen projectId={project._id} showHeader={false} />;
 
       default:
         return null;
@@ -274,9 +271,14 @@ const ViewDetailsScreen = () => {
           contentContainerStyle={{ paddingHorizontal: 12 }}
         />
       </View>
-      <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
+      {/* Conditionally render ScrollView or direct View based on tab */}
+      {['Snags', 'Progress', 'BOQ', 'Task'].includes(activeTab) ? (
         <View style={styles.content}>{renderTabContent()}</View>
-      </ScrollView>
+      ) : (
+        <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
+          <View style={styles.content}>{renderTabContent()}</View>
+        </ScrollView>
+      )}
 
     </View>
   );

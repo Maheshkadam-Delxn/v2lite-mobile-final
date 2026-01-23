@@ -13,8 +13,8 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker'; // Using standard picker
-
 import Header from '../../components/Header';
+
 import CustomInput from '../../components/Inputfield'; // Check if this path is correct based on export
 import { SnagService, SNAG_CATEGORIES, SNAG_SEVERITIES } from '../../services/SnagService';
 import { uploadToCloudinary } from '../../utils/cloudinary';
@@ -34,32 +34,19 @@ const CreateSnagScreen = () => {
     const [loading, setLoading] = useState(false);
 
     const pickImage = async () => {
-        // Request permissions
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (status !== 'granted') {
-            Alert.alert('Permission denied', 'Sorry, we need camera roll permissions to make this work!');
-            return;
-        }
+        try {
+            let result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                quality: 0.7,
+            });
 
-        let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            quality: 0.7,
-            base64: true, // We might need base64 or upload file directly. 
-            // For now, assuming API handles base64 or we upload to separate service.
-            // Based on req: "photos": ["url1.jpg"] -> Implies URL.
-            // Since I don't have a file upload service mocked yet, I'll simulate or send base64 if backend supports.
-            // *Correction*: The user request says "must upload photos".
-            // I'll stick to local URI for now and assume there's a file upload mechanism or I'll just send the URI and let backend handle (unlikely).
-            // Standard practice: Upload image -> get URL -> send URL.
-            // Since I don't see a general FileUpload service, I will assume for this task I send the base64 data uri or just the object.
-            // Let's assume for now I can send the base64 string directly as a data URI if the backend accepts it, or just a placeholder if I can't upload.
-            // Wait, let's look at `SnagService` plan. I didn't verify file upload.
-            // I'll just use the URI for now to unblock UI.
-        });
-
-        if (!result.canceled) {
-            setPhotos([...photos, result.assets[0].uri]);
+            if (!result.canceled) {
+                setPhotos([...photos, result.assets[0].uri]);
+            }
+        } catch (error) {
+            console.error('Error picking image:', error);
+            Alert.alert('Error', 'Failed to open gallery');
         }
     };
 
@@ -129,9 +116,14 @@ const CreateSnagScreen = () => {
                 category,
                 location,
                 severity,
-                workProgressId,
                 photos: uploadedUrls,
             };
+
+            if (workProgressId) {
+                payload.workProgressId = workProgressId;
+            }
+
+            console.log('[CreateSnag] Submitting payload:', JSON.stringify(payload));
 
             await SnagService.createSnag(payload);
             Alert.alert('Success', 'Snag reported successfully', [
@@ -148,7 +140,6 @@ const CreateSnagScreen = () => {
     return (
         <View className="flex-1 bg-white">
             <Header title="Report Snag" showBackButton={true} />
-
             <ScrollView className="flex-1 px-4 py-6" contentContainerStyle={{ paddingBottom: 40 }}>
 
                 <CustomInput

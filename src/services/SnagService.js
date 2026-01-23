@@ -70,16 +70,30 @@ export const SnagService = {
      * @param {string} id - Snag ID
      */
     getSnagDetails: async (id) => {
+        if (!id) throw new Error('Snag ID is required');
         try {
             const headers = await getHeaders();
-            const response = await fetch(`${API_URL}/${id}`, {
+            const url = `${API_URL}/${id}`;
+            console.log('[SnagService] getSnagDetails requesting:', url);
+
+            const response = await fetch(url, {
                 method: 'GET',
                 headers,
             });
 
-            const json = await response.json();
+            console.log('[SnagService] getSnagDetails status:', response.status);
+            const text = await response.text();
+            console.log('[SnagService] getSnagDetails response:', text);
+
+            let json;
+            try {
+                json = JSON.parse(text);
+            } catch (e) {
+                throw new Error(`Invalid JSON response: ${text.substring(0, 100)}...`);
+            }
+
             if (!response.ok) {
-                throw new Error(json.message || 'Failed to fetch snag details');
+                throw new Error(json.message || `Failed to fetch snag details: ${response.status}`);
             }
             return json;
         } catch (error) {
@@ -96,15 +110,29 @@ export const SnagService = {
     updateSnag: async (id, data) => {
         try {
             const headers = await getHeaders();
-            const response = await fetch(`${API_URL}/${id}`, {
+            const url = `${API_URL}/${id}`;
+            console.log('[SnagService] updateSnag requesting:', url, 'with data:', JSON.stringify(data));
+
+            const response = await fetch(url, {
                 method: 'PATCH',
                 headers,
                 body: JSON.stringify(data),
             });
 
-            const json = await response.json();
+            console.log('[SnagService] updateSnag status:', response.status);
+            const text = await response.text();
+            console.log('[SnagService] updateSnag response:', text);
+
+            let json;
+            try {
+                json = JSON.parse(text);
+            } catch (e) {
+                console.error('[SnagService] JSON parse error:', e);
+                throw new Error(`Invalid JSON response: ${text.substring(0, 100)}...`);
+            }
+
             if (!response.ok) {
-                throw new Error(json.message || 'Failed to update snag');
+                throw new Error(json.message || `Failed to update snag: ${response.status}`);
             }
             return json;
         } catch (error) {

@@ -413,7 +413,7 @@ const Overview = () => {
 
     return (
       <TouchableOpacity
-        onPress={() => navigation.navigate('MilestoneDetail', { milestone })}
+        onPress={() => navigation.navigate('MilestoneDetail', { milestone, projectId: project._id || project.id })}
         style={{
           backgroundColor: COLORS.surface,
           borderRadius: 16,
@@ -867,9 +867,9 @@ const Overview = () => {
         case 'Plans':
           return <FilesScreen project={project} />;
         case 'Snags':
-          return <SnagListScreen projectId={project._id} />;
+          return <SnagListScreen projectId={project._id} showHeader={false} isClient={true} />;
         case 'Progress':
-          return <WorkProgressListScreen projectId={project._id} isClient={true} />;
+          return <WorkProgressListScreen projectId={project._id} isClient={true} showHeader={false} />;
         default:
           return null;
       }
@@ -923,37 +923,41 @@ const Overview = () => {
       </View>
 
       {/* Main Content */}
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {activeTab === 'Overview' ? (
-          <Animated.View style={{ opacity: fadeAnim, paddingTop: 20, paddingBottom: 32 }}>
-            {/* Progress Dashboard */}
-            {renderProgressDashboard()}
+      {['Snags', 'Progress'].includes(activeTab) ? (
+        <View style={{ flex: 1, paddingTop: 12 }}>{renderTabContent()}</View>
+      ) : (
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {activeTab === 'Overview' ? (
+            <Animated.View style={{ opacity: fadeAnim, paddingTop: 20, paddingBottom: 32 }}>
+              {/* Progress Dashboard */}
+              {renderProgressDashboard()}
 
-            {/* Progress Cards */}
-            {renderProgressCards()}
+              {/* Progress Cards */}
+              {renderProgressCards()}
 
-            {/* Progress Stats */}
-            <ProgressStatsCard />
+              {/* Progress Stats */}
+              <ProgressStatsCard />
 
-            {/* Milestones List */}
-            <View style={{ paddingHorizontal: 16 }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <Text style={{ fontSize: 20, fontWeight: '700', color: COLORS.text }}>Recent Tasks</Text>
-                <TouchableOpacity onPress={() => navigation.navigate('AllMilestones', { project })}>
-                  <Text style={{ fontSize: 14, color: COLORS.primary, fontWeight: '600' }}>View All</Text>
-                </TouchableOpacity>
+              {/* Milestones List */}
+              <View style={{ paddingHorizontal: 16 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <Text style={{ fontSize: 20, fontWeight: '700', color: COLORS.text }}>Recent Tasks</Text>
+                  <TouchableOpacity onPress={() => navigation.navigate('AllMilestones', { project, projectId: project._id || project.id })}>
+                    <Text style={{ fontSize: 14, color: COLORS.primary, fontWeight: '600' }}>View All</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {milestones.slice(0, 5).map((milestone, index) => (
+                  <MilestoneCard key={milestone._id || index} milestone={milestone} index={index} />
+                ))}
               </View>
-
-              {milestones.slice(0, 5).map((milestone, index) => (
-                <MilestoneCard key={milestone._id || index} milestone={milestone} index={index} />
-              ))}
-            </View>
-          </Animated.View>
-        ) : (
-          // Other Tabs Content
-          <View style={{ paddingTop: 12 }}>{renderTabContent()}</View>
-        )}
-      </ScrollView>
+            </Animated.View>
+          ) : (
+            // Other Tabs Content
+            <View style={{ paddingTop: 12 }}>{renderTabContent()}</View>
+          )}
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 };

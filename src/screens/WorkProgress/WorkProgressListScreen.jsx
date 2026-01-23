@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Header from '../../components/Header';
 import { WorkProgressService } from '../../services/WorkProgressService';
 
-const WorkProgressListScreen = ({ projectId: propProjectId, isClient = false }) => {
+const WorkProgressListScreen = ({ projectId: propProjectId, isClient = false, showHeader = true }) => {
     const navigation = useNavigation();
     const route = useRoute();
     const params = route.params || {};
@@ -203,10 +203,12 @@ const WorkProgressListScreen = ({ projectId: propProjectId, isClient = false }) 
 
     return (
         <View className="flex-1 bg-gray-50">
-            <Header
-                title="Work Progress"
-                showBackButton={true}
-            />
+            {showHeader && (
+                <Header
+                    title="Work Progress"
+                    showBackButton={true}
+                />
+            )}
 
             {/* Selector Tab */}
             <View className="flex-row px-4 py-3 bg-white shadow-sm">

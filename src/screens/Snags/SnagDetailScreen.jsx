@@ -40,9 +40,14 @@ const SnagDetailScreen = () => {
     const [updating, setUpdating] = useState(false);
 
     useEffect(() => {
-        fetchSnagDetails();
+        if (snagId) {
+            fetchSnagDetails();
+        } else {
+            Alert.alert('Error', 'No Snag ID provided');
+            navigation.goBack();
+        }
         fetchCurrentUser();
-    }, []);
+    }, [snagId]);
 
     const fetchCurrentUser = async () => {
         const json = await AsyncStorage.getItem('userData');
@@ -105,6 +110,31 @@ const SnagDetailScreen = () => {
             Alert.alert('Error', 'Failed to assign snag');
         } finally {
             setUpdating(false);
+        }
+    };
+
+    const handlePickImage = () => {
+        Alert.alert('Select Photo', 'Choose an option', [
+            { text: 'Camera', onPress: takePhoto },
+            { text: 'Gallery', onPress: pickResolutionPhoto },
+            { text: 'Cancel', style: 'cancel' }
+        ]);
+    };
+
+    const takePhoto = async () => {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permission denied', 'Camera permission is required');
+            return;
+        }
+
+        let result = await ImagePicker.launchCameraAsync({
+            allowsEditing: true,
+            quality: 0.7,
+        });
+
+        if (!result.canceled) {
+            setResolutionPhoto(result.assets[0].uri);
         }
     };
 
@@ -180,9 +210,25 @@ const SnagDetailScreen = () => {
         ])
     }
 
+
     // Permission Checks (Basic MVP implementation)
     const isAdminOrManager = currentUser?.role === 'admin' || currentUser?.role === 'manager' || currentUser?.role === 'project_manager';
-    // Determining permissions usually complex, here simulating based on simple role check.
+
+    // Normalize IDs for comparison
+    const currentUserId = currentUser?._id || currentUser?.id;
+    const assigneeId = snag?.assignedTo?._id || snag?.assignedTo?.id;
+    const isAssignee = currentUserId && assigneeId && String(currentUserId) === String(assigneeId);
+
+    // Debug Logging
+    useEffect(() => {
+        if (snag && currentUser) {
+            console.log('[SnagDetailScreen] Debug Permissions:');
+            console.log(' - Current User ID:', currentUserId);
+            console.log(' - Assignee ID:', assigneeId);
+            console.log(' - isAdminOrManager:', isAdminOrManager);
+            console.log(' - Is Assignee:', isAssignee);
+        }
+    }, [snag, currentUser, currentUserId, assigneeId, isAssignee]);
 
     if (loading) {
         return (
@@ -289,7 +335,7 @@ const SnagDetailScreen = () => {
                         )}
 
                         {/* Assignee Actions (or Admin acting as assignee for testing) */}
-                        {(snag.status === 'assigned' && (currentUser?._id === snag.assignedTo?._id || isAdminOrManager)) && (
+                        {(snag.status === 'assigned' && (isAssignee || isAdminOrManager)) && (
                             <TouchableOpacity
                                 className="bg-yellow-500 py-3 rounded-xl items-center"
                                 onPress={() => setShowResolveModal(true)}
@@ -375,7 +421,7 @@ const SnagDetailScreen = () => {
                         ) : (
                             <TouchableOpacity
                                 className="h-48 border-2 border-dashed border-gray-300 rounded-lg items-center justify-center mb-4 bg-gray-50"
-                                onPress={pickResolutionPhoto}
+                                onPress={handlePickImage}
                             >
                                 <Ionicons name="camera" size={40} color="#9CA3AF" />
                                 <Text className="text-gray-400 mt-2">Tap to take/select photo</Text>
