@@ -34,15 +34,22 @@ const SnagListScreen = ({ projectId: propProjectId, showHeader = true, isClient 
         try {
             const params = {};
             if (projectId) params.projectId = projectId;
-            if (statusFilter) params.status = statusFilter;
+            if (statusFilter) {
+                // For Clients, "Open" tab should show ALL active snags (open, assigned, fixed, verified)
+                if (isClient && statusFilter === 'open') {
+                    // Do not send specific status param, fetch all
+                } else {
+                    params.status = statusFilter;
+                }
+            }
 
             console.log('[SnagList] Fetching snags with params:', params);
             const response = await SnagService.getSnags(params);
             let fetchedSnags = response.data || [];
             console.log(`[SnagList] Fetched ${fetchedSnags.length} snags for status: ${statusFilter || 'all'}`);
 
-            // If "All" tab (empty filter), exclude 'closed' snags as per user req
-            if (statusFilter === '') {
+            // If "All" tab (empty filter) OR (Client + Open tab), exclude 'closed' snags
+            if (statusFilter === '' || (isClient && statusFilter === 'open')) {
                 fetchedSnags = fetchedSnags.filter(s => s.status !== 'closed');
             }
 

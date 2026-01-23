@@ -213,6 +213,7 @@ const SnagDetailScreen = () => {
 
     // Permission Checks (Basic MVP implementation)
     const isAdminOrManager = currentUser?.role === 'admin' || currentUser?.role === 'manager' || currentUser?.role === 'project_manager';
+    const isClient = currentUser?.role === 'client' || currentUser?.role === 'homeowner';
 
     // Normalize IDs for comparison
     const currentUserId = currentUser?._id || currentUser?.id;
@@ -334,8 +335,8 @@ const SnagDetailScreen = () => {
                             </TouchableOpacity>
                         )}
 
-                        {/* Assignee Actions (or Admin acting as assignee for testing) */}
-                        {(snag.status === 'assigned' && (isAssignee || isAdminOrManager)) && (
+                        {/* Assignee Actions (or Admin acting as assignee for testing) - Clients CANNOT fix */}
+                        {(snag.status === 'assigned' && (isAssignee || isAdminOrManager) && !isClient) && (
                             <TouchableOpacity
                                 className="bg-yellow-500 py-3 rounded-xl items-center"
                                 onPress={() => setShowResolveModal(true)}
