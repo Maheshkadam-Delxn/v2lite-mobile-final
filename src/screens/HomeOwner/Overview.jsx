@@ -26,6 +26,7 @@ import MaterialStatus from '../HomeOwner/MaterialStatus';
 import BOQClientScreen from '../HomeOwner/BOQClientScreen';
 import FilesScreen from '../Document-Management/FileScreen';
 import SnagListScreen from '../Snags/SnagListScreen';
+import WorkProgressListScreen from '../WorkProgress/WorkProgressListScreen';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -295,6 +296,7 @@ const Overview = () => {
     { id: 'ChangeRequests', label: 'Changes', icon: 'swap-horizontal-outline' },
     { id: 'MaterialStatus', label: 'Materials', icon: 'cube-outline' },
     { id: 'Snags', label: 'Snags', icon: 'bug-outline' },
+    { id: 'Progress', label: 'Progress', icon: 'trending-up-outline' },
   ];
 
   // Progress data based on milestones
@@ -866,6 +868,8 @@ const Overview = () => {
           return <FilesScreen project={project} />;
         case 'Snags':
           return <SnagListScreen projectId={project._id} />;
+        case 'Progress':
+          return <WorkProgressListScreen projectId={project._id} isClient={true} />;
         default:
           return null;
       }

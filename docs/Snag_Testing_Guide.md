@@ -13,7 +13,14 @@ The Snag Module allows users (Clients, Contractors, Managers) to report and trac
 | **Contractor (Assignee)** | View Assigned Snags, Mark as Fixed (with photo proof) |
 | **Client** | Report Snag, View Progress |
 
-## 🚦 3. The Happy Path (Standard Flow)
+## 🛡️ 3. Handover Gate (Quality Guard)
+A project **cannot** be marked as "Completed" or handed over if there are any outstanding **High** or **Critical** snags. 
+- Even if all milestones are 100%, quality acts as the final gate.
+- Testers must verify that handover is blocked until all severe snags are "Closed".
+
+---
+
+## 🚦 4. The Happy Path (Standard Flow)
 
 ### Step 1: Reporting an Issue
 1.  **Actor**: Admin, Manager, or Client.
@@ -63,7 +70,8 @@ The Snag Module allows users (Clients, Contractors, Managers) to report and trac
 
 ### A. Photo Requirements
 - **Creation**: Photos are optional but recommended.
-- **Fixing**: Status **"fixed"** REQUIRE a photo. The "Submit Fix" button is disabled until a photo is picked.
+- **Fixing**: Status **"fixed"** REQUIRES resolution photos. The "Submit Fix" button is disabled until a photo is provided.
+- **Locking**: Once a snag is marked as "Fixed", its original details (Title, Description, etc.) are locked and cannot be edited.
 
 ### B. Role Restrictions (RBAC)
 - **Assigning**: Only visible/allowed for Admin/Manager.

@@ -29,6 +29,7 @@ const CreateSnagScreen = () => {
     const [location, setLocation] = useState('');
     const [category, setCategory] = useState(SNAG_CATEGORIES[0]);
     const [severity, setSeverity] = useState('medium');
+    const [workProgressId, setWorkProgressId] = useState(route.params?.workProgressId || null);
     const [photos, setPhotos] = useState([]);
     const [loading, setLoading] = useState(false);
 
@@ -128,6 +129,7 @@ const CreateSnagScreen = () => {
                 category,
                 location,
                 severity,
+                workProgressId,
                 photos: uploadedUrls,
             };
 

@@ -26,6 +26,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import CreateBOQDraftScreen from '@/screens/BOQ/CreateBOQDraftScreen';
 import BOQListScreen from '@/screens/BOQ/BOQListScreen';
 import SnagListScreen from '@/screens/Snags/SnagListScreen';
+import WorkProgressListScreen from '@/screens/WorkProgress/WorkProgressListScreen';
 const API_URL = `${process.env.BASE_API_URL}`;
 
 const ViewDetailsScreen = () => {
@@ -95,7 +96,7 @@ const ViewDetailsScreen = () => {
     { id: 'Issues', label: 'Issues' },
     { id: 'Reports', label: 'Reports' },
     { id: 'Snags', label: 'Snags' },
-
+    { id: 'Progress', label: 'Progress' },
   ];
 
 
@@ -224,6 +225,9 @@ const ViewDetailsScreen = () => {
 
       case 'Snags':
         return <SnagListScreen projectId={project._id} />;
+
+      case 'Progress':
+        return <WorkProgressListScreen projectId={project._id} />;
 
       default:
         return null;

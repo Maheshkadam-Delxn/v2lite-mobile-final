@@ -20,6 +20,8 @@ import MilestoneTasksScreen from '../screens/Projects/MilestoneTasksScreen';
 import SnagListScreen from '../screens/Snags/SnagListScreen';
 import CreateSnagScreen from '../screens/Snags/CreateSnagScreen';
 import SnagDetailScreen from '../screens/Snags/SnagDetailScreen';
+import WorkProgressListScreen from '../screens/WorkProgress/WorkProgressListScreen';
+import CreateWorkProgressScreen from '../screens/WorkProgress/CreateWorkProgressScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -44,6 +46,8 @@ const ProjectStack = () => (
         <Stack.Screen name="SnagListScreen" component={SnagListScreen} />
         <Stack.Screen name="CreateSnagScreen" component={CreateSnagScreen} />
         <Stack.Screen name="SnagDetailScreen" component={SnagDetailScreen} />
+        <Stack.Screen name="WorkProgressList" component={WorkProgressListScreen} />
+        <Stack.Screen name="CreateWorkProgressScreen" component={CreateWorkProgressScreen} />
     </Stack.Navigator>
 );
 
