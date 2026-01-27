@@ -37,9 +37,9 @@ const WorkProgressListScreen = ({ projectId: propProjectId, isClient = false, sh
                 setLogs(response.data || []);
             } else {
                 const [daily, weekly, monthly] = await Promise.all([
-                    WorkProgressService.getSummary({ projectId, type: 'daily' }),
-                    WorkProgressService.getSummary({ projectId, type: 'weekly' }),
-                    WorkProgressService.getSummary({ projectId, type: 'monthly' })
+                    WorkProgressService.getSummary({ projectId, range: 'daily' }),
+                    WorkProgressService.getSummary({ projectId, range: 'weekly' }),
+                    WorkProgressService.getSummary({ projectId, range: 'monthly' })
                 ]);
                 setSummaries({
                     daily: daily.data,
@@ -72,7 +72,7 @@ const WorkProgressListScreen = ({ projectId: propProjectId, isClient = false, sh
             <View className="flex-row justify-between items-start">
                 <View className="flex-1">
                     <Text className="text-sm font-semibold text-gray-400 capitalize">
-                        {new Date(item.logDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                        {new Date(item.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                     </Text>
                     <Text className="text-base text-gray-800 mt-2" numberOfLines={3}>
                         {item.description}
@@ -80,13 +80,13 @@ const WorkProgressListScreen = ({ projectId: propProjectId, isClient = false, sh
                 </View>
                 <View
                     className="px-2 py-1 rounded-lg items-center justify-center min-w-[50px]"
-                    style={{ backgroundColor: WorkProgressService.getEffortColor(item.effortPercentage) + '20' }}
+                    style={{ backgroundColor: WorkProgressService.getEffortColor(item.progressPercent) + '20' }}
                 >
                     <Text
                         className="text-xs font-bold"
-                        style={{ color: WorkProgressService.getEffortColor(item.effortPercentage) }}
+                        style={{ color: WorkProgressService.getEffortColor(item.progressPercent) }}
                     >
-                        {item.effortPercentage}%
+                        {item.progressPercent}%
                     </Text>
                 </View>
             </View>
@@ -135,8 +135,11 @@ const WorkProgressListScreen = ({ projectId: propProjectId, isClient = false, sh
         </View>
     );
 
-    const renderSummaryCard = (title, data, icon) => {
-        if (!data) return null;
+    const renderSummaryCard = (title, rawData, icon) => {
+        if (!rawData) return null;
+        // Handle if data is array (API Guide says data: [{...}])
+        const data = Array.isArray(rawData) ? (rawData[0] || {}) : rawData;
+
         return (
             <View className="bg-white p-5 rounded-2xl mb-4 shadow-sm border border-gray-100">
                 <View className="flex-row justify-between items-center mb-4">
@@ -153,21 +156,21 @@ const WorkProgressListScreen = ({ projectId: propProjectId, isClient = false, sh
 
                 <View className="flex-row justify-between">
                     <View className="items-center flex-1">
-                        <Text className="text-2xl font-black text-gray-800">{data.averageEffort?.toFixed(1) || 0}%</Text>
+                        <Text className="text-2xl font-black text-gray-800">{data.avgProgress?.toFixed(1) || 0}%</Text>
                         <Text className="text-xs text-gray-400 mt-1 uppercase tracking-tighter">Avg. Effort</Text>
                     </View>
                     <View className="w-[1px] h-10 bg-gray-100" />
                     <View className="items-center flex-1">
-                        <Text className="text-2xl font-black text-gray-800">{data.totalLogs || 0}</Text>
+                        <Text className="text-2xl font-black text-gray-800">{data.count || 0}</Text>
                         <Text className="text-xs text-gray-400 mt-1 uppercase tracking-tighter">Total Logs</Text>
                     </View>
                     <View className="w-[1px] h-10 bg-gray-100" />
                     <View className="items-center flex-1">
                         <Text
                             className="text-2xl font-black"
-                            style={{ color: WorkProgressService.getEffortColor(data.totalEffort || 0) }}
+                            style={{ color: WorkProgressService.getEffortColor(data.totalProgress || 0) }}
                         >
-                            {data.totalEffort || 0}%
+                            {data.totalProgress || 0}%
                         </Text>
                         <Text className="text-xs text-gray-400 mt-1 uppercase tracking-tighter">Total Progress</Text>
                     </View>
@@ -176,12 +179,12 @@ const WorkProgressListScreen = ({ projectId: propProjectId, isClient = false, sh
                 <View className="mt-4 bg-gray-50 rounded-xl p-3">
                     <View className="flex-row justify-between items-center mb-2">
                         <Text className="text-xs font-medium text-gray-500">Progress Visualization</Text>
-                        <Text className="text-xs font-bold text-blue-600">{data.totalEffort || 0}%</Text>
+                        <Text className="text-xs font-bold text-blue-600">{data.totalProgress || 0}%</Text>
                     </View>
                     <View className="h-2 bg-gray-200 rounded-full overflow-hidden">
                         <View
                             className="h-full bg-blue-500"
-                            style={{ width: `${Math.min(data.totalEffort || 0, 100)}%` }}
+                            style={{ width: `${Math.min(data.totalProgress || 0, 100)}%` }}
                         />
                     </View>
                 </View>

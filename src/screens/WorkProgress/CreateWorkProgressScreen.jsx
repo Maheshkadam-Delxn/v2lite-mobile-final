@@ -70,7 +70,7 @@ const CreateWorkProgressScreen = () => {
         }
 
         let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            mediaTypes: ['images'],
             allowsEditing: true,
             quality: 0.7,
         });
@@ -121,7 +121,8 @@ const CreateWorkProgressScreen = () => {
             }
 
             // Check 100% total effort cap for today
-            const totalExistingEffort = existingLogs.data.reduce((sum, log) => sum + (log.effortPercentage || 0), 0);
+            // Check 100% total effort cap for today
+            const totalExistingEffort = existingLogs.data.reduce((sum, log) => sum + (log.progressPercent || 0), 0);
             if (totalExistingEffort + parseInt(effortPercentage) > 100) {
                 Alert.alert('Limit Exceeded', `Total effort for today cannot exceed 100%. You have already logged ${totalExistingEffort}% effort.`);
                 setLoading(false);
@@ -143,9 +144,9 @@ const CreateWorkProgressScreen = () => {
                 projectId,
                 milestoneId: selectedMilestone || undefined,
                 description: description.trim(),
-                effortPercentage: parseInt(effortPercentage),
+                progressPercent: parseInt(effortPercentage),
                 photos: uploadedUrls,
-                logDate: new Date().toISOString(),
+                date: new Date().toISOString().split('T')[0],
             };
 
             await WorkProgressService.createLog(payload);
