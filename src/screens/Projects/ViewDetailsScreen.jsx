@@ -93,7 +93,7 @@ const ViewDetailsScreen = () => {
 
     { id: 'Material', label: 'Material' },
     { id: 'Attendance', label: 'Attendance' },
-    { id: 'Issues', label: 'Issues' },
+    { id: 'Escalation Matrix', label: 'Escalation Matrix' },
     { id: 'Snags', label: 'Snags' },
     { id: 'Progress', label: 'Progress' },
   ];
@@ -214,7 +214,7 @@ const ViewDetailsScreen = () => {
         // Render the PaymentsTransaction component inline
         return <AttendanceScreen project={project} />;
 
-      case 'Issues':
+      case 'Escalation Matrix':
         // Render the PaymentsTransaction component inline
         return <RiskCategoriesScreen project={project} />;
 
