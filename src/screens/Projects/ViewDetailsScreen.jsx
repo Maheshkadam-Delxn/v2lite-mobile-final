@@ -27,6 +27,7 @@ import CreateBOQDraftScreen from '@/screens/BOQ/CreateBOQDraftScreen';
 import BOQListScreen from '@/screens/BOQ/BOQListScreen';
 import SnagListScreen from '@/screens/Snags/SnagListScreen';
 import WorkProgressListScreen from '@/screens/WorkProgress/WorkProgressListScreen';
+import AuditDashboard from '@/screens/Audit/AuditDashboard';
 const API_URL = `${process.env.BASE_API_URL}`;
 
 const ViewDetailsScreen = () => {
@@ -96,6 +97,7 @@ const ViewDetailsScreen = () => {
     { id: 'Escalation Matrix', label: 'Escalation Matrix' },
     { id: 'Snags', label: 'Snags' },
     { id: 'Progress', label: 'Progress' },
+    { id: 'Audit', label: 'Audit' },
   ];
 
 
@@ -226,6 +228,9 @@ const ViewDetailsScreen = () => {
       case 'Progress':
         return <WorkProgressListScreen projectId={project._id} showHeader={false} />;
 
+      case 'Audit':
+        return <AuditDashboard showHeader={false} projectId={project._id} />;
+
       default:
         return null;
     }
@@ -272,7 +277,7 @@ const ViewDetailsScreen = () => {
         />
       </View>
       {/* Conditionally render ScrollView or direct View based on tab */}
-      {['Snags', 'Progress', 'BOQ', 'Task'].includes(activeTab) ? (
+      {['Snags', 'Progress', 'BOQ', 'Task', 'Audit'].includes(activeTab) ? (
         <View style={styles.content}>{renderTabContent()}</View>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
