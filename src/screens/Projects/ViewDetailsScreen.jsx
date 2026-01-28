@@ -28,6 +28,7 @@ import BOQListScreen from '@/screens/BOQ/BOQListScreen';
 import SnagListScreen from '@/screens/Snags/SnagListScreen';
 import WorkProgressListScreen from '@/screens/WorkProgress/WorkProgressListScreen';
 import AuditDashboard from '@/screens/Audit/AuditDashboard';
+import HandoverScreen from '@/screens/Handover/HandoverScreen';
 const API_URL = `${process.env.BASE_API_URL}`;
 
 const ViewDetailsScreen = () => {
@@ -98,6 +99,7 @@ const ViewDetailsScreen = () => {
     { id: 'Snags', label: 'Snags' },
     { id: 'Progress', label: 'Progress' },
     { id: 'Audit', label: 'Audit' },
+    { id: 'Handover', label: 'Handover' },
   ];
 
 
@@ -231,6 +233,9 @@ const ViewDetailsScreen = () => {
       case 'Audit':
         return <AuditDashboard showHeader={false} projectId={project._id} />;
 
+      case 'Handover':
+        return <HandoverScreen project={project} />;
+
       default:
         return null;
     }
@@ -277,7 +282,7 @@ const ViewDetailsScreen = () => {
         />
       </View>
       {/* Conditionally render ScrollView or direct View based on tab */}
-      {['Snags', 'Progress', 'BOQ', 'Task', 'Audit'].includes(activeTab) ? (
+      {['Snags', 'Progress', 'BOQ', 'Task', 'Audit', 'Handover'].includes(activeTab) ? (
         <View style={styles.content}>{renderTabContent()}</View>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
