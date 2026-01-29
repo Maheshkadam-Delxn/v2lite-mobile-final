@@ -22,6 +22,10 @@ import AddDocumentScreen from '../screens/Document-Management/AddDocumentScreen'
 import CustomerChooseTemplate from '../screens/HomeOwner/CustomerChooseTemplate';
 import TemplatePreview from '../screens/HomeOwner/TemplatePreview';
 import SubmitProposalCustomer from '../screens/HomeOwner/SubmitProposalCustomer';
+import SnagDetailScreen from '../screens/Snags/SnagDetailScreen';
+import CreateSnagScreen from '../screens/Snags/CreateSnagScreen';
+import MilestoneTasksScreen from '../screens/Projects/MilestoneTasksScreen';
+import TaskScreen from '../screens/Projects/TaskScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -37,6 +41,11 @@ const ClientProjectStack = () => (
         <Stack.Screen name="QualityChecks" component={QualityChecks} />
         <Stack.Screen name="ChangeRequests" component={ChangeRequests} />
         <Stack.Screen name="MaterialStatus" component={MaterialStatus} />
+
+        <Stack.Screen name="SnagDetailScreen" component={SnagDetailScreen} />
+        <Stack.Screen name="CreateSnagScreen" component={CreateSnagScreen} />
+        <Stack.Screen name="MilestoneDetail" component={MilestoneTasksScreen} />
+        <Stack.Screen name="AllMilestones" component={TaskScreen} />
         {/* Document Management Screens for Plans Tab */}
         <Stack.Screen name="FolderDetails" component={FolderDetailsScreen} />
         <Stack.Screen name="viewDocument" component={ViewDocument} />

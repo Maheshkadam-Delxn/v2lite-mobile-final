@@ -1,4 +1,4 @@
-// MilestoneTasksScreen.js - Updated with delay detection feature
+
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -14,13 +14,19 @@ import {
   Switch,
   Platform,
 } from 'react-native';
+import { uploadToCloudinary } from '@/utils/cloudinary';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons, Feather } from '@expo/vector-icons';
+import { Image } from 'react-native';
+
+import * as ImagePicker from 'expo-image-picker';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 // Import Header component
 import Header from '../../components/Header';
+
 
 const BASE_URL = `${process.env.BASE_API_URL}/api`;
 const MILESTONE_BY_ID = (milestoneId) => `${BASE_URL}/milestones/${milestoneId}`;
@@ -41,6 +47,8 @@ const MilestoneTasksScreen = () => {
     return sunday;
   });
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [previewImage, setPreviewImage] = useState(null);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   const [allTasks, setAllTasks] = useState([]);
   const [filteredTasks, setFilteredTasks] = useState([]);
@@ -48,6 +56,10 @@ const MilestoneTasksScreen = () => {
   const [tasksError, setTasksError] = useState(null);
   const [currentProgress, setCurrentProgress] = useState(initialMilestone?.progress || 0);
   const [milestoneData, setMilestoneData] = useState(initialMilestone);
+  const [showAttachmentModal, setShowAttachmentModal] = useState(false);
+  const [selectedTaskForCompletion, setSelectedTaskForCompletion] = useState(null);
+  const [completionImage, setCompletionImage] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Members states for user selection in modal
   const [members, setMembers] = useState([]);
@@ -85,15 +97,15 @@ const MilestoneTasksScreen = () => {
   // Function to check if task is delayed
   const isTaskDelayed = (taskEndDate, completionDate = new Date()) => {
     if (!taskEndDate) return false;
-    
+
     try {
       const endDate = new Date(taskEndDate);
       const today = new Date(completionDate);
-      
+
       // Clear time part for accurate day comparison
       endDate.setHours(0, 0, 0, 0);
       today.setHours(0, 0, 0, 0);
-      
+
       // Task is delayed if end date is before today
       return endDate < today;
     } catch (error) {
@@ -105,18 +117,18 @@ const MilestoneTasksScreen = () => {
   // Calculate delay in days
   const calculateDelayDays = (taskEndDate, completionDate = new Date()) => {
     if (!taskEndDate) return 0;
-    
+
     try {
       const endDate = new Date(taskEndDate);
       const today = new Date(completionDate);
-      
+
       // Clear time part
       endDate.setHours(0, 0, 0, 0);
       today.setHours(0, 0, 0, 0);
-      
+
       const diffTime = today.getTime() - endDate.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
+
       return diffDays > 0 ? diffDays : 0;
     } catch (error) {
       console.error('Error calculating delay days:', error);
@@ -129,7 +141,7 @@ const MilestoneTasksScreen = () => {
     if (!tasks || !Array.isArray(tasks)) {
       return [];
     }
-    
+
     return tasks.filter(task => {
       if (!task || !task.startDate || !task.endDate) return false;
       try {
@@ -187,7 +199,7 @@ const MilestoneTasksScreen = () => {
 
   const formatMonthYear = (date) => {
     const months = [
-      'January','February','March','April','May','June','July','August','September','October','November','December',
+      'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December',
     ];
     return `${months[date.getMonth()]} ${date.getFullYear()}`;
   };
@@ -228,7 +240,7 @@ const MilestoneTasksScreen = () => {
   // Calculate progress based on tasks
   const calculateProgress = (tasks) => {
     if (!tasks || !Array.isArray(tasks) || tasks.length === 0) return 0;
-    const completed = tasks.filter(task => 
+    const completed = tasks.filter(task =>
       task && task.status === 'completed'
     ).length;
     return Math.round((completed / tasks.length) * 100);
@@ -275,7 +287,7 @@ const MilestoneTasksScreen = () => {
 
     setLoadingTasks(true);
     setTasksError(null);
-    
+
     try {
       const token = await AsyncStorage.getItem(TOKEN_KEY);
       const headers = { 'Content-Type': 'application/json' };
@@ -303,7 +315,7 @@ const MilestoneTasksScreen = () => {
       const mappedTasks = subtasks.map(sub => {
         const isDelayed = isTaskDelayed(sub.endDate);
         const delayDays = isDelayed ? calculateDelayDays(sub.endDate) : 0;
-        
+
         return {
           id: sub._id,
           _id: sub._id,
@@ -488,14 +500,14 @@ const MilestoneTasksScreen = () => {
 
   // Handle delete subtask
   const handleDeleteSubtask = async (taskId) => {
-     if (!permissions?.permissions?.task?.delete && permissions?.role !== "admin") {
-    Alert.alert(
-      "Access Denied",
-      "You do not have permission to delete a task.",
-      [{ text: "OK" }]
-    );
-    return;
-  }
+    if (!permissions?.permissions?.task?.delete && permissions?.role !== "admin") {
+      Alert.alert(
+        "Access Denied",
+        "You do not have permission to delete a task.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
     const milestoneId = milestoneData?.id || milestoneData?._id;
     if (!milestoneId) {
       Alert.alert("Error", "Milestone ID is missing");
@@ -567,14 +579,14 @@ const MilestoneTasksScreen = () => {
 
   // Handle edit subtask
   const handleEditSubtask = (taskId) => {
-     if (!permissions?.permissions?.task?.update && permissions?.role !== "admin") {
-    Alert.alert(
-      "Access Denied",
-      "You do not have permission to update a task.",
-      [{ text: "OK" }]
-    );
-    return;
-  }
+    if (!permissions?.permissions?.task?.update && permissions?.role !== "admin") {
+      Alert.alert(
+        "Access Denied",
+        "You do not have permission to update a task.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
     const task = allTasks.find(t => (t._id || t.id) === taskId);
     if (!task) return;
     setCurrentSubtask({
@@ -591,51 +603,82 @@ const MilestoneTasksScreen = () => {
     setShowSubtaskModal(true);
   };
 
-  // Handle toggle completion with delay check
   const handleToggleCompletion = async (taskId) => {
-    const milestoneId = milestoneData?.id || milestoneData?._id;
-    if (!milestoneId) {
-      Alert.alert("Error", "Milestone ID is missing");
+    const task = allTasks.find(t => (t._id || t.id) === taskId);
+    if (!task) return;
+
+    // If already completed → allow normal toggle
+    if (task.isCompleted) {
+      proceedWithCompletion(taskId, true);
       return;
     }
 
-    const taskIndex = allTasks.findIndex(t => (t._id || t.id) === taskId);
-    if (taskIndex === -1) {
-      Alert.alert("Error", "Task not found");
+    // Open attachment modal
+    setSelectedTaskForCompletion(task);
+    setCompletionImage(null);
+    setShowAttachmentModal(true);
+  };
+  const pickCompletionImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      setCompletionImage(result.assets[0]);
+    }
+  };
+  const confirmCompletionWithImage = async () => {
+    if (!completionImage) {
+      Alert.alert("Image Required", "Please attach an image to complete the task.");
       return;
     }
 
-    const task = allTasks[taskIndex];
-    const newCompleted = !task.isCompleted;
-    const completionDate = new Date();
+    setUploadingImage(true);
 
-    // Check if task is delayed when marking as completed
-    if (newCompleted && isTaskDelayed(task.endDate, completionDate)) {
-      const delayDays = calculateDelayDays(task.endDate, completionDate);
-      setDelayedTaskInfo({
-        title: task.title,
-        endDate: task.endDate,
-        delayDays: delayDays,
-      });
-      setShowDelayAlert(true);
-      return; // Don't proceed until user confirms
+    try {
+      // 🔼 Upload image to Cloudinary
+      const uploadResult = await uploadToCloudinary(completionImage.uri);
+
+      if (!uploadResult.success) {
+        Alert.alert("Upload Failed", uploadResult.error || "Image upload failed");
+        return;
+      }
+
+      const imageUrl = uploadResult.url;
+
+      // ✅ Proceed with completion & attach image
+      await proceedWithCompletion(
+        selectedTaskForCompletion._id || selectedTaskForCompletion.id,
+        true,
+        imageUrl
+      );
+
+      setShowAttachmentModal(false);
+      setSelectedTaskForCompletion(null);
+      setCompletionImage(null);
+
+      Alert.alert("Success", "Task completed with image proof!");
+    } catch (err) {
+      console.error(err);
+      Alert.alert("Error", "Failed to complete task");
+    } finally {
+      setUploadingImage(false);
     }
-
-    // If not delayed, proceed with completion
-    proceedWithCompletion(taskId, taskIndex, newCompleted);
   };
 
+
   // Proceed with completion after delay check
-  const proceedWithCompletion = async (taskId, taskIndex, newCompleted) => {
+  const proceedWithCompletion = async (taskId, newCompleted, completionImageUrl = null) => {
     const milestoneId = milestoneData?.id || milestoneData?._id;
-    
+
     try {
       const token = await AsyncStorage.getItem(TOKEN_KEY);
       const headers = {
         'Content-Type': 'application/json',
         ...(token && { Authorization: `Bearer ${token}` })
       };
-      
+
       const apiSubtasks = allTasks.map(t => {
         if ((t._id || t.id) === taskId) {
           return {
@@ -646,7 +689,9 @@ const MilestoneTasksScreen = () => {
             startDate: t.startDate,
             endDate: t.endDate,
             assignedTo: t.assignedTo,
-            attachments: t.attachments || [],
+            attachments: completionImageUrl
+              ? [...(t.attachments || []), completionImageUrl]
+              : t.attachments || [],
           };
         } else {
           return {
@@ -661,10 +706,11 @@ const MilestoneTasksScreen = () => {
           };
         }
       });
-      
+
       const body = {
         subtasks: apiSubtasks,
       };
+
 
       console.log('TOGGLE PUT Request Body:', JSON.stringify(body, null, 2));
 
@@ -683,7 +729,7 @@ const MilestoneTasksScreen = () => {
 
       console.log('TOGGLE PUT Response:', await res.json());
       await fetchMilestone();
-      
+
       // Show success message
       Alert.alert(
         "Task Completed",
@@ -700,20 +746,20 @@ const MilestoneTasksScreen = () => {
   const handleDelayAlertResponse = (confirm) => {
     if (confirm && delayedTaskInfo) {
       // Find the task again and proceed with completion
-      const taskId = allTasks.find(t => 
-        t.title === delayedTaskInfo.title && 
+      const taskId = allTasks.find(t =>
+        t.title === delayedTaskInfo.title &&
         t.endDate === delayedTaskInfo.endDate
-      )?._id || allTasks.find(t => 
-        t.title === delayedTaskInfo.title && 
+      )?._id || allTasks.find(t =>
+        t.title === delayedTaskInfo.title &&
         t.endDate === delayedTaskInfo.endDate
       )?.id;
-      
+
       if (taskId) {
         const taskIndex = allTasks.findIndex(t => (t._id || t.id) === taskId);
         proceedWithCompletion(taskId, taskIndex, true);
       }
     }
-    
+
     // Reset delay alert state
     setShowDelayAlert(false);
     setDelayedTaskInfo(null);
@@ -727,42 +773,42 @@ const MilestoneTasksScreen = () => {
     setTempStartDate(new Date());
     setTempEndDate(new Date());
   };
-const [permissions, setPermissions] = useState(null);
-useEffect(() => {
-        const checkStorage = async () => {
-            const user = await AsyncStorage.getItem('userData');
-            const parsedUser = user ? JSON.parse(user) : null;
+  const [permissions, setPermissions] = useState(null);
+  useEffect(() => {
+    const checkStorage = async () => {
+      const user = await AsyncStorage.getItem('userData');
+      const parsedUser = user ? JSON.parse(user) : null;
 
-            const canAccessPayment =
-                parsedUser?.role === "admin" ||
-                !!(
-                    parsedUser?.permissions?.payment &&
-                    (
-                        parsedUser.permissions.payment.create ||
-                        parsedUser.permissions.payment.update ||
-                        parsedUser.permissions.payment.delete ||
-                        parsedUser.permissions.payment.view
-                    )
-                );
-           
-setPermissions(parsedUser);
-          
+      const canAccessPayment =
+        parsedUser?.role === "admin" ||
+        !!(
+          parsedUser?.permissions?.payment &&
+          (
+            parsedUser.permissions.payment.create ||
+            parsedUser.permissions.payment.update ||
+            parsedUser.permissions.payment.delete ||
+            parsedUser.permissions.payment.view
+          )
+        );
 
-          
-        };
+      setPermissions(parsedUser);
 
-        checkStorage();
-    }, []);
+
+
+    };
+
+    checkStorage();
+  }, []);
   // Open add modal
   const openAddSubtask = () => {
-      if (!permissions?.permissions?.task?.create && permissions?.role !== "admin") {
-    Alert.alert(
-      "Access Denied",
-      "You do not have permission to create a task.",
-      [{ text: "OK" }]
-    );
-    return;
-  }
+    if (!permissions?.permissions?.task?.create && permissions?.role !== "admin") {
+      Alert.alert(
+        "Access Denied",
+        "You do not have permission to create a task.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
 
     resetSubtaskForm();
     setEditingTaskId(null);
@@ -798,140 +844,218 @@ setPermissions(parsedUser);
   // UI Components - Enhanced ActivityCard with delay indicator
   const ActivityCard = ({ item, taskId }) => {
     if (!item) return null;
-    
-    const formattedStartDate = item.startDate ? new Date(item.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No start date';
-    const formattedEndDate = item.endDate ? new Date(item.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No end date';
-    
+
+    const formattedStartDate = item.startDate
+      ? new Date(item.startDate).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      })
+      : 'No start date';
+
+    const formattedEndDate = item.endDate
+      ? new Date(item.endDate).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      })
+      : 'No end date';
+
+    // Get assignee names
+    const getAssigneeNames = () => {
+      if (!item.assignedTo || item.assignedTo.length === 0) {
+        return "No assignees";
+      }
+
+      const assigneeNames = item.assignedTo.map(assigneeId => {
+        const member = members.find(m =>
+          String(m._id) === String(assigneeId) ||
+          String(m.id) === String(assigneeId)
+        );
+        return member?.name || member?.fullName || "Unknown";
+      });
+
+      return assigneeNames.slice(0, 2).join(", ") +
+        (item.assignedTo.length > 2 ? ` +${item.assignedTo.length - 2}` : "");
+    };
+
     return (
       <View style={[
         styles.activityCard,
-        item.isDelayed && styles.delayedTaskCard
+        item.isDelayed && styles.delayedTaskCard,
+        item.isCompleted && styles.completedTaskCard
       ]}>
-        {/* Delay Indicator Banner */}
-        {item.isDelayed && (
+        {/* Header Row with Title and Status */}
+        <View style={styles.cardHeader}>
+          <View style={styles.titleContainer}>
+            <Text style={[
+              styles.activityTitle,
+              item.isCompleted && styles.completedTitle
+            ]}>
+              {item.title}
+            </Text>
+
+            {/* Priority Badge */}
+            {item.priority && item.priority !== 'Medium' && (
+              <View style={[
+                styles.priorityBadge,
+                item.priority === 'High' ? styles.priorityHigh :
+                  item.priority === 'Low' ? styles.priorityLow : null
+              ]}>
+                <Text style={[
+                  styles.priorityText,
+                  item.priority === 'High' ? styles.textHigh :
+                    item.priority === 'Low' ? styles.textLow : styles.textMedium
+                ]}>
+                  {item.priority}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Completion Toggle */}
+          <TouchableOpacity
+            style={styles.completionButton}
+            onPress={() => handleToggleCompletion(taskId)}
+          >
+            <Ionicons
+              name={item.isCompleted ? 'checkmark-circle' : 'radio-button-off'}
+              size={24}
+              color={item.isCompleted ? '#10B981' : '#D1D5DB'}
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* Description */}
+        {item.description && item.description.trim() && (
+          <Text style={[
+            styles.activityDesc,
+            item.isCompleted && styles.completedDesc
+          ]}>
+            {item.description}
+          </Text>
+        )}
+
+        {/* Delay Banner */}
+        {item.isDelayed && !item.isCompleted && (
           <View style={styles.delayBanner}>
-            <Ionicons name="alert-circle" size={14} color="#DC2626" />
+            <Ionicons name="alert-circle" size={16} color="#DC2626" />
             <Text style={styles.delayBannerText}>
               Delayed by {item.delayDays} day{item.delayDays !== 1 ? 's' : ''}
             </Text>
           </View>
         )}
-        
-        <View style={styles.activityHeader}>
-          <View style={styles.titleWithDelay}>
-            <Text style={styles.activityTitle}>{item.title || 'Untitled Task'}</Text>
-            {item.isDelayed && (
-              <View style={styles.delayBadge}>
-                <Text style={styles.delayBadgeText}>DELAYED</Text>
-              </View>
-            )}
+
+        {/* Dates Row */}
+        <View style={styles.datesRow}>
+          <View style={styles.dateItem}>
+            <Ionicons name="calendar-outline" size={14} color="#6B7280" />
+            <Text style={styles.dateLabel}>Start:</Text>
+            <Text style={styles.dateValue}>{formattedStartDate}</Text>
           </View>
-          <View
-            style={[
-              styles.priorityBadge,
-              item.priority === 'High' ? styles.priorityHigh : 
-              item.priority === 'Medium' ? styles.priorityMedium : styles.priorityLow,
+
+          <View style={styles.separator} />
+
+          <View style={styles.dateItem}>
+            <Ionicons name="flag-outline" size={14} color="#6B7280" />
+            <Text style={styles.dateLabel}>Due:</Text>
+            <Text style={[
+              styles.dateValue,
+              item.isDelayed && styles.delayedDate
             ]}>
-            <Text
-              style={[
-                styles.priorityText,
-                item.priority === 'High' ? styles.textHigh : 
-                item.priority === 'Medium' ? styles.textMedium : styles.textLow,
-              ]}>
-              {item.priority || 'Low'}
+              {formattedEndDate}
             </Text>
           </View>
         </View>
-        <Text style={styles.activityDesc}>
-          {item.description}
-        </Text>
-        
-        {/* Delay Warning if task is delayed */}
-        {item.isDelayed && (
-          <View style={styles.delayWarningContainer}>
-            <View style={styles.delayWarning}>
-              <Ionicons name="time-outline" size={14} color="#DC2626" />
-              <Text style={styles.delayWarningText}>
-                Was due on {formattedEndDate}
-              </Text>
-            </View>
+
+        {/* Assignees */}
+        <View style={styles.assigneesRow}>
+          <Ionicons name="people-outline" size={14} color="#6B7280" />
+          <Text style={styles.assigneesText}>{getAssigneeNames()}</Text>
+        </View>
+
+        {/* ✅ ATTACHMENTS PREVIEW */}
+        {item.isCompleted && Array.isArray(item.attachments) && item.attachments.length > 0 && (
+          <View style={styles.attachmentsContainer}>
+            <Text style={styles.attachmentsTitle}>
+              <Ionicons name="images-outline" size={14} color="#4B5563" />
+              <Text style={{ marginLeft: 4 }}>Proof of Completion ({item.attachments.length})</Text>
+            </Text>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.attachmentsScroll}
+            >
+              {item.attachments.map((url, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => {
+                    setPreviewImage(url);
+                    setShowPreviewModal(true);
+                  }}
+                  style={styles.attachmentWrapper}
+                >
+                  <Image
+                    source={{ uri: url }}
+                    style={styles.attachmentImage}
+                    resizeMode="cover"
+                  />
+                  <View style={styles.attachmentOverlay}>
+                    <Ionicons name="expand-outline" size={16} color="white" />
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
         )}
-        
-        <View style={styles.taskDetails}>
-          <View style={styles.dateRow}>
-            <Ionicons name="calendar-outline" size={12} color="#6B7280" />
-            <Text style={styles.dateText}>{formattedStartDate} - {formattedEndDate}</Text>
+
+        {/* Action Buttons */}
+        {!item.isCompleted && (
+          <View style={styles.actionButtons}>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.editButton]}
+              onPress={() => handleEditSubtask(taskId)}
+            >
+              <Ionicons name="create-outline" size={16} color="#0066FF" />
+              <Text style={styles.editButtonText}>Edit</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionButton, styles.deleteButton]}
+              onPress={() => handleDeleteSubtask(taskId)}
+            >
+              <Ionicons name="trash-outline" size={16} color="#DC2626" />
+              <Text style={styles.deleteButtonText}>Delete</Text>
+            </TouchableOpacity>
           </View>
-          <View style={styles.assigneeRow}>
-            <View style={styles.assigneeAvatars}>
-              {[...Array(Math.max(0, item.assignees || 0))].map((_, i) => (
-                <View key={i} style={[styles.avatar, i > 0 && { marginLeft: -8 }]} />
-              ))}
-            </View>
-            <Text style={styles.assigneeCount}>{item.assignees || 0} assigned</Text>
+        )}
+
+        {/* Completed Status Badge */}
+        {item.isCompleted && (
+          <View style={styles.completedBadge}>
+            <Ionicons name="checkmark-circle" size={14} color="#10B981" />
+            <Text style={styles.completedBadgeText}>Completed</Text>
           </View>
-        </View>
-        <View style={styles.taskActionsRow}>
-          <TouchableOpacity
-            style={[styles.toggleButton, item.status === 'completed' && styles.toggleCompleted]}
-            onPress={() => {
-               if (!permissions?.permissions?.task?.approve && permissions?.role !== "admin") {
-    Alert.alert(
-      "Access Denied",
-      "You do not have permission to action a task.",
-      [{ text: "OK" }]
-    );
-    return;
-  }
-              handleToggleCompletion(taskId)}}
-          >
-            <Ionicons 
-              name={item.status === 'completed' ? 'checkmark-circle' : 'radio-button-off'} 
-              size={20} 
-              color={item.status === 'completed' ? '#10b981' : '#6B7280'} 
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={() => {
-              console.log('Permissions:', permissions);
-               if (!permissions?.permissions?.task?.update && permissions?.role !== "admin") {
-    Alert.alert(
-      "Access Denied",
-      "You do not have permission to update a task.",
-      [{ text: "OK" }]
-    );
-    return;
-  }
-              handleEditSubtask(taskId)}}
-          >
-            <Feather name="edit-2" size={16} color="#0066FF" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={() => handleDeleteSubtask(taskId)}
-          >
-            <Feather name="trash-2" size={16} color="#EF4444" />
-          </TouchableOpacity>
-        </View>
+        )}
       </View>
     );
   };
 
+
   const ScheduleCard = ({ item }) => {
     if (!item) return null;
-    
+
     const formattedStartDate = item.startDate ? new Date(item.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No date';
     const formattedEndDate = item.endDate ? new Date(item.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No date';
-    
+
     return (
       <View style={[
         styles.scheduleCard,
         item.isDelayed && styles.delayedScheduleCard
       ]}>
         <View style={[
-          styles.scheduleColorBar, 
+          styles.scheduleColorBar,
           { backgroundColor: item.isDelayed ? '#DC2626' : (item.color || milestoneData?.color || '#0066FF') }
         ]} />
         <View style={styles.scheduleContent}>
@@ -964,22 +1088,22 @@ setPermissions(parsedUser);
   };
 
   // Filter tasks for schedule view
-  const scheduleTasks = filteredTasks.filter(task => 
+  const scheduleTasks = filteredTasks.filter(task =>
     task && task.startTime && task.endTime
   );
 
   if (!milestoneData) {
     return (
       <View style={styles.container}>
-        <Header 
-          title="Milestone Not Found" 
-          showBackButton={true} 
+        <Header
+          title="Milestone Not Found"
+          showBackButton={true}
           onBackPress={() => navigation.goBack()}
         />
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle" size={64} color="#EF4444" />
           <Text style={styles.errorTitle}>Milestone Not Found</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.backButtonFull}
             onPress={() => navigation.goBack()}
           >
@@ -993,12 +1117,12 @@ setPermissions(parsedUser);
   return (
     <View style={styles.container}>
       {/* Header Component */}
-      <Header 
-        title={milestoneData.title || 'Untitled Milestone'} 
-        showBackButton={true} 
+      <Header
+        title={milestoneData.title || 'Untitled Milestone'}
+        showBackButton={true}
         onBackPress={() => navigation.goBack()}
       />
-      
+
       <ScrollView showsVerticalScrollIndicator={false} style={styles.contentContainer}>
         {/* Milestone Header Section */}
         <View style={styles.milestoneHeader}>
@@ -1022,14 +1146,14 @@ setPermissions(parsedUser);
             <Text style={styles.progressPercent}>{currentProgress}%</Text>
           </View>
           <View style={styles.progressBar}>
-            <View 
+            <View
               style={[
-                styles.progressFill, 
-                { 
+                styles.progressFill,
+                {
                   width: `${currentProgress}%`,
-                  backgroundColor: milestoneData.color || '#0066FF' 
+                  backgroundColor: milestoneData.color || '#0066FF'
                 }
-              ]} 
+              ]}
             />
           </View>
           <Text style={styles.progressSubtitle}>
@@ -1101,7 +1225,7 @@ setPermissions(parsedUser);
               <View style={styles.tasksContainer}>
                 <View style={styles.tasksHeader}>
                   <Text style={styles.tasksDate}>
-                    Tasks for {selectedDate.toLocaleDateString('en-US', { 
+                    Tasks for {selectedDate.toLocaleDateString('en-US', {
                       month: 'long',
                       day: 'numeric'
                     })}
@@ -1129,15 +1253,15 @@ setPermissions(parsedUser);
                   <FlatList
                     data={filteredTasks}
                     renderItem={({ item }) => (
-                      <ActivityCard 
-                        key={item._id || item.id} 
-                        item={item} 
-                        taskId={item._id || item.id} 
+                      <ActivityCard
+                        key={item._id || item.id}
+                        item={item}
+                        taskId={item._id || item.id}
                       />
                     )}
-                    keyExtractor={(item, index) => 
-                      item?._id?.toString() || 
-                      item?.id?.toString() || 
+                    keyExtractor={(item, index) =>
+                      item?._id?.toString() ||
+                      item?.id?.toString() ||
                       `task-${index}`
                     }
                     scrollEnabled={false}
@@ -1217,9 +1341,9 @@ setPermissions(parsedUser);
                   <FlatList
                     data={scheduleTasks}
                     renderItem={({ item, index }) => <ScheduleCard key={item._id || item.id || index} item={item} />}
-                    keyExtractor={(item, index) => 
-                      item?._id?.toString() || 
-                      item?.id?.toString() || 
+                    keyExtractor={(item, index) =>
+                      item?._id?.toString() ||
+                      item?.id?.toString() ||
                       `schedule-${index}`
                     }
                     scrollEnabled={false}
@@ -1254,13 +1378,13 @@ setPermissions(parsedUser);
               It is {delayedTaskInfo?.delayDays || 0} day{delayedTaskInfo?.delayDays !== 1 ? 's' : ''} overdue.
             </Text>
             <View style={styles.alertButtons}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.alertButton, styles.alertButtonCancel]}
                 onPress={() => handleDelayAlertResponse(false)}
               >
                 <Text style={styles.alertButtonCancelText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.alertButton, styles.alertButtonConfirm]}
                 onPress={() => handleDelayAlertResponse(true)}
               >
@@ -1374,11 +1498,11 @@ setPermissions(parsedUser);
                       <Text style={styles.dropdownText} numberOfLines={1}>
                         {currentSubtask.assignedTo.length > 0
                           ? currentSubtask.assignedTo
-                              .map(id => {
-                                const member = members.find(m => String(m._id || m.id) === String(id));
-                                return member?.name || member?.fullName || `${member?.firstName || ''} ${member?.lastName || ''}`.trim() || id;
-                              })
-                              .join(', ')
+                            .map(id => {
+                              const member = members.find(m => String(m._id || m.id) === String(id));
+                              return member?.name || member?.fullName || `${member?.firstName || ''} ${member?.lastName || ''}`.trim() || id;
+                            })
+                            .join(', ')
                           : 'Select members'}
                       </Text>
                       <Feather name="chevron-down" size={20} color="#6B7280" />
@@ -1428,13 +1552,13 @@ setPermissions(parsedUser);
               </View>
             </ScrollView>
             <View style={styles.modalActions}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.cancelButton}
                 onPress={resetSubtaskForm}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[
                   styles.createButton,
                   !currentSubtask.title.trim() && styles.createButtonDisabled
@@ -1450,14 +1574,75 @@ setPermissions(parsedUser);
           </View>
         </View>
       </Modal>
+      <Modal visible={showAttachmentModal} transparent animationType="fade">
+        <View style={styles.alertOverlay}>
+          <View style={styles.alertContainer}>
+            <Text style={styles.alertTitle}>Attach Completion Image</Text>
+
+            <TouchableOpacity
+              style={styles.createButton}
+              onPress={pickCompletionImage}
+            >
+              <Text style={styles.createButtonText}>
+                {completionImage ? "Change Image" : "Select Image"}
+              </Text>
+            </TouchableOpacity>
+
+            {completionImage && (
+              <Text style={{ marginTop: 10, color: '#10B981', textAlign: 'center' }}>
+                Image attached ✔
+              </Text>
+            )}
+
+            <View style={{ flexDirection: 'row', marginTop: 20, gap: 12 }}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setShowAttachmentModal(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.createButton,
+                  !completionImage && styles.createButtonDisabled
+                ]}
+                onPress={confirmCompletionWithImage}
+                disabled={!completionImage || uploadingImage}
+              >
+                <Text style={styles.createButtonText}>
+                  {uploadingImage ? "Uploading..." : "Complete Task"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+      <Modal visible={showPreviewModal} transparent animationType="fade">
+        <View style={styles.previewOverlay}>
+          <TouchableOpacity
+            style={styles.previewClose}
+            onPress={() => setShowPreviewModal(false)}
+          >
+            <Ionicons name="close" size={30} color="#fff" />
+          </TouchableOpacity>
+
+          <Image
+            source={{ uri: previewImage }}
+            style={styles.previewImage}
+            resizeMode="contain"
+          />
+        </View>
+      </Modal>
+
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#f9fafb' 
+  container: {
+    flex: 1,
+    backgroundColor: '#f9fafb'
   },
   contentContainer: {
     marginTop: 16,
@@ -1469,6 +1654,50 @@ const styles = StyleSheet.create({
     padding: 20,
     marginTop: 80,
   },
+  attachmentsContainer: {
+    marginTop: 12,
+  },
+
+  attachmentsTitle: {
+    fontFamily: 'Urbanist-SemiBold',
+    fontSize: 13,
+    color: '#374151',
+    marginBottom: 6,
+  },
+
+  attachmentImageWrapper: {
+    marginRight: 10,
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+
+  attachmentImage: {
+    width: 80,
+    height: 80,
+    backgroundColor: '#F3F4F6',
+  },
+
+  previewOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  previewImage: {
+    width: '100%',
+    height: '80%',
+  },
+
+  previewClose: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 10,
+  },
+
   errorTitle: {
     fontFamily: 'Urbanist-Bold',
     fontSize: 20,
@@ -1670,16 +1899,250 @@ const styles = StyleSheet.create({
     color: '#0066FF',
     marginLeft: 6,
   },
-  
+
   // Activity Card Styles with Delay Indicators
+  // Add these styles to your existing StyleSheet
   activityCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#f3f4f6',
+    borderColor: '#F3F4F6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  delayedTaskCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#DC2626',
+    backgroundColor: '#FFF5F5',
+  },
+  completedTaskCard: {
+    backgroundColor: '#F9FAFB',
+    borderColor: '#E5E7EB',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  titleContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    marginRight: 8,
+  },
+  activityTitle: {
+    fontFamily: 'Urbanist-SemiBold',
+    fontSize: 16,
+    color: '#111827',
+    marginRight: 8,
+    flexShrink: 1,
+  },
+  completedTitle: {
+    color: '#6B7280',
+
+  },
+  priorityBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+  },
+  priorityHigh: {
+    backgroundColor: '#FEE2E2'
+  },
+  priorityLow: {
+    backgroundColor: '#ECFDF5'
+  },
+  priorityText: {
+    fontFamily: 'Urbanist-Medium',
+    fontSize: 11,
+  },
+  textHigh: {
+    color: '#DC2626'
+  },
+  textMedium: {
+    color: '#D97706'
+  },
+  textLow: {
+    color: '#10B981'
+  },
+  completionButton: {
+    padding: 4,
+  },
+  activityDesc: {
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 14,
+    color: '#6B7280',
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  completedDesc: {
+    color: '#9CA3AF',
+  },
+  delayBanner: {
+    backgroundColor: '#FEE2E2',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  delayBannerText: {
+    fontFamily: 'Urbanist-SemiBold',
+    fontSize: 13,
+    color: '#DC2626',
+    marginLeft: 6,
+  },
+  datesRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  dateItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  separator: {
+    width: 1,
+    height: 20,
+    backgroundColor: '#E5E7EB',
+    marginHorizontal: 12,
+  },
+  dateLabel: {
+    fontFamily: 'Urbanist-Medium',
+    fontSize: 12,
+    color: '#6B7280',
+    marginLeft: 6,
+    marginRight: 4,
+  },
+  dateValue: {
+    fontFamily: 'Urbanist-SemiBold',
+    fontSize: 13,
+    color: '#111827',
+  },
+  delayedDate: {
+    color: '#DC2626',
+  },
+  assigneesRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  assigneesText: {
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 13,
+    color: '#6B7280',
+    marginLeft: 6,
+    flex: 1,
+  },
+  attachmentsContainer: {
+    marginTop: 8,
+    marginBottom: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  attachmentsTitle: {
+    fontFamily: 'Urbanist-SemiBold',
+    fontSize: 13,
+    color: '#4B5563',
+    marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  attachmentsScroll: {
+    marginHorizontal: -4,
+  },
+  attachmentWrapper: {
     position: 'relative',
+    marginRight: 10,
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  attachmentImage: {
+    width: 80,
+    height: 80,
+    backgroundColor: '#F3F4F6',
+  },
+  attachmentOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  editButton: {
+    borderColor: '#0066FF',
+    backgroundColor: '#EFF6FF',
+  },
+  deleteButton: {
+    borderColor: '#DC2626',
+    backgroundColor: '#FEF2F2',
+  },
+  editButtonText: {
+    fontFamily: 'Urbanist-Medium',
+    fontSize: 13,
+    color: '#0066FF',
+    marginLeft: 4,
+  },
+  deleteButtonText: {
+    fontFamily: 'Urbanist-Medium',
+    fontSize: 13,
+    color: '#DC2626',
+    marginLeft: 4,
+  },
+  completedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    marginTop: 8,
+  },
+  completedBadgeText: {
+    fontFamily: 'Urbanist-SemiBold',
+    fontSize: 12,
+    color: '#10B981',
+    marginLeft: 4,
   },
   delayedTaskCard: {
     borderLeftWidth: 4,
@@ -1815,7 +2278,7 @@ const styles = StyleSheet.create({
   deleteButton: {
     padding: 4,
   },
-  
+
   // Schedule Card Styles with Delay Indicators
   scheduleCard: {
     backgroundColor: '#FFFFFF',
@@ -1894,7 +2357,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#9CA3AF',
   },
-  
+
   // Alert Modal Styles
   alertOverlay: {
     flex: 1,
@@ -1960,7 +2423,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: 'white',
   },
-  
+
   // Error and Loading States
   errorText: {
     textAlign: 'center',
@@ -1986,7 +2449,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#9CA3AF',
   },
-  
+
   // Modal styles
   modalOverlay: {
     flex: 1,
@@ -2050,7 +2513,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  
+
   // Member selection styles
   dropdownInput: {
     borderWidth: 1,
@@ -2139,7 +2602,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: 'white',
   },
-  
+
   // Existing styles for other components
   activityContainer: {
     paddingBottom: 16,

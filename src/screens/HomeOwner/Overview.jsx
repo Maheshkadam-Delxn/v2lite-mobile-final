@@ -25,6 +25,8 @@ import ChangeRequests from '../HomeOwner/ChangeRequests';
 import MaterialStatus from '../HomeOwner/MaterialStatus';
 import BOQClientScreen from '../HomeOwner/BOQClientScreen';
 import FilesScreen from '../Document-Management/FileScreen';
+import SnagListScreen from '../Snags/SnagListScreen';
+import WorkProgressListScreen from '../WorkProgress/WorkProgressListScreen';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -185,7 +187,7 @@ const Overview = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const isFocused = useIsFocused();
-  const { project } = route.params || {};
+  const { project, initialTab } = route.params || {};
 
   const [activeTab, setActiveTab] = useState('Overview');
   const [milestones, setMilestones] = useState([]);
@@ -263,6 +265,12 @@ const Overview = () => {
   };
 
   useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
+
+  useEffect(() => {
     if (isFocused) {
       fetchMilestones();
       fetchRisks();
@@ -287,6 +295,8 @@ const Overview = () => {
     { id: 'QualityChecks', label: 'Quality', icon: 'checkmark-circle-outline' },
     { id: 'ChangeRequests', label: 'Changes', icon: 'swap-horizontal-outline' },
     { id: 'MaterialStatus', label: 'Materials', icon: 'cube-outline' },
+    { id: 'Snags', label: 'Snags', icon: 'bug-outline' },
+    { id: 'Progress', label: 'Progress', icon: 'trending-up-outline' },
   ];
 
   // Progress data based on milestones
@@ -403,7 +413,7 @@ const Overview = () => {
 
     return (
       <TouchableOpacity
-        onPress={() => navigation.navigate('MilestoneDetail', { milestone })}
+        onPress={() => navigation.navigate('MilestoneDetail', { milestone, projectId: project._id || project.id })}
         style={{
           backgroundColor: COLORS.surface,
           borderRadius: 16,
@@ -680,7 +690,7 @@ const Overview = () => {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
         <Header title="Project Overview" showBackButton />
-        
+
         {/* Tab Navigation Skeleton */}
         <View style={{ backgroundColor: COLORS.surface, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: COLORS.border }}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12 }}>
@@ -760,7 +770,7 @@ const Overview = () => {
             <Ionicons name="file-tray-outline" size={56} color={COLORS.primary} />
           </View>
           <Text style={{ fontSize: 24, fontWeight: '700', color: COLORS.text, marginBottom: 12, textAlign: 'center' }}>
-          Project is Under Approval
+            Project is Under Approval
           </Text>
           <Text style={{ fontSize: 15, color: COLORS.textSecondary, textAlign: 'center', marginBottom: 32, lineHeight: 22 }}>
             Please wait until the project is approved to view the overview and manage milestones.
@@ -856,6 +866,10 @@ const Overview = () => {
           return <MaterialStatus />;
         case 'Plans':
           return <FilesScreen project={project} />;
+        case 'Snags':
+          return <SnagListScreen projectId={project._id} showHeader={false} isClient={true} />;
+        case 'Progress':
+          return <WorkProgressListScreen projectId={project._id} isClient={true} showHeader={false} />;
         default:
           return null;
       }
@@ -909,37 +923,41 @@ const Overview = () => {
       </View>
 
       {/* Main Content */}
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {activeTab === 'Overview' ? (
-          <Animated.View style={{ opacity: fadeAnim, paddingTop: 20, paddingBottom: 32 }}>
-            {/* Progress Dashboard */}
-            {renderProgressDashboard()}
+      {['Snags', 'Progress'].includes(activeTab) ? (
+        <View style={{ flex: 1, paddingTop: 12 }}>{renderTabContent()}</View>
+      ) : (
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {activeTab === 'Overview' ? (
+            <Animated.View style={{ opacity: fadeAnim, paddingTop: 20, paddingBottom: 32 }}>
+              {/* Progress Dashboard */}
+              {renderProgressDashboard()}
 
-            {/* Progress Cards */}
-            {renderProgressCards()}
+              {/* Progress Cards */}
+              {renderProgressCards()}
 
-            {/* Progress Stats */}
-            <ProgressStatsCard />
+              {/* Progress Stats */}
+              <ProgressStatsCard />
 
-            {/* Milestones List */}
-            <View style={{ paddingHorizontal: 16 }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <Text style={{ fontSize: 20, fontWeight: '700', color: COLORS.text }}>Recent Tasks</Text>
-                <TouchableOpacity onPress={() => navigation.navigate('AllMilestones', { project })}>
-                  <Text style={{ fontSize: 14, color: COLORS.primary, fontWeight: '600' }}>View All</Text>
-                </TouchableOpacity>
+              {/* Milestones List */}
+              <View style={{ paddingHorizontal: 16 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <Text style={{ fontSize: 20, fontWeight: '700', color: COLORS.text }}>Recent Tasks</Text>
+                  <TouchableOpacity onPress={() => navigation.navigate('AllMilestones', { project, projectId: project._id || project.id })}>
+                    <Text style={{ fontSize: 14, color: COLORS.primary, fontWeight: '600' }}>View All</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {milestones.slice(0, 5).map((milestone, index) => (
+                  <MilestoneCard key={milestone._id || index} milestone={milestone} index={index} />
+                ))}
               </View>
-
-              {milestones.slice(0, 5).map((milestone, index) => (
-                <MilestoneCard key={milestone._id || index} milestone={milestone} index={index} />
-              ))}
-            </View>
-          </Animated.View>
-        ) : (
-          // Other Tabs Content
-          <View style={{ paddingTop: 12 }}>{renderTabContent()}</View>
-        )}
-      </ScrollView>
+            </Animated.View>
+          ) : (
+            // Other Tabs Content
+            <View style={{ paddingTop: 12 }}>{renderTabContent()}</View>
+          )}
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 };
