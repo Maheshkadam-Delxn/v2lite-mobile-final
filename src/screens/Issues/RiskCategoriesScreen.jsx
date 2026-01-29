@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  SafeAreaView,
+
   View,
   Text,
   TextInput,
@@ -17,7 +17,7 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import { SafeAreaView } from 'react-native-safe-area-context';
 const API_URL = `${process.env.BASE_API_URL}/api`;
 
 /* ——— Helper: Get Score Color ——— */
@@ -414,7 +414,7 @@ const RiskCategoriesScreen = () => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
+   <SafeAreaView style={{ flex: 1 }} className="bg-slate-50">
       {/* Header Search */}
       <View className="mx-4 mb-4 mt-3 h-12 flex-row items-center rounded-xl bg-white px-4 border border-slate-100 shadow-sm">
         <Feather name="search" size={20} color="#94a3b8" className="mr-3" />
@@ -448,11 +448,34 @@ const RiskCategoriesScreen = () => {
       )}
 
       {/* FAB */}
-      <TouchableOpacity
+      {/* <TouchableOpacity
         className="absolute bottom-6 right-6 h-16 w-16 items-center justify-center rounded-full bg-slate-900 shadow-xl shadow-slate-900/30"
         onPress={() => setModalVisible(true)}>
         <Feather name="plus" size={32} color="white" />
-      </TouchableOpacity>
+      </TouchableOpacity> */}
+{/* Floating Action Button */}
+<TouchableOpacity
+  onPress={() => setModalVisible(true)}
+  style={{
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#2563EB', // ✅ Blue
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8, // ✅ Android shadow
+    zIndex: 999, // ✅ Stay above FlatList
+    shadowColor: '#000', // iOS shadow
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  }}
+>
+  <Feather name="plus" size={28} color="#FFFFFF" /> {/* ✅ White icon */}
+</TouchableOpacity>
 
       <AddRiskModal
         visible={modalVisible}
