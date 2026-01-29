@@ -1,5 +1,5 @@
 // MilestonesScreen.js - Updated to include pull-to-refresh and manual reload
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -13,12 +13,13 @@ import {
   Alert,
   Switch,
   Platform,
-  RefreshControl, // Added for pull-to-refresh
+  RefreshControl,
+  Animated,
 } from 'react-native';
-import { useNavigation, useFocusEffect } from '@react-navigation/native'; // Added useFocusEffect
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import { Swipeable, GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const BASE_URL = `${process.env.BASE_API_URL}/api`;
 const MILESTONES_BY_PROJECT = (projectId) => `${BASE_URL}/milestones?projectId=${projectId}`;
@@ -28,11 +29,11 @@ const TOKEN_KEY = 'userToken';
 const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
   const navigation = useNavigation();
   const route = routeProp || {};
-  
+
   const projectId = (projectProp && (projectProp._id || projectProp.id)) || route?.params?.projectId || null;
   const [milestones, setMilestones] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false); // For pull-to-refresh state
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [showNewMilestoneModal, setShowNewMilestoneModal] = useState(false);
   const [newMilestone, setNewMilestone] = useState({
@@ -41,7 +42,14 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
     color: '#0066FF',
     subtasks: [],
   });
-  
+
+  // Loading states
+  const [isCreating, setIsCreating] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+
+  // Swipeable refs
+  const openSwipeableRefs = useRef(new Map());
+
   // New: States for subtask addition in modal
   const [showSubtaskModal, setShowSubtaskModal] = useState(false);
   const [editingSubtaskIndex, setEditingSubtaskIndex] = useState(null);
@@ -53,18 +61,18 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
     assignedTo: [],
     isCompleted: false,
   });
-  
+
   // Date picker states
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
   const [tempStartDate, setTempStartDate] = useState(new Date());
   const [tempEndDate, setTempEndDate] = useState(new Date());
-  
+
   // Members states
   const [members, setMembers] = useState([]);
   const [membersLoading, setMembersLoading] = useState(false);
   const [membersError, setMembersError] = useState(null);
-  
+
   // Status mapping from API to UI
   const mapStatusToUI = (apiStatus) => {
     switch (apiStatus) {
@@ -74,12 +82,25 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
       default: return 'Not Started';
     }
   };
-  
+
   // Subtask status mapping for UI
   const mapSubtaskStatus = (apiStatus) => {
     return apiStatus === true ? 'completed' : 'pending';
   };
-  
+
+  // Close all open swipeables when navigating away or refreshing
+  const closeAllSwipes = useCallback(() => {
+    openSwipeableRefs.current.forEach((ref) => ref?.close());
+    openSwipeableRefs.current.clear();
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      // fetchMilestones(); // Already handled in useEffect/focus below
+      return () => closeAllSwipes();
+    }, [closeAllSwipes])
+  );
+
   // Fetch milestones (GET API)
   const fetchMilestones = async () => {
     if (!projectId) {
@@ -89,30 +110,31 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
     }
     setLoading(true);
     setError(null);
-    
+    closeAllSwipes();
+
     try {
       const token = await AsyncStorage.getItem(TOKEN_KEY);
       const headers = {
         'Content-Type': 'application/json',
         ...(token && { 'Authorization': `Bearer ${token}` })
       };
-      
+
       const res = await fetch(MILESTONES_BY_PROJECT(projectId), {
         method: 'GET',
         headers,
       });
-      
+
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}: ${res.statusText}`);
       }
-      
+
       const json = await res.json();
       if (!json.success) {
         throw new Error(json.message || 'Failed to fetch milestones');
       }
-      
+
       const items = Array.isArray(json.data) ? json.data : [];
-      
+
       // Map API data to UI shape
       const mappedMilestones = items.map(item => ({
         id: item._id,
@@ -131,8 +153,9 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
           status: mapSubtaskStatus(sub.isCompleted),
           assignedTo: sub.assignedTo?.map(userId => ({ name: 'User' })) || ['Not Assigned'],
         })),
+        raw: item, // Keep raw item for easy deletion access if needed
       }));
-      
+
       setMilestones(mappedMilestones);
     } catch (err) {
       console.error('Failed to fetch milestones:', err);
@@ -142,12 +165,12 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
       setLoading(false);
     }
   };
-  
+
   // Pull-to-refresh handler
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     setError(null);
-    
+
     try {
       await fetchMilestones();
     } catch (err) {
@@ -157,13 +180,116 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
       setRefreshing(false);
     }
   }, [projectId]);
-  
+
   // Manual reload handler
   const handleManualReload = () => {
     setError(null);
     fetchMilestones();
   };
-  
+
+  // Delete Milestone Logic
+  const deleteMilestone = async (milestoneId) => {
+    if (!permissions?.permissions?.task?.delete && permissions?.role !== "admin") {
+      Alert.alert(
+        "Access Denied",
+        "You do not have permission to delete a milestone.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
+    try {
+      setDeletingId(milestoneId);
+      openSwipeableRefs.current.get(milestoneId)?.close();
+
+      const token = await AsyncStorage.getItem(TOKEN_KEY);
+
+      const res = await fetch(`${BASE_URL}/milestones/${milestoneId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        if (res.status === 403) {
+          throw new Error("Only admin can delete milestones");
+        }
+        throw new Error(errorData.message || "Failed to delete milestone");
+      }
+
+      // Remove from list on success
+      setMilestones(prev => prev.filter(m => m.id !== milestoneId));
+      openSwipeableRefs.current.delete(milestoneId);
+
+    } catch (err) {
+      console.error("Delete milestone error:", err);
+      Alert.alert("Error", err.message || "Failed to delete milestone");
+      // fetchMilestones(); // No need to re-fetch if we didn't optimistic delete
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const confirmDeleteMilestone = (milestone) => {
+    if (!permissions?.permissions?.task?.delete && permissions?.role !== "admin") {
+      Alert.alert(
+        "Access Denied",
+        "You do not have permission to delete a milestone.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
+    Alert.alert(
+      "Delete Milestone",
+      `Are you sure you want to delete "${milestone.title}"? This action cannot be undone.`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+          onPress: () => {
+            openSwipeableRefs.current.get(milestone.id)?.close();
+          }
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => deleteMilestone(milestone.id)
+        }
+      ]
+    );
+  };
+
+  // Render Swipeable Right Actions
+  const renderRightActions = (progress, dragX, milestone) => {
+    const trans = progress.interpolate({
+      inputRange: [0, 1],
+      outputRange: [100, 0],
+    });
+
+    return (
+      <Animated.View style={{ width: 80, justifyContent: 'center', alignItems: 'center', transform: [{ translateX: trans }] }}>
+        <TouchableOpacity
+          style={{
+            backgroundColor: '#EF4444',
+            justifyContent: 'center',
+            alignItems: 'center',
+            width: '80%',
+            height: '80%',
+            borderRadius: 12,
+          }}
+          onPress={() => confirmDeleteMilestone(milestone)}
+        >
+          <Ionicons name="trash-outline" size={24} color="white" />
+          <Text style={{ color: 'white', fontSize: 12, fontWeight: '600', marginTop: 4 }}>Delete</Text>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
+
   // Fetch members
   useEffect(() => {
     if (!projectId) return;
@@ -197,27 +323,27 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
     };
     fetchMembers();
   }, [projectId]);
-  
+
   // Fetch milestones when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       fetchMilestones();
     }, [projectId])
   );
-  
+
   // Calculate progress based on subtasks (for validation)
   const calculateProgress = (subtasks) => {
     if (!subtasks || subtasks.length === 0) return 0;
     const completed = subtasks.filter(task => task.isCompleted).length;
     return Math.round((completed / subtasks.length) * 100);
   };
-  
+
   // Colors for new milestones
   const milestoneColors = ['#0066FF', '#FFA800', '#1DD1A1', '#FF6B6B', '#9B59B6', '#FFC312'];
-  
+
   // Icons for new milestones
   const milestoneIcons = ['home', 'cube', 'square', 'grid', 'water', 'flash', 'construct', 'hammer', 'layers'];
-  
+
   // New: Handle add/edit subtask
   const handleSaveSubtask = () => {
     if (!currentSubtask.title.trim()) {
@@ -230,19 +356,19 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
       startDate: currentSubtask.startDate || '',
       endDate: currentSubtask.endDate || '',
     };
-    
+
     if (editingSubtaskIndex >= 0) {
       subtasks[editingSubtaskIndex] = subtaskData;
     } else {
       subtasks.push(subtaskData);
     }
-    
+
     setNewMilestone({ ...newMilestone, subtasks });
     setCurrentSubtask({ title: '', description: '', startDate: '', endDate: '', assignedTo: [], isCompleted: false });
     setEditingSubtaskIndex(null);
     setShowSubtaskModal(false);
   };
-  
+
   // New: Handle delete subtask
   const handleDeleteSubtask = (index) => {
     Alert.alert(
@@ -261,7 +387,7 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
       ]
     );
   };
-  
+
   // New: Handle edit subtask
   const handleEditSubtask = (index) => {
     const subtask = newMilestone.subtasks[index];
@@ -272,39 +398,41 @@ const MilestonesScreen = ({ project: projectProp, route: routeProp }) => {
     setShowSubtaskModal(true);
   };
   const [permissions, setPermissions] = useState(null);
-useEffect(() => {
-        const checkStorage = async () => {
-            const user = await AsyncStorage.getItem('userData');
-            const parsedUser = user ? JSON.parse(user) : null;
+  useEffect(() => {
+    const checkStorage = async () => {
+      const user = await AsyncStorage.getItem('userData');
+      const parsedUser = user ? JSON.parse(user) : null;
 
-            const canAccessPayment =
-                parsedUser?.role === "admin" ||
-                !!(
-                    parsedUser?.permissions?.payment &&
-                    (
-                        parsedUser.permissions.payment.create ||
-                        parsedUser.permissions.payment.update ||
-                        parsedUser.permissions.payment.delete ||
-                        parsedUser.permissions.payment.view
-                    )
-                );
-           
-setPermissions(parsedUser);
-console.log("Permissions set in MilestoneScreen:", parsedUser);
-          
+      const canAccessPayment =
+        parsedUser?.role === "admin" ||
+        !!(
+          parsedUser?.permissions?.payment &&
+          (
+            parsedUser.permissions.payment.create ||
+            parsedUser.permissions.payment.update ||
+            parsedUser.permissions.payment.delete ||
+            parsedUser.permissions.payment.view
+          )
+        );
 
-          
-        };
+      setPermissions(parsedUser);
+      console.log("Permissions set in MilestoneScreen:", parsedUser);
 
-        checkStorage();
-    }, []);
+
+
+    };
+
+    checkStorage();
+  }, []);
   // Create new milestone (POST API) - Updated to include subtasks
   const handleCreateMilestone = async () => {
     if (!newMilestone.title.trim()) {
       Alert.alert("Error", "Title is required");
       return;
     }
-    
+
+    setIsCreating(true);
+
     const randomIcon = milestoneIcons[Math.floor(Math.random() * milestoneIcons.length)];
     const body = {
       projectId,
@@ -322,29 +450,29 @@ console.log("Permissions set in MilestoneScreen:", parsedUser);
         attachments: [],
       })),
     };
-    
+
     try {
       const token = await AsyncStorage.getItem(TOKEN_KEY);
       const headers = {
         'Content-Type': 'application/json',
         ...(token && { Authorization: `Bearer ${token}` })
       };
-      
+
       const res = await fetch(`${BASE_URL}/milestones`, {
         method: 'POST',
         headers,
         body: JSON.stringify(body),
       });
-      
+
       if (!res.ok) {
         const errData = await res.json();
         throw new Error(errData.message || "Failed to create milestone");
       }
-      
+
       const newData = await res.json();
       if (newData.success) {
         Alert.alert("Success", "Milestone created successfully");
-        
+
         // Map new milestone to UI shape
         const createdMilestone = {
           id: newData.data._id,
@@ -364,7 +492,7 @@ console.log("Permissions set in MilestoneScreen:", parsedUser);
             assignedTo: sub.assignedTo?.map(userId => ({ name: 'User' })) || ['Not Assigned'],
           })),
         };
-        
+
         setMilestones([createdMilestone, ...milestones]);
         setNewMilestone({ title: '', description: '', color: '#0066FF', subtasks: [] });
         setShowNewMilestoneModal(false);
@@ -374,9 +502,11 @@ console.log("Permissions set in MilestoneScreen:", parsedUser);
     } catch (err) {
       console.error('POST error:', err);
       Alert.alert("Error", err.message || "Network error");
+    } finally {
+      setIsCreating(false);
     }
   };
-  
+
   // Navigate to milestone tasks screen
   const handleMilestonePress = (milestone) => {
     navigation.navigate('MilestoneTasks', {
@@ -384,71 +514,98 @@ console.log("Permissions set in MilestoneScreen:", parsedUser);
       projectId,
     });
   };
-  
+
   // Fetch on mount
   useEffect(() => {
     fetchMilestones();
   }, [projectId]);
-  
+
   // Milestone Card Component
   const MilestoneCard = ({ milestone }) => {
     const completedSubtasks = milestone.subtasks.filter(task => task.status === 'completed').length;
     const totalSubtasks = milestone.subtasks.length;
+    const isDeleting = deletingId === milestone.id;
+
+    if (isDeleting) {
+      return (
+        <View style={[styles.milestoneCard, { justifyContent: 'center', alignItems: 'center', height: 160, opacity: 0.7 }]}>
+          <ActivityIndicator size="large" color="#EF4444" />
+          <Text style={{ marginTop: 12, color: '#EF4444', fontFamily: 'Urbanist-SemiBold' }}>Deleting Milestone...</Text>
+        </View>
+      );
+    }
+
     return (
-      <TouchableOpacity
-        style={styles.milestoneCard}
-        onPress={() => handleMilestonePress(milestone)}
-        activeOpacity={0.9}
+      <Swipeable
+        ref={(ref) => {
+          if (ref) {
+            openSwipeableRefs.current.set(milestone.id, ref);
+          }
+        }}
+        renderRightActions={(progress, dragX) => renderRightActions(progress, dragX, milestone)}
+        onSwipeableWillOpen={() => {
+          openSwipeableRefs.current.forEach((ref, id) => {
+            if (id !== milestone.id) {
+              ref?.close();
+            }
+          });
+        }}
       >
-        <View style={styles.milestoneHeader}>
-          <View style={styles.milestoneIconContainer}>
-            <View style={[styles.milestoneIcon, { backgroundColor: `${milestone.color}20` }]}>
-              <Ionicons name={milestone.icon} size={20} color={milestone.color} />
+        <TouchableOpacity
+          style={styles.milestoneCard}
+          onPress={() => handleMilestonePress(milestone)}
+          activeOpacity={0.9}
+        >
+          <View style={styles.milestoneHeader}>
+            <View style={styles.milestoneIconContainer}>
+              <View style={[styles.milestoneIcon, { backgroundColor: `${milestone.color}20` }]}>
+                <Ionicons name={milestone.icon} size={20} color={milestone.color} />
+              </View>
+              <View style={styles.milestoneTitleContainer}>
+                <Text style={styles.milestoneTitle}>{milestone.title}</Text>
+                <Text style={styles.milestoneSubtitle}>{milestone.description}</Text>
+              </View>
             </View>
-            <View style={styles.milestoneTitleContainer}>
-              <Text style={styles.milestoneTitle}>{milestone.title}</Text>
-              <Text style={styles.milestoneSubtitle}>{milestone.description}</Text>
+            <View style={[styles.statusBadge, { backgroundColor: `${milestone.color}15` }]}>
+              <Text style={[styles.statusBadgeText, { color: milestone.color }]}>
+                {milestone.status}
+              </Text>
             </View>
           </View>
-          <View style={[styles.statusBadge, { backgroundColor: `${milestone.color}15` }]}>
-            <Text style={[styles.statusBadgeText, { color: milestone.color }]}>
-              {milestone.status}
+          <View style={styles.progressContainer}>
+            <View style={styles.progressLabels}>
+              <Text style={styles.progressText}>Progress</Text>
+              <Text style={styles.progressPercent}>{milestone.progress}%</Text>
+            </View>
+            <View style={styles.progressBar}>
+              <View
+                style={[
+                  styles.progressFill,
+                  {
+                    width: `${milestone.progress}%`,
+                    backgroundColor: milestone.color
+                  }
+                ]}
+              />
+            </View>
+            <Text style={styles.subtaskCount}>
+              {completedSubtasks} of {totalSubtasks} tasks completed
             </Text>
           </View>
-        </View>
-        <View style={styles.progressContainer}>
-          <View style={styles.progressLabels}>
-            <Text style={styles.progressText}>Progress</Text>
-            <Text style={styles.progressPercent}>{milestone.progress}%</Text>
+          <View style={styles.actionButtons}>
+            <TouchableOpacity
+              style={styles.viewTasksButton}
+              onPress={() => handleMilestonePress(milestone)}
+            >
+              <Text style={styles.viewTasksText}>View Tasks</Text>
+              <Feather name="chevron-right" size={16} color="#0066FF" />
+            </TouchableOpacity>
           </View>
-          <View style={styles.progressBar}>
-            <View
-              style={[
-                styles.progressFill,
-                {
-                  width: `${milestone.progress}%`,
-                  backgroundColor: milestone.color
-                }
-              ]}
-            />
-          </View>
-          <Text style={styles.subtaskCount}>
-            {completedSubtasks} of {totalSubtasks} tasks completed
-          </Text>
-        </View>
-        <View style={styles.actionButtons}>
-          <TouchableOpacity
-            style={styles.viewTasksButton}
-            onPress={() => handleMilestonePress(milestone)}
-          >
-            <Text style={styles.viewTasksText}>View Tasks</Text>
-            <Feather name="chevron-right" size={16} color="#0066FF" />
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      </Swipeable>
     );
   };
-  
+
   // Loading state
   if (loading && !refreshing) {
     return (
@@ -460,7 +617,7 @@ console.log("Permissions set in MilestoneScreen:", parsedUser);
       </View>
     );
   }
-  
+
   // Error state
   if (error && milestones.length === 0) {
     return (
@@ -487,466 +644,476 @@ console.log("Permissions set in MilestoneScreen:", parsedUser);
       </View>
     );
   }
-  
-  return (
-    <View style={styles.container}>
-      <ScrollView 
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={['#0066FF']}
-            tintColor="#0066FF"
-            progressBackgroundColor="#ffffff"
-          />
-        }
-      >
-        {/* Header with reload button */}
-        <View style={styles.header}>
-          <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>Project Milestones</Text>
-            <Text style={styles.headerSubtitle}>
-              Track progress for each construction phase
-            </Text>
-          </View>
-          <View style={styles.headerButtons}>
-            <TouchableOpacity
-              style={styles.reloadButton}
-              onPress={handleManualReload}
-              disabled={refreshing}
-            >
-              <Ionicons 
-                name="refresh" 
-                size={22} 
-                color="#0066FF" 
-                style={refreshing && styles.spinningIcon}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={() =>{
-                  if (!permissions?.permissions?.task?.create && permissions?.role !== "admin") {
-    Alert.alert(
-      "Access Denied",
-      "You do not have permission to create a task.",
-      [{ text: "OK" }]
-    );
-    return;
-  }
 
-                setShowNewMilestoneModal(true)}}
-              disabled={loading || refreshing}
-            >
-              <Ionicons name="add" size={24} color="white" />
-            </TouchableOpacity>
-          </View>
-        </View>
-        
-        {/* Stats Overview */}
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{milestones.length}</Text>
-            <Text style={styles.statLabel}>Total</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>
-              {milestones.filter(m => m.status === 'In Progress' || m.status === 'Ongoing').length}
-            </Text>
-            <Text style={styles.statLabel}>Active</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>
-              {milestones.filter(m => m.status === 'Completed').length}
-            </Text>
-            <Text style={styles.statLabel}>Completed</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>
-              {Math.round(milestones.reduce((acc, m) => acc + m.progress, 0) / milestones.length) || 0}%
-            </Text>
-            <Text style={styles.statLabel}>Avg Progress</Text>
-          </View>
-        </View>
-        
-        {/* Last Updated Time */}
-        {milestones.length > 0 && (
-          <View style={styles.lastUpdatedContainer}>
-            <Ionicons name="time-outline" size={14} color="#6B7280" />
-            <Text style={styles.lastUpdatedText}>
-              Last updated: {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </Text>
-            {refreshing && (
-              <View style={styles.refreshingIndicator}>
-                <ActivityIndicator size="small" color="#0066FF" />
-                <Text style={styles.refreshingText}>Refreshing...</Text>
-              </View>
-            )}
-          </View>
-        )}
-        
-        {/* Milestones List */}
-        {milestones.length === 0 ? (
-          <View style={styles.emptyState}>
-            <View style={styles.emptyIcon}>
-              <Ionicons name="flag" size={48} color="#9CA3AF" />
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <View style={styles.container}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#0066FF']}
+              tintColor="#0066FF"
+              progressBackgroundColor="#ffffff"
+            />
+          }
+        >
+          {/* Header with reload button */}
+          <View style={styles.header}>
+            <View style={styles.headerContent}>
+              <Text style={styles.headerTitle}>Project Milestones</Text>
+              <Text style={styles.headerSubtitle}>
+                Track progress for each construction phase
+              </Text>
             </View>
-            <Text style={styles.emptyTitle}>No Milestones Yet</Text>
-            <Text style={styles.emptySubtitle}>
-              Create your first milestone to start tracking construction phases
-            </Text>
-            <TouchableOpacity
-              style={styles.emptyButton}
-              onPress={() => setShowNewMilestoneModal(true)}
-              disabled={loading || refreshing}
-            >
-              <Ionicons name="add-circle-outline" size={20} color="#0066FF" />
-              <Text style={styles.emptyButtonText}>Create Milestone</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.emptyReloadButton}
-              onPress={handleManualReload}
-              disabled={refreshing}
-            >
-              <Ionicons 
-                name="refresh" 
-                size={16} 
-                color="#6B7280" 
-                style={refreshing && styles.spinningIcon}
-              />
-              <Text style={styles.emptyReloadButtonText}>Reload</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <FlatList
-            data={milestones}
-            renderItem={({ item }) => <MilestoneCard milestone={item} />}
-            keyExtractor={(item) => item.id}
-            scrollEnabled={false}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.milestonesList}
-          />
-        )}
-        <View style={{ height: 100 }} />
-      </ScrollView>
-      
-      {/* New Milestone Modal */}
-      <Modal
-        visible={showNewMilestoneModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowNewMilestoneModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Create New Milestone</Text>
-              <TouchableOpacity onPress={() => setShowNewMilestoneModal(false)}>
-                <Ionicons name="close" size={24} color="#6B7280" />
+            <View style={styles.headerButtons}>
+              <TouchableOpacity
+                style={styles.reloadButton}
+                onPress={handleManualReload}
+                disabled={refreshing}
+              >
+                <Ionicons
+                  name="refresh"
+                  size={22}
+                  color="#0066FF"
+                  style={refreshing && styles.spinningIcon}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={() => {
+                  if (!permissions?.permissions?.task?.create && permissions?.role !== "admin") {
+                    Alert.alert(
+                      "Access Denied",
+                      "You do not have permission to create a task.",
+                      [{ text: "OK" }]
+                    );
+                    return;
+                  }
+
+                  setShowNewMilestoneModal(true)
+                }}
+                disabled={loading || refreshing}
+              >
+                <Ionicons name="add" size={24} color="white" />
               </TouchableOpacity>
             </View>
-            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
-              {/* Modal content remains the same */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Milestone Title *</Text>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="e.g., Foundation Work, Slab Making"
-                  value={newMilestone.title}
-                  onChangeText={(text) => setNewMilestone({...newMilestone, title: text})}
-                  maxLength={50}
-                />
-                <Text style={styles.charCount}>{newMilestone.title.length}/50</Text>
-              </View>
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Description</Text>
-                <TextInput
-                  style={[styles.textInput, styles.textArea]}
-                  placeholder="Brief description of this milestone..."
-                  value={newMilestone.description}
-                  onChangeText={(text) => setNewMilestone({...newMilestone, description: text})}
-                  multiline
-                  numberOfLines={3}
-                  textAlignVertical="top"
-                />
-              </View>
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Color Theme</Text>
-                <View style={styles.colorOptions}>
-                  {milestoneColors.map((color, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={[
-                        styles.colorOption,
-                        { backgroundColor: color },
-                        newMilestone.color === color && styles.colorOptionSelected
-                      ]}
-                      onPress={() => setNewMilestone({...newMilestone, color})}
-                    />
-                  ))}
+          </View>
+
+          {/* Stats Overview */}
+          <View style={styles.statsContainer}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{milestones.length}</Text>
+              <Text style={styles.statLabel}>Total</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {milestones.filter(m => m.status === 'In Progress' || m.status === 'Ongoing').length}
+              </Text>
+              <Text style={styles.statLabel}>Active</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {milestones.filter(m => m.status === 'Completed').length}
+              </Text>
+              <Text style={styles.statLabel}>Completed</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {Math.round(milestones.reduce((acc, m) => acc + m.progress, 0) / milestones.length) || 0}%
+              </Text>
+              <Text style={styles.statLabel}>Avg Progress</Text>
+            </View>
+          </View>
+
+          {/* Last Updated Time */}
+          {milestones.length > 0 && (
+            <View style={styles.lastUpdatedContainer}>
+              <Ionicons name="time-outline" size={14} color="#6B7280" />
+              <Text style={styles.lastUpdatedText}>
+                Last updated: {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </Text>
+              {refreshing && (
+                <View style={styles.refreshingIndicator}>
+                  <ActivityIndicator size="small" color="#0066FF" />
+                  <Text style={styles.refreshingText}>Refreshing...</Text>
                 </View>
+              )}
+            </View>
+          )}
+
+          {/* Milestones List */}
+          {milestones.length === 0 ? (
+            <View style={styles.emptyState}>
+              <View style={styles.emptyIcon}>
+                <Ionicons name="flag" size={48} color="#9CA3AF" />
               </View>
-              {/* Subtasks Section */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Subtasks (Optional)</Text>
-                <TouchableOpacity
-                  style={styles.addSubtaskButton}
-                  onPress={() => {
-                    setCurrentSubtask({ title: '', description: '', startDate: '', endDate: '', assignedTo: [], isCompleted: false });
-                    setEditingSubtaskIndex(-1);
-                    setTempStartDate(new Date());
-                    setTempEndDate(new Date());
-                    setShowSubtaskModal(true);
-                  }}
-                >
-                  <Feather name="plus" size={20} color="#0066FF" />
-                  <Text style={styles.addSubtaskText}>Add Subtask</Text>
+              <Text style={styles.emptyTitle}>No Milestones Yet</Text>
+              <Text style={styles.emptySubtitle}>
+                Create your first milestone to start tracking construction phases
+              </Text>
+              <TouchableOpacity
+                style={styles.emptyButton}
+                onPress={() => setShowNewMilestoneModal(true)}
+                disabled={loading || refreshing}
+              >
+                <Ionicons name="add-circle-outline" size={20} color="#0066FF" />
+                <Text style={styles.emptyButtonText}>Create Milestone</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.emptyReloadButton}
+                onPress={handleManualReload}
+                disabled={refreshing}
+              >
+                <Ionicons
+                  name="refresh"
+                  size={16}
+                  color="#6B7280"
+                  style={refreshing && styles.spinningIcon}
+                />
+                <Text style={styles.emptyReloadButtonText}>Reload</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <FlatList
+              data={milestones}
+              renderItem={({ item }) => <MilestoneCard milestone={item} />}
+              keyExtractor={(item) => item.id}
+              scrollEnabled={false}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.milestonesList}
+            />
+          )}
+          <View style={{ height: 100 }} />
+        </ScrollView>
+
+        {/* New Milestone Modal */}
+        <Modal
+          visible={showNewMilestoneModal}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowNewMilestoneModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Create New Milestone</Text>
+                <TouchableOpacity onPress={() => setShowNewMilestoneModal(false)}>
+                  <Ionicons name="close" size={24} color="#6B7280" />
                 </TouchableOpacity>
-                {newMilestone.subtasks.length > 0 && (
-                  <View style={styles.subtasksList}>
-                    {newMilestone.subtasks.map((subtask, index) => (
-                      <View key={index} style={styles.subtaskItem}>
-                        <View style={styles.subtaskContent}>
-                          <Text style={styles.subtaskTitle}>{subtask.title}</Text>
-                          {subtask.description ? <Text style={styles.subtaskDesc}>{subtask.description}</Text> : null}
-                          <Text style={styles.subtaskDates}>
-                            {subtask.startDate} - {subtask.endDate}
-                          </Text>
-                        </View>
-                        <View style={styles.subtaskActions}>
-                          <TouchableOpacity
-                            style={styles.editSubtaskButton}
-                            onPress={() => handleEditSubtask(index)}
-                          >
-                            <Feather name="edit-2" size={16} color="#0066FF" />
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            style={styles.deleteSubtaskButton}
-                            onPress={() => handleDeleteSubtask(index)}
-                          >
-                            <Feather name="trash-2" size={16} color="#EF4444" />
-                          </TouchableOpacity>
-                        </View>
-                      </View>
+              </View>
+              <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+                {/* Modal content remains the same */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Milestone Title *</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="e.g., Foundation Work, Slab Making"
+                    value={newMilestone.title}
+                    onChangeText={(text) => setNewMilestone({ ...newMilestone, title: text })}
+                    maxLength={50}
+                  />
+                  <Text style={styles.charCount}>{newMilestone.title.length}/50</Text>
+                </View>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Description</Text>
+                  <TextInput
+                    style={[styles.textInput, styles.textArea]}
+                    placeholder="Brief description of this milestone..."
+                    value={newMilestone.description}
+                    onChangeText={(text) => setNewMilestone({ ...newMilestone, description: text })}
+                    multiline
+                    numberOfLines={3}
+                    textAlignVertical="top"
+                  />
+                </View>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Color Theme</Text>
+                  <View style={styles.colorOptions}>
+                    {milestoneColors.map((color, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        style={[
+                          styles.colorOption,
+                          { backgroundColor: color },
+                          newMilestone.color === color && styles.colorOptionSelected
+                        ]}
+                        onPress={() => setNewMilestone({ ...newMilestone, color })}
+                      />
                     ))}
                   </View>
-                )}
-                {newMilestone.subtasks.length === 0 && (
-                  <Text style={styles.subtaskHint}>Add subtasks to track detailed progress</Text>
-                )}
+                </View>
+                {/* Subtasks Section */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Subtasks (Optional)</Text>
+                  <TouchableOpacity
+                    style={styles.addSubtaskButton}
+                    onPress={() => {
+                      setCurrentSubtask({ title: '', description: '', startDate: '', endDate: '', assignedTo: [], isCompleted: false });
+                      setEditingSubtaskIndex(-1);
+                      setTempStartDate(new Date());
+                      setTempEndDate(new Date());
+                      setShowSubtaskModal(true);
+                    }}
+                  >
+                    <Feather name="plus" size={20} color="#0066FF" />
+                    <Text style={styles.addSubtaskText}>Add Subtask</Text>
+                  </TouchableOpacity>
+                  {newMilestone.subtasks.length > 0 && (
+                    <View style={styles.subtasksList}>
+                      {newMilestone.subtasks.map((subtask, index) => (
+                        <View key={index} style={styles.subtaskItem}>
+                          <View style={styles.subtaskContent}>
+                            <Text style={styles.subtaskTitle}>{subtask.title}</Text>
+                            {subtask.description ? <Text style={styles.subtaskDesc}>{subtask.description}</Text> : null}
+                            <Text style={styles.subtaskDates}>
+                              {subtask.startDate} - {subtask.endDate}
+                            </Text>
+                          </View>
+                          <View style={styles.subtaskActions}>
+                            <TouchableOpacity
+                              style={styles.editSubtaskButton}
+                              onPress={() => handleEditSubtask(index)}
+                            >
+                              <Feather name="edit-2" size={16} color="#0066FF" />
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              style={styles.deleteSubtaskButton}
+                              onPress={() => handleDeleteSubtask(index)}
+                            >
+                              <Feather name="trash-2" size={16} color="#EF4444" />
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                  {newMilestone.subtasks.length === 0 && (
+                    <Text style={styles.subtaskHint}>Add subtasks to track detailed progress</Text>
+                  )}
+                </View>
+              </ScrollView>
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => setShowNewMilestoneModal(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.createButton,
+                    (!newMilestone.title.trim() || isCreating) && styles.createButtonDisabled
+                  ]}
+                  onPress={handleCreateMilestone}
+                  disabled={!newMilestone.title.trim() || isCreating}
+                >
+                  {isCreating ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <ActivityIndicator size="small" color="white" style={{ marginRight: 8 }} />
+                      <Text style={styles.createButtonText}>Creating...</Text>
+                    </View>
+                  ) : (
+                    <Text style={styles.createButtonText}>Create Milestone</Text>
+                  )}
+                </TouchableOpacity>
               </View>
-            </ScrollView>
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => setShowNewMilestoneModal(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.createButton,
-                  !newMilestone.title.trim() && styles.createButtonDisabled
-                ]}
-                onPress={handleCreateMilestone}
-                disabled={!newMilestone.title.trim()}
-              >
-                <Text style={styles.createButtonText}>Create Milestone</Text>
-              </TouchableOpacity>
             </View>
           </View>
-        </View>
-      </Modal>
-      
-      {/* Subtask Modal */}
-      <Modal
-        visible={showSubtaskModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => {
-          setShowSubtaskModal(false);
-          setEditingSubtaskIndex(null);
-        }}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {editingSubtaskIndex >= 0 ? 'Edit Subtask' : 'Add New Subtask'}
-              </Text>
-              <TouchableOpacity onPress={() => setShowSubtaskModal(false)}>
-                <Ionicons name="close" size={24} color="#6B7280" />
-              </TouchableOpacity>
-            </View>
-            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
-              {/* Subtask modal content remains the same */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Title *</Text>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="e.g., Pour concrete foundation"
-                  value={currentSubtask.title}
-                  onChangeText={(text) => setCurrentSubtask({ ...currentSubtask, title: text })}
-                />
-              </View>
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Description</Text>
-                <TextInput
-                  style={[styles.textInput, styles.textArea]}
-                  placeholder="Details about this subtask..."
-                  value={currentSubtask.description}
-                  onChangeText={(text) => setCurrentSubtask({ ...currentSubtask, description: text })}
-                  multiline
-                  numberOfLines={3}
-                />
-              </View>
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Start Date</Text>
-                <TouchableOpacity
-                  style={styles.dateInput}
-                  onPress={() => setShowStartDatePicker(true)}
-                >
-                  <Text style={styles.dateText}>
-                    {currentSubtask.startDate || 'Select start date'}
-                  </Text>
-                  <Feather name="calendar" size={18} color="#0066FF" />
+        </Modal>
+
+        {/* Subtask Modal */}
+        <Modal
+          visible={showSubtaskModal}
+          transparent
+          animationType="slide"
+          onRequestClose={() => {
+            setShowSubtaskModal(false);
+            setEditingSubtaskIndex(null);
+          }}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>
+                  {editingSubtaskIndex >= 0 ? 'Edit Subtask' : 'Add New Subtask'}
+                </Text>
+                <TouchableOpacity onPress={() => setShowSubtaskModal(false)}>
+                  <Ionicons name="close" size={24} color="#6B7280" />
                 </TouchableOpacity>
-                {showStartDatePicker && (
-                  <DateTimePicker
-                    value={tempStartDate}
-                    mode="date"
-                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                    onChange={(event, selectedDate) => {
-                      setShowStartDatePicker(Platform.OS === 'ios');
-                      if (selectedDate) {
-                        setTempStartDate(selectedDate);
-                        setCurrentSubtask({ ...currentSubtask, startDate: selectedDate.toISOString().split('T')[0] });
-                      }
-                    }}
-                  />
-                )}
               </View>
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>End Date</Text>
-                <TouchableOpacity
-                  style={styles.dateInput}
-                  onPress={() => setShowEndDatePicker(true)}
-                >
-                  <Text style={styles.dateText}>
-                    {currentSubtask.endDate || 'Select end date'}
-                  </Text>
-                  <Feather name="calendar" size={18} color="#0066FF" />
-                </TouchableOpacity>
-                {showEndDatePicker && (
-                  <DateTimePicker
-                    value={tempEndDate}
-                    mode="date"
-                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                    onChange={(event, selectedDate) => {
-                      setShowEndDatePicker(Platform.OS === 'ios');
-                      if (selectedDate) {
-                        setTempEndDate(selectedDate);
-                        setCurrentSubtask({ ...currentSubtask, endDate: selectedDate.toISOString().split('T')[0] });
-                      }
-                    }}
+              <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+                {/* Subtask modal content remains the same */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Title *</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="e.g., Pour concrete foundation"
+                    value={currentSubtask.title}
+                    onChangeText={(text) => setCurrentSubtask({ ...currentSubtask, title: text })}
                   />
-                )}
-              </View>
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Assigned To (Optional)</Text>
-                {membersLoading ? (
-                  <View style={{ paddingVertical: 12, alignItems: 'center' }}>
-                    <ActivityIndicator size="small" color="#0066FF" />
-                  </View>
-                ) : membersError ? (
-                  <Text style={{ color: '#EF4444', fontSize: 14, marginTop: 4 }}>{membersError}</Text>
-                ) : members.length === 0 ? (
-                  <Text style={{ color: '#9CA3AF', fontSize: 14, marginTop: 4 }}>No members available</Text>
-                ) : (
-                  <View>
-                    <View style={styles.dropdownInput}>
-                      <Text style={styles.dropdownText} numberOfLines={1}>
-                        {currentSubtask.assignedTo.length > 0
-                          ? currentSubtask.assignedTo
+                </View>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Description</Text>
+                  <TextInput
+                    style={[styles.textInput, styles.textArea]}
+                    placeholder="Details about this subtask..."
+                    value={currentSubtask.description}
+                    onChangeText={(text) => setCurrentSubtask({ ...currentSubtask, description: text })}
+                    multiline
+                    numberOfLines={3}
+                  />
+                </View>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Start Date</Text>
+                  <TouchableOpacity
+                    style={styles.dateInput}
+                    onPress={() => setShowStartDatePicker(true)}
+                  >
+                    <Text style={styles.dateText}>
+                      {currentSubtask.startDate || 'Select start date'}
+                    </Text>
+                    <Feather name="calendar" size={18} color="#0066FF" />
+                  </TouchableOpacity>
+                  {showStartDatePicker && (
+                    <DateTimePicker
+                      value={tempStartDate}
+                      mode="date"
+                      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                      onChange={(event, selectedDate) => {
+                        setShowStartDatePicker(Platform.OS === 'ios');
+                        if (selectedDate) {
+                          setTempStartDate(selectedDate);
+                          setCurrentSubtask({ ...currentSubtask, startDate: selectedDate.toISOString().split('T')[0] });
+                        }
+                      }}
+                    />
+                  )}
+                </View>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>End Date</Text>
+                  <TouchableOpacity
+                    style={styles.dateInput}
+                    onPress={() => setShowEndDatePicker(true)}
+                  >
+                    <Text style={styles.dateText}>
+                      {currentSubtask.endDate || 'Select end date'}
+                    </Text>
+                    <Feather name="calendar" size={18} color="#0066FF" />
+                  </TouchableOpacity>
+                  {showEndDatePicker && (
+                    <DateTimePicker
+                      value={tempEndDate}
+                      mode="date"
+                      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                      onChange={(event, selectedDate) => {
+                        setShowEndDatePicker(Platform.OS === 'ios');
+                        if (selectedDate) {
+                          setTempEndDate(selectedDate);
+                          setCurrentSubtask({ ...currentSubtask, endDate: selectedDate.toISOString().split('T')[0] });
+                        }
+                      }}
+                    />
+                  )}
+                </View>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Assigned To (Optional)</Text>
+                  {membersLoading ? (
+                    <View style={{ paddingVertical: 12, alignItems: 'center' }}>
+                      <ActivityIndicator size="small" color="#0066FF" />
+                    </View>
+                  ) : membersError ? (
+                    <Text style={{ color: '#EF4444', fontSize: 14, marginTop: 4 }}>{membersError}</Text>
+                  ) : members.length === 0 ? (
+                    <Text style={{ color: '#9CA3AF', fontSize: 14, marginTop: 4 }}>No members available</Text>
+                  ) : (
+                    <View>
+                      <View style={styles.dropdownInput}>
+                        <Text style={styles.dropdownText} numberOfLines={1}>
+                          {currentSubtask.assignedTo.length > 0
+                            ? currentSubtask.assignedTo
                               .map(id => {
                                 const member = members.find(m => String(m._id || m.id) === String(id));
                                 return member?.name || member?.fullName || `${member?.firstName || ''} ${member?.lastName || ''}`.trim() || id;
                               })
                               .join(', ')
-                          : 'Select members'}
-                      </Text>
-                      <Feather name="chevron-down" size={20} color="#6B7280" />
+                            : 'Select members'}
+                        </Text>
+                        <Feather name="chevron-down" size={20} color="#6B7280" />
+                      </View>
+                      <View style={{ marginTop: 8 }}>
+                        {members.map((m) => {
+                          const id = m._id || m.id;
+                          const selected = currentSubtask.assignedTo.some(x => String(x) === String(id));
+                          return (
+                            <TouchableOpacity
+                              key={id}
+                              style={[styles.memberItem, selected && styles.memberItemActive]}
+                              onPress={() => {
+                                setCurrentSubtask(prev => {
+                                  const assigned = [...prev.assignedTo];
+                                  const exists = assigned.some(x => String(x) === String(id));
+                                  if (exists) {
+                                    return { ...prev, assignedTo: assigned.filter(x => String(x) !== String(id)) };
+                                  } else {
+                                    return { ...prev, assignedTo: [...assigned, id] };
+                                  }
+                                });
+                              }}
+                            >
+                              <Text style={[styles.memberText, selected && styles.memberTextActive]}>
+                                {m.name || m.fullName || `${m.firstName || ''} ${m.lastName || ''}`.trim() || id}
+                              </Text>
+                              <Text style={{ fontSize: 12, color: selected ? '#ffffff' : '#6B7280' }}>{m.email}</Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
                     </View>
-                    <View style={{ marginTop: 8 }}>
-                      {members.map((m) => {
-                        const id = m._id || m.id;
-                        const selected = currentSubtask.assignedTo.some(x => String(x) === String(id));
-                        return (
-                          <TouchableOpacity
-                            key={id}
-                            style={[styles.memberItem, selected && styles.memberItemActive]}
-                            onPress={() => {
-                              setCurrentSubtask(prev => {
-                                const assigned = [...prev.assignedTo];
-                                const exists = assigned.some(x => String(x) === String(id));
-                                if (exists) {
-                                  return { ...prev, assignedTo: assigned.filter(x => String(x) !== String(id)) };
-                                } else {
-                                  return { ...prev, assignedTo: [...assigned, id] };
-                                }
-                              });
-                            }}
-                          >
-                            <Text style={[styles.memberText, selected && styles.memberTextActive]}>
-                              {m.name || m.fullName || `${m.firstName || ''} ${m.lastName || ''}`.trim() || id}
-                            </Text>
-                            <Text style={{ fontSize: 12, color: selected ? '#ffffff' : '#6B7280' }}>{m.email}</Text>
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
-                  </View>
-                )}
-              </View>
-              <View style={styles.inputGroup}>
-                <View style={styles.switchRow}>
-                  <Text style={styles.switchLabel}>Mark as Completed</Text>
-                  <Switch
-                    value={currentSubtask.isCompleted}
-                    onValueChange={(value) => setCurrentSubtask({ ...currentSubtask, isCompleted: value })}
-                    trackColor={{ false: "#767577", true: "#81b0ff" }}
-                    thumbColor={currentSubtask.isCompleted ? "#0066FF" : "#f4f3f4"}
-                  />
+                  )}
                 </View>
+                <View style={styles.inputGroup}>
+                  <View style={styles.switchRow}>
+                    <Text style={styles.switchLabel}>Mark as Completed</Text>
+                    <Switch
+                      value={currentSubtask.isCompleted}
+                      onValueChange={(value) => setCurrentSubtask({ ...currentSubtask, isCompleted: value })}
+                      trackColor={{ false: "#767577", true: "#81b0ff" }}
+                      thumbColor={currentSubtask.isCompleted ? "#0066FF" : "#f4f3f4"}
+                    />
+                  </View>
+                </View>
+              </ScrollView>
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => setShowSubtaskModal(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.createButton,
+                    !currentSubtask.title.trim() && styles.createButtonDisabled
+                  ]}
+                  onPress={handleSaveSubtask}
+                  disabled={!currentSubtask.title.trim()}
+                >
+                  <Text style={styles.createButtonText}>
+                    {editingSubtaskIndex >= 0 ? 'Update Subtask' : 'Add Subtask'}
+                  </Text>
+                </TouchableOpacity>
               </View>
-            </ScrollView>
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => setShowSubtaskModal(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.createButton,
-                  !currentSubtask.title.trim() && styles.createButtonDisabled
-                ]}
-                onPress={handleSaveSubtask}
-                disabled={!currentSubtask.title.trim()}
-              >
-                <Text style={styles.createButtonText}>
-                  {editingSubtaskIndex >= 0 ? 'Update Subtask' : 'Add Subtask'}
-                </Text>
-              </TouchableOpacity>
             </View>
           </View>
-        </View>
-      </Modal>
-    </View>
+        </Modal>
+      </View>
+    </GestureHandlerRootView>
   );
 };
 

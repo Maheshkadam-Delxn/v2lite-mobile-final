@@ -27,6 +27,7 @@ import BOQClientScreen from '../HomeOwner/BOQClientScreen';
 import FilesScreen from '../Document-Management/FileScreen';
 import SnagListScreen from '../Snags/SnagListScreen';
 import WorkProgressListScreen from '../WorkProgress/WorkProgressListScreen';
+import Survey from '../HomeOwner/survey';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -290,13 +291,14 @@ const Overview = () => {
     { id: 'Issues', label: 'Issues', icon: 'alert-circle-outline' },
     { id: 'BOQ', label: 'BOQ', icon: 'document-text-outline' },
     { id: 'Plans', label: 'Plans', icon: 'layers-outline' },
-    { id: 'ProjectTimeline', label: 'Timeline', icon: 'calendar-outline' },
-    { id: 'BudgetTracker', label: 'Budget', icon: 'cash-outline' },
-    { id: 'QualityChecks', label: 'Quality', icon: 'checkmark-circle-outline' },
+    // { id: 'ProjectTimeline', label: 'Timeline', icon: 'calendar-outline' },
+    // { id: 'BudgetTracker', label: 'Budget', icon: 'cash-outline' },
+    // { id: 'QualityChecks', label: 'Quality', icon: 'checkmark-circle-outline' },
     { id: 'ChangeRequests', label: 'Changes', icon: 'swap-horizontal-outline' },
     { id: 'MaterialStatus', label: 'Materials', icon: 'cube-outline' },
     { id: 'Snags', label: 'Snags', icon: 'bug-outline' },
     { id: 'Progress', label: 'Progress', icon: 'trending-up-outline' },
+    { id: 'Survey', label: 'Survey', icon: 'clipboard-outline' },
   ];
 
   // Progress data based on milestones
@@ -954,7 +956,9 @@ const Overview = () => {
             </Animated.View>
           ) : (
             // Other Tabs Content
-            <View style={{ paddingTop: 12 }}>{renderTabContent()}</View>
+            <View style={{ paddingTop: 12 }}>
+              {activeTab === 'Survey' ? <Survey project={project} /> : renderTabContent()}
+            </View>
           )}
         </ScrollView>
       )}
