@@ -9,7 +9,9 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Dimensions,
+  Alert,
   Animated,
+  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, useIsFocused } from '@react-navigation/native';
@@ -296,6 +298,7 @@ const Overview = () => {
     { id: 'ChangeRequests', label: 'Changes', icon: 'swap-horizontal-outline' },
     { id: 'MaterialStatus', label: 'Materials', icon: 'cube-outline' },
     { id: 'Snags', label: 'Snags', icon: 'bug-outline' },
+    { id: 'Handover', label: 'Handover', icon: 'key-outline' },
     { id: 'Progress', label: 'Progress', icon: 'trending-up-outline' },
   ];
 
@@ -751,7 +754,7 @@ const Overview = () => {
 
   // Empty State
   console.log("Project Status:", project.status);
-  if (project.status != "Ongoing") {
+  if (project.status != "Ongoing" && project.status != "completed") {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
         <Header title="Project Overview" showBackButton />
@@ -870,6 +873,192 @@ const Overview = () => {
           return <SnagListScreen projectId={project._id} showHeader={false} isClient={true} />;
         case 'Progress':
           return <WorkProgressListScreen projectId={project._id} isClient={true} showHeader={false} />;
+        case 'Handover':
+          const isAccepted = project.handover?.handoverAccepted;
+          const isRequested = project.handover?.handoverRequested;
+
+          return (
+            <View style={{ padding: 16 }}>
+              <View
+                style={{
+                  backgroundColor: COLORS.surface,
+                  borderRadius: 16,
+                  padding: 24,
+                  alignItems: 'center',
+                  borderWidth: 1,
+                  borderColor: COLORS.border,
+                }}
+              >
+                <View
+                  style={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: 32,
+                    backgroundColor: isAccepted ? '#DBEAFE' : (isRequested ? '#DCFCE7' : '#F1F5F9'), // Blue-100, Green-100 or Slate-100
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    marginBottom: 16,
+                  }}
+                >
+                  <Ionicons
+                    name={isAccepted ? "document-text" : (isRequested ? "checkmark-circle" : "time-outline")}
+                    size={32}
+                    color={isAccepted ? "#2563EB" : (isRequested ? "#16A34A" : "#64748B")}
+                  />
+                </View>
+
+                <Text style={{ fontSize: 18, fontWeight: '700', color: COLORS.text, marginBottom: 8, textAlign: 'center' }}>
+                  {isAccepted ? "Handover Accepted" : (isRequested ? "Handover Requested" : "No Handover Request")}
+                </Text>
+
+                <Text style={{ fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 22, marginBottom: 24 }}>
+                  {isAccepted
+                    ? "Handover successfully accepted. Waiting for the final documents."
+                    : (isRequested
+                      ? "The admin has initiated the handover process. Please review any pending actions."
+                      : "The handover process has not been initiated yet. Checking back later."
+                    )
+                  }
+                </Text>
+
+                {isRequested && !isAccepted && (
+                  <View style={{ width: '100%', gap: 12 }}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        Alert.alert('Confirm Approval', 'Are you sure you want to approve this handover request?', [
+                          { text: 'Cancel', style: 'cancel' },
+                          {
+                            text: 'Approve',
+                            onPress: async () => {
+                              try {
+                                const token = await AsyncStorage.getItem('userToken');
+                                const res = await fetch(`${process.env.BASE_API_URL}/api/projects/${project._id}/handover/approve`, {
+                                  method: 'POST',
+                                  headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+                                });
+                                const data = await res.json();
+                                if (data.success) {
+                                  Alert.alert('Success', 'Handover approved successfully');
+                                } else {
+                                  Alert.alert('Error', data.message || 'Failed to approve');
+                                }
+                              } catch (e) {
+                                Alert.alert('Error', 'Network request failed');
+                              }
+                            }
+                          }
+                        ]);
+                      }}
+                      style={{
+                        backgroundColor: COLORS.success,
+                        paddingVertical: 14,
+                        borderRadius: 12,
+                        alignItems: 'center',
+                        flexDirection: 'row',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Ionicons name="checkmark-circle-outline" size={20} color="white" style={{ marginRight: 8 }} />
+                      <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>Approve Handover</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => {
+                        Alert.alert('Confirm Rejection', 'Are you sure you want to reject this handover request?', [
+                          { text: 'Cancel', style: 'cancel' },
+                          {
+                            text: 'Reject',
+                            style: 'destructive',
+                            onPress: async () => {
+                              try {
+                                const token = await AsyncStorage.getItem('userToken');
+                                const res = await fetch(`${process.env.BASE_API_URL}/api/projects/${project._id}/handover/reject`, {
+                                  method: 'POST',
+                                  headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+                                });
+                                const data = await res.json();
+                                if (data.success) {
+                                  Alert.alert('Rejected', 'Handover request rejected');
+                                } else {
+                                  Alert.alert('Error', data.message || 'Failed to reject');
+                                }
+                              } catch (e) {
+                                Alert.alert('Error', 'Network request failed');
+                              }
+                            }
+                          }
+                        ]);
+                      }}
+                      style={{
+                        backgroundColor: 'transparent',
+                        borderWidth: 1,
+                        borderColor: COLORS.danger,
+                        paddingVertical: 14,
+                        borderRadius: 12,
+                        alignItems: 'center',
+                        flexDirection: 'row',
+                        justifyContent: 'center',
+                        marginTop: 12
+                      }}
+                    >
+                      <Ionicons name="close-circle-outline" size={20} color={COLORS.danger} style={{ marginRight: 8 }} />
+                      <Text style={{ color: COLORS.danger, fontWeight: 'bold', fontSize: 16 }}>Reject Request</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+
+              {/* Handover Documents List */}
+              {project.handoverDocuments && project.handoverDocuments.length > 0 && (
+                <View style={{ marginTop: 20 }}>
+                  <Text style={{ fontSize: 16, fontWeight: '700', color: COLORS.text, marginBottom: 12 }}>
+                    Handover Documents
+                  </Text>
+                  {project.handoverDocuments.map((docUrl, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      onPress={() => Linking.openURL(docUrl).catch(err => Alert.alert("Error", "Could not open document"))}
+                      style={{
+                        backgroundColor: COLORS.surface,
+                        borderRadius: 12,
+                        padding: 16,
+                        marginBottom: 10,
+                        borderWidth: 1,
+                        borderColor: COLORS.border,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <View
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 20,
+                          backgroundColor: '#EFF6FF',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          marginRight: 12
+                        }}
+                      >
+                        <Ionicons name="document-text-outline" size={20} color={COLORS.primary} />
+                      </View>
+
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 14, fontWeight: '600', color: COLORS.text }} numberOfLines={1}>
+                          Document {index + 1}
+                        </Text>
+                        <Text style={{ fontSize: 12, color: COLORS.textSecondary, marginTop: 2 }}>
+                          Tap to view
+                        </Text>
+                      </View>
+
+                      <Ionicons name="open-outline" size={20} color={COLORS.textLight} />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+          );
         default:
           return null;
       }
@@ -923,7 +1112,7 @@ const Overview = () => {
       </View>
 
       {/* Main Content */}
-      {['Snags', 'Progress'].includes(activeTab) ? (
+      {['Snags', 'Progress', 'Handover'].includes(activeTab) ? (
         <View style={{ flex: 1, paddingTop: 12 }}>{renderTabContent()}</View>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false}>
