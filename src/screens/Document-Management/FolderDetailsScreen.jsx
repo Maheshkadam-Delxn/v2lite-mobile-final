@@ -1,5 +1,3 @@
-
-
 import {
   View,
   Text,
@@ -9,6 +7,7 @@ import {
   Modal,
   TextInput,
   Alert,
+  RefreshControl,
 } from 'react-native'
 import * as DocumentPicker from 'expo-document-picker'
 import React, { useEffect, useState } from 'react'
@@ -28,31 +27,33 @@ const CLOUDINARY_CONFIG = {
 const FolderDetailsScreen = () => {
   const navigation = useNavigation()
   const route = useRoute()
-const generateSignature = async (timestamp) => {
-  const stringToSign = `timestamp=${timestamp}${CLOUDINARY_CONFIG.apiSecret}`
-  return await Crypto.digestStringAsync(
-    Crypto.CryptoDigestAlgorithm.SHA1,
-    stringToSign
-  )
-}
 
-  const { folderId, folderName,parentFolderId, project } = route.params
-// console.log(route.params);
-console.log(parentFolderId);
+  const generateSignature = async (timestamp) => {
+    const stringToSign = `timestamp=${timestamp}${CLOUDINARY_CONFIG.apiSecret}`
+    return await Crypto.digestStringAsync(
+      Crypto.CryptoDigestAlgorithm.SHA1,
+      stringToSign
+    )
+  }
+
+  const { folderId, folderName, parentFolderId, project } = route.params
+
   const [subFolders, setSubFolders] = useState([])
   const [documents, setDocuments] = useState([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [docModalVisible, setDocModalVisible] = useState(false)
   const [docTitle, setDocTitle] = useState('')
   const [selectedFile, setSelectedFile] = useState(null)
   const [uploading, setUploading] = useState(false)
+  const [dataLoaded, setDataLoaded] = useState(false)
 
   /* -------------------- FETCH FOLDER CONTENT -------------------- */
   const fetchFolderContent = async () => {
     try {
-      setLoading(true)
       const token = await AsyncStorage.getItem('userToken')
 
+      // Fetch subfolders
       const res = await fetch(
         `${API_URL}/api/plan-folders?parentFolder=${folderId}&projectId=${project._id}`,
         {
@@ -64,10 +65,21 @@ console.log(parentFolderId);
 
       const json = await res.json()
       setSubFolders(json.data || [])
+      
+      return json.data || []
+    } catch (err) {
+      console.log('Fetch folder content error:', err)
+      return []
+    }
+  }
 
-      // fetch documents inside folder
-      const docRes = await fetch(
-        `${API_URL}/api/plan-documents?folderId=${folderId}`,
+  /* -------------------- FETCH DOCUMENTS -------------------- */
+  const fetchDocuments = async () => {
+    try {
+      const token = await AsyncStorage.getItem('userToken')
+
+      const res = await fetch(
+        `${API_URL}/api/plan-folders/document/${parentFolderId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -75,61 +87,92 @@ console.log(parentFolderId);
         }
       )
 
-      const docJson = await docRes.json()
-      setDocuments(docJson.data || [])
+      const json = await res.json()
+
+      if (json.success) {
+        setDocuments(json.data)
+        return json.data
+      }
+      return []
     } catch (err) {
-      console.log('Fetch folder content error:', err)
+      console.log('Fetch documents error:', err)
+      return []
+    }
+  }
+
+  /* -------------------- LOAD ALL DATA -------------------- */
+  const loadAllData = async () => {
+    try {
+      setLoading(true)
+      const [foldersResult, docsResult] = await Promise.all([
+        fetchFolderContent(),
+        fetchDocuments()
+      ])
+      
+      // Data is now loaded
+      setDataLoaded(true)
+    } catch (error) {
+      console.log('Load all data error:', error)
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
   }
+
+  /* -------------------- ON REFRESH (Pull-to-refresh) -------------------- */
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true)
+    loadAllData()
+  }, [])
 
   useEffect(() => {
-    fetchFolderContent()
+    loadAllData()
   }, [])
-const uploadToCloudinary = async (file) => {
-  try {
-    const timestamp = Math.round(Date.now() / 1000)
-    const signature = await generateSignature(timestamp)
 
-    const isImage = file.mimeType?.startsWith('image')
-    const uploadType = isImage ? 'image' : 'raw' // raw = pdf
+  /* -------------------- UPLOAD TO CLOUDINARY -------------------- */
+  const uploadToCloudinary = async (file) => {
+    try {
+      const timestamp = Math.round(Date.now() / 1000)
+      const signature = await generateSignature(timestamp)
 
-    const formData = new FormData()
-    formData.append('file', {
-      uri: file.uri,
-      name: file.name,
-      type: file.mimeType,
-    })
-    formData.append('timestamp', timestamp.toString())
-    formData.append('signature', signature)
-    formData.append('api_key', CLOUDINARY_CONFIG.apiKey)
+      const isImage = file.mimeType?.startsWith('image')
+      const uploadType = isImage ? 'image' : 'raw'
 
-    const uploadUrl = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/${uploadType}/upload`
+      const formData = new FormData()
+      formData.append('file', {
+        uri: file.uri,
+        name: file.name,
+        type: file.mimeType,
+      })
+      formData.append('timestamp', timestamp.toString())
+      formData.append('signature', signature)
+      formData.append('api_key', CLOUDINARY_CONFIG.apiKey)
 
-    const res = await fetch(uploadUrl, {
-      method: 'POST',
-      body: formData,
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
+      const uploadUrl = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/${uploadType}/upload`
 
-    const data = await res.json()
+      const res = await fetch(uploadUrl, {
+        method: 'POST',
+        body: formData,
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
 
-    if (!res.ok || !data.secure_url) {
-      throw new Error(data.error?.message || 'Cloudinary upload failed')
+      const data = await res.json()
+
+      if (!res.ok || !data.secure_url) {
+        throw new Error(data.error?.message || 'Cloudinary upload failed')
+      }
+
+      return {
+        success: true,
+        url: data.secure_url,
+        publicId: data.public_id,
+        type: uploadType,
+      }
+    } catch (err) {
+      console.log('Cloudinary error:', err)
+      return { success: false, error: err.message }
     }
-
-    return {
-      success: true,
-      url: data.secure_url,
-      publicId: data.public_id,
-      type: uploadType,
-    }
-  } catch (err) {
-    console.log('Cloudinary error:', err)
-    return { success: false, error: err.message }
   }
-}
 
   /* -------------------- OPEN SUBFOLDER -------------------- */
   const openSubFolder = (folder) => {
@@ -144,109 +187,92 @@ const uploadToCloudinary = async (file) => {
   const addDocument = () => {
     setDocModalVisible(true)
   }
+
   const pickFile = async () => {
-  const result = await DocumentPicker.getDocumentAsync({
-    type: ['application/pdf', 'image/*'],
-    copyToCacheDirectory: true,
-  })
-
-  if (result.canceled) return
-
-  const file = result.assets[0]
-  setUploading(true)
-
-  const uploadResult = await uploadToCloudinary(file)
-
-  setUploading(false)
-
-  if (uploadResult.success) {
-    setSelectedFile({
-      name: file.name,
-      url: uploadResult.url,
-      type: uploadResult.type,
+    const result = await DocumentPicker.getDocumentAsync({
+      type: ['application/pdf', 'image/*'],
+      copyToCacheDirectory: true,
     })
-  } else {
-    Alert.alert('Upload Failed', uploadResult.error)
-  }
-}
 
-const fetchDocuments = async () => {
-  try {
-    const token = await AsyncStorage.getItem('userToken')
+    if (result.canceled) return
 
-    const res = await fetch(
-      `${API_URL}/api/plan-folders/document/${parentFolderId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    )
-
-    const json = await res.json()
-
-    if (json.success) {
-      console.log(json.data);
-      setDocuments(json.data)
-    }
-  } catch (err) {
-    console.log('Fetch documents error:', err)
-  }
-}
-useEffect(()=>{
-  fetchDocuments();
-},[])
-
-const submitDocument = async () => {
-  if (!docTitle || !selectedFile?.url) {
-    Alert.alert('Error', 'Document name and upload are required')
-    return
-  }
-
-  try {
+    const file = result.assets[0]
     setUploading(true)
-    const token = await AsyncStorage.getItem('userToken')
 
-    const payload = {
-      documentName: docTitle,
-      imageUrl: selectedFile.url,
-    }
+    const uploadResult = await uploadToCloudinary(file)
 
-    console.log("Sending payload:", payload)
-
-    const res = await fetch(
-      `${API_URL}/api/plan-folders/document/${parentFolderId}`,
-      {
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload), // ✅ VERY IMPORTANT
-      }
-    )
-
-    const json = await res.json()
-
-    if (json.success) {
-      Alert.alert('Success', 'Document added')
-      setDocModalVisible(false)
-      setDocTitle('')
-      setSelectedFile(null)
-      fetchFolderContent()
-    } else {
-      Alert.alert('Error', json.message || 'Failed')
-    }
-  } catch (err) {
-    console.log('Submit document error:', err)
-    Alert.alert('Error', 'Something went wrong')
-  } finally {
     setUploading(false)
+
+    if (uploadResult.success) {
+      setSelectedFile({
+        name: file.name,
+        url: uploadResult.url,
+        type: uploadResult.type,
+      })
+    } else {
+      Alert.alert('Upload Failed', uploadResult.error)
+    }
   }
-}
 
+  const submitDocument = async () => {
+    if (!docTitle || !selectedFile?.url) {
+      Alert.alert('Error', 'Document name and upload are required')
+      return
+    }
 
+    try {
+      setUploading(true)
+      const token = await AsyncStorage.getItem('userToken')
 
+      const payload = {
+        documentName: docTitle,
+        imageUrl: selectedFile.url,
+      }
+
+      const res = await fetch(
+        `${API_URL}/api/plan-folders/document/${parentFolderId}`,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        }
+      )
+
+      const json = await res.json()
+
+      if (json.success) {
+        Alert.alert('Success', 'Document added')
+        setDocModalVisible(false)
+        setDocTitle('')
+        setSelectedFile(null)
+        // Refresh data after adding document
+        loadAllData()
+      } else {
+        Alert.alert('Error', json.message || 'Failed')
+      }
+    } catch (err) {
+      console.log('Submit document error:', err)
+      Alert.alert('Error', 'Something went wrong')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  /* -------------------- RENDER LOADING -------------------- */
+  if (loading) {
+    return (
+      <View className="flex-1 bg-gray-100">
+        <Header title={folderName} showBackButton={true} />
+        <View className="flex-1 justify-center items-center">
+          <ActivityIndicator size="large" color="#2563EB" />
+          <Text className="text-gray-500 mt-4">Loading folder content...</Text>
+        </View>
+      </View>
+    )
+  }
 
   return (
     <View className="flex-1 bg-gray-100">
@@ -255,70 +281,65 @@ const submitDocument = async () => {
       <ScrollView
         className="px-5"
         contentContainerStyle={{ paddingBottom: 120 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#2563EB']}
+            tintColor="#2563EB"
+          />
+        }
       >
-        {loading ? (
-          <ActivityIndicator size="large" className="mt-10" />
-        ) : (
+        {/* Subfolders */}
+        {subFolders.length > 0 && (
           <>
-            {/* Subfolders */}
-            {subFolders.length > 0 && (
-              <>
-                <Text className="text-sm text-gray-500 mt-5 mb-2">
-                  Folders
-                </Text>
-                {subFolders.map((folder) => (
-                  <TouchableOpacity
-                    key={folder._id}
-                    className="flex-row justify-between bg-white rounded-xl px-4 py-4 mb-3"
-                    onPress={() => openSubFolder(folder)}
-                  >
-                    <View className="flex-row items-center gap-3">
-                      <Icon name="folder" size={24} color="#2563EB" />
-                      <Text className="text-base font-semibold">
-                        {folder.name}
-                      </Text>
-                    </View>
-                    <Icon name="chevron-right" size={20} color="#9CA3AF" />
-                  </TouchableOpacity>
-                ))}
-              </>
-            )}
-
-            {/* Documents */}
-            {documents.length > 0 && (
-              <>
-                <Text className="text-sm text-gray-500 mt-6 mb-2">
-                  Documents
-                </Text>
-                {documents.map((doc) => (
-                  <TouchableOpacity
-                    key={doc._id}
-                    onPress={()=>navigation.navigate('viewDocument',{document : doc , folderId:parentFolderId})}
-                    className="flex-row justify-between bg-white rounded-xl px-4 py-4 mb-3"
-                  >
-                    <View className="flex-row items-center gap-3">
-                      <Icon name="file-pdf-box" size={24} color="#EF4444" />
-                      <Text className="text-base font-semibold">
-                        {doc.name}
-                      </Text>
-                    </View>
-                    {/* <Text className="text-sm text-gray-400">
-                      v{doc.versions?.length || 1}
-                    </Text> */}
-                  </TouchableOpacity>
-                ))}
-              </>
-            )}
-
-            {subFolders.length === 0 && documents.length === 0 && (
-              <View className="items-center mt-16">
-                <Icon name="folder-open" size={64} color="#D1D5DB" />
-                <Text className="text-gray-400 mt-4">
-                  This folder is empty
-                </Text>
-              </View>
-            )}
+            <Text className="text-sm text-gray-500 mt-5 mb-2">Folders</Text>
+            {subFolders.map((folder) => (
+              <TouchableOpacity
+                key={folder._id}
+                className="flex-row justify-between bg-white rounded-xl px-4 py-4 mb-3"
+                onPress={() => openSubFolder(folder)}
+              >
+                <View className="flex-row items-center gap-3">
+                  <Icon name="folder" size={24} color="#2563EB" />
+                  <Text className="text-base font-semibold">{folder.name}</Text>
+                </View>
+                <Icon name="chevron-right" size={20} color="#9CA3AF" />
+              </TouchableOpacity>
+            ))}
           </>
+        )}
+
+        {/* Documents */}
+        {documents.length > 0 && (
+          <>
+            <Text className="text-sm text-gray-500 mt-6 mb-2">Documents</Text>
+            {documents.map((doc) => (
+              <TouchableOpacity
+                key={doc._id}
+                onPress={() =>
+                  navigation.navigate('viewDocument', {
+                    document: doc,
+                    folderId: parentFolderId,
+                  })
+                }
+                className="flex-row justify-between bg-white rounded-xl px-4 py-4 mb-3"
+              >
+                <View className="flex-row items-center gap-3">
+                  <Icon name="file-pdf-box" size={24} color="#EF4444" />
+                  <Text className="text-base font-semibold">{doc.name}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </>
+        )}
+
+        {/* Only show empty state AFTER data has been loaded and there's truly no content */}
+        {dataLoaded && subFolders.length === 0 && documents.length === 0 && (
+          <View className="items-center mt-16">
+            <Icon name="folder-open" size={64} color="#D1D5DB" />
+            <Text className="text-gray-400 mt-4">This folder is empty</Text>
+          </View>
         )}
       </ScrollView>
 
@@ -343,17 +364,12 @@ const submitDocument = async () => {
           <Text className="text-white font-semibold">Add Document</Text>
         </TouchableOpacity>
       </View>
-      <Modal
-        visible={docModalVisible}
-        transparent
-        animationType="slide"
-      >
+
+      {/* Document Modal */}
+      <Modal visible={docModalVisible} transparent animationType="slide">
         <View className="flex-1 justify-end bg-black/40">
           <View className="bg-white rounded-t-3xl px-5 py-6">
-
-            <Text className="text-lg font-semibold mb-4">
-              Add Document
-            </Text>
+            <Text className="text-lg font-semibold mb-4">Add Document</Text>
 
             {/* Document Name */}
             <TextInput
@@ -391,19 +407,15 @@ const submitDocument = async () => {
                 {uploading ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text className="text-white font-semibold">
-                    Save
-                  </Text>
+                  <Text className="text-white font-semibold">Save</Text>
                 )}
               </TouchableOpacity>
             </View>
-
           </View>
         </View>
       </Modal>
-
     </View>
   )
 }
 
-export default FolderDetailsScreen
+export default FolderDetailsScreen    

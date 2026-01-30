@@ -29,6 +29,7 @@ import RequestReworkScreen from '../screens/Audit/RequestReworkScreen';
 // Materials
 import MaterialsListScreen from '../screens/Materials/MaterialsListScreen';
 import MaterialDetailScreen from '../screens/Materials/MaterialDetailScreen';
+import CreatePOScreen from '../screens/Materials/CreatePOScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -76,5 +77,6 @@ export const MaterialsStack = () => (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="MaterialsList" component={MaterialsListScreen} />
         <Stack.Screen name="MaterialDetailScreen" component={MaterialDetailScreen} />
+        <Stack.Screen name="CreatePOScreen" component={CreatePOScreen} />
     </Stack.Navigator>
 );

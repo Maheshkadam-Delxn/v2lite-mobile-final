@@ -74,33 +74,33 @@ const OutgoingPaymentModal = ({ visible, onClose, onSave, editingTransaction, pr
 
   // Dropdown data states
   const [vendorNames, setVendorNames] = useState([]);
-   const [modeOptions, setModeOptions] = useState([
-      { name: 'Cash', value: 'cash' },
-      { name: 'Bank Transfer', value: 'bank_transfer' },
-      { name: 'UPI', value: 'upi' },
-      { name: 'Cheque', value: 'cheque' },
-    ]);
-  
-    const [bankOptions, setBankOptions] = useState([
-      { name: 'State Bank of India', value: 'sbi' },
-      { name: 'HDFC Bank', value: 'hdfc' },
-      { name: 'ICICI Bank', value: 'icici' },
-      { name: 'Axis Bank', value: 'axis' },
-    ]);
-  
-    const [costCodeOptions, setCostCodeOptions] = useState([
-      { name: 'MAT-2024-001', value: 'mat001' },
-      { name: 'LAB-2024-002', value: 'lab002' },
-      { name: 'EQP-2024-003', value: 'eqp003' },
-      { name: 'SVC-2024-004', value: 'svc004' },
-    ]);
-  
-    const [categoryOptions, setCategoryOptions] = useState([
-      { name: 'Material Purchase', value: 'material' },
-      { name: 'Labor Charges', value: 'labor' },
-      { name: 'Equipment Rental', value: 'equipment' },
-      { name: 'Service Charges', value: 'service' },
-    ]);
+  const [modeOptions, setModeOptions] = useState([
+    { name: 'Cash', value: 'cash' },
+    { name: 'Bank Transfer', value: 'bank_transfer' },
+    { name: 'UPI', value: 'upi' },
+    { name: 'Cheque', value: 'cheque' },
+  ]);
+
+  const [bankOptions, setBankOptions] = useState([
+    { name: 'State Bank of India', value: 'sbi' },
+    { name: 'HDFC Bank', value: 'hdfc' },
+    { name: 'ICICI Bank', value: 'icici' },
+    { name: 'Axis Bank', value: 'axis' },
+  ]);
+
+  const [costCodeOptions, setCostCodeOptions] = useState([
+    { name: 'MAT-2024-001', value: 'mat001' },
+    { name: 'LAB-2024-002', value: 'lab002' },
+    { name: 'EQP-2024-003', value: 'eqp003' },
+    { name: 'SVC-2024-004', value: 'svc004' },
+  ]);
+
+  const [categoryOptions, setCategoryOptions] = useState([
+    { name: 'Material Purchase', value: 'material' },
+    { name: 'Labor Charges', value: 'labor' },
+    { name: 'Equipment Rental', value: 'equipment' },
+    { name: 'Service Charges', value: 'service' },
+  ]);
 
   // Selected values
   const [selectedValues, setSelectedValues] = useState({
@@ -272,10 +272,13 @@ const OutgoingPaymentModal = ({ visible, onClose, onSave, editingTransaction, pr
 
     const payload = {
       type: 'payment_out',
+      typeLabel: 'Outgoing Payment', // For PDF
       amount: parseFloat(amount),
       description,
       vendorId: selectedValues.vendorId,
+      vendorName: selectedValues.vendorName, // For PDF
       paymentMode: paymentModeMap[selectedValues.mode] || 'cash',
+      paymentModeLabel: selectedValues.mode, // For PDF
       date: selectedDate.toISOString(),
       documents: uploadedDocs,
       bankName: selectedValues.bank,
@@ -285,7 +288,7 @@ const OutgoingPaymentModal = ({ visible, onClose, onSave, editingTransaction, pr
     };
 
     console.log('Outgoing Payment Payload:', payload);
-     onSave(payload);
+    onSave(payload);
   };
 
   return (

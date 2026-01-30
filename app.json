@@ -10,7 +10,9 @@
     "experiments": {
       "tsconfigPaths": true
     },
-    "plugins": [],
+    "plugins": [
+      "expo-asset"
+    ],
     "orientation": "portrait",
     "icon": "./src/assets/icon.png",
     "userInterfaceStyle": "light",
@@ -34,8 +36,9 @@
     },
     "extra": {
       "eas": {
-        "projectId": "8f6d54b8-71ad-4fa6-9b6f-900f6f013f69"
+        "projectId": "31f40c14-6eee-4379-af14-9b1e4e7a802d"
       }
-    }
+    },
+    "owner": "maheshkadam"
   }
 }

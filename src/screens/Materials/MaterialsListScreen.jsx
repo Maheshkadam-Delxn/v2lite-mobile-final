@@ -488,16 +488,16 @@ const MaterialsListScreen = ({ project }) => {
 
     try {
       dataFetchedRef.current = true;
-      
+
       // Load vendors first
       await loadVendors();
-      
+
       // Fetch materials data sequentially
       await fetchMaterials();
       await fetchMaterialRequests();
       await fetchMaterialReceived();
       await fetchMaterialUsed();
-      
+
     } catch (error) {
       console.error('Error fetching all material data:', error);
       dataFetchedRef.current = false;
@@ -626,7 +626,7 @@ const MaterialsListScreen = ({ project }) => {
   const deleteMaterial = useCallback(async (id) => {
     try {
       if (!id) return Alert.alert('Error', 'Invalid material ID');
-      
+
       Alert.alert(
         'Confirm Delete',
         'Are you sure you want to delete this material?',
@@ -715,7 +715,7 @@ const MaterialsListScreen = ({ project }) => {
       setEditMaterialModalVisible(false);
       dataFetchedRef.current = false;
       fetchMaterials(true);
-      
+
     } catch (err) {
       console.error("[Edit Material] ❌ Error:", err);
       Alert.alert("Error", err.message || "Failed to update material");
@@ -784,7 +784,7 @@ const MaterialsListScreen = ({ project }) => {
   // === Show Material Details ===
   const showMaterialDetails = useCallback((item) => {
     const rawMaterial = item.__raw || item;
-    
+
     // Extract all relevant details from the material
     const materialDetails = {
       _id: rawMaterial._id || item._id,
@@ -802,7 +802,7 @@ const MaterialsListScreen = ({ project }) => {
       lastUpdated: rawMaterial.lastUpdated,
       __raw: rawMaterial, // Keep full raw data
     };
-    
+
     setSelectedMaterialDetail(materialDetails);
     setMaterialDetailModalVisible(true);
   }, []);
@@ -995,7 +995,7 @@ const MaterialsListScreen = ({ project }) => {
       Alert.alert('Error', 'Please select a material');
       return;
     }
-    
+
     if (!usedForm.quantity.trim()) {
       Alert.alert('Error', 'Please enter quantity');
       return;
@@ -1042,19 +1042,19 @@ const MaterialsListScreen = ({ project }) => {
       Alert.alert('Error', 'Please select a material');
       return;
     }
-    
+
     if (!purchaseForm.quantity.trim() || !purchaseForm.rate.trim()) {
       Alert.alert('Error', 'Please enter quantity and rate');
       return;
     }
-    
+
     if (!purchaseForm.partyName.trim()) {
       Alert.alert('Error', 'Please enter party name');
       return;
     }
-    
+
     const existingVendor = vendors.find(v => v.name === purchaseForm.partyName);
-    
+
     if (!existingVendor) {
       Alert.alert('Error', 'Selected vendor not found');
       return;
@@ -1106,7 +1106,7 @@ const MaterialsListScreen = ({ project }) => {
       Alert.alert('Error', 'Please enter quantity');
       return;
     }
-    
+
     const selectedMaterialId = selectedMaterials[0];
 
     const requestData = {
@@ -1248,7 +1248,7 @@ const MaterialsListScreen = ({ project }) => {
   const renderRequestItem = useCallback(({ item }) => (
     <TouchableOpacity
       className="mb-2 rounded-xl bg-white p-3"
-      onPress={() => {}}
+      onPress={() => { }}
     >
       <View className="flex-row items-center justify-between">
         <View className="flex-1 flex-row items-center">
@@ -1267,6 +1267,17 @@ const MaterialsListScreen = ({ project }) => {
           </View>
         </View>
       </View>
+
+      {/* Create PO Action */}
+      {item.status !== 'PO Created' && (
+        <TouchableOpacity
+          className="mt-3 bg-blue-600 py-2 rounded-lg items-center flex-row justify-center"
+          onPress={() => navigation.navigate('CreatePOScreen', { requestItem: item })}
+        >
+          <MaterialCommunityIcons name="file-document-edit-outline" size={16} color="white" />
+          <Text className="text-white font-semibold text-xs ml-2">Create Purchase Order</Text>
+        </TouchableOpacity>
+      )}
     </TouchableOpacity>
   ), []);
 
@@ -1443,7 +1454,7 @@ const MaterialsListScreen = ({ project }) => {
           activeOpacity={1}
           className="rounded-t-3xl bg-white"
           style={{ height: '85%' }}
-          onPress={() => {}}
+          onPress={() => { }}
         >
           {/* Drag handle */}
           <View className="items-center pt-3 pb-1">
@@ -1483,7 +1494,7 @@ const MaterialsListScreen = ({ project }) => {
                   {/* Details Grid */}
                   <View className="mb-6">
                     <Text className="text-base font-semibold text-gray-900 mb-4">Basic Information</Text>
-                    
+
                     <View className="bg-gray-50 rounded-xl p-4">
                       <View className="flex-row justify-between mb-3">
                         <Text className="text-sm text-gray-500">Current Stock</Text>
@@ -1491,28 +1502,28 @@ const MaterialsListScreen = ({ project }) => {
                           {selectedMaterialDetail.stock} {selectedMaterialDetail.unit}
                         </Text>
                       </View>
-                      
+
                       <View className="flex-row justify-between mb-3">
                         <Text className="text-sm text-gray-500">Unit</Text>
                         <Text className="text-sm font-semibold text-gray-900">
                           {selectedMaterialDetail.unit || 'N/A'}
                         </Text>
                       </View>
-                      
+
                       <View className="flex-row justify-between mb-3">
                         <Text className="text-sm text-gray-500">GST Rate</Text>
                         <Text className="text-sm font-semibold text-gray-900">
                           {selectedMaterialDetail.gst || 0}%
                         </Text>
                       </View>
-                      
+
                       <View className="flex-row justify-between mb-3">
                         <Text className="text-sm text-gray-500">HSN Code</Text>
                         <Text className="text-sm font-semibold text-gray-900">
                           {selectedMaterialDetail.hsnCode || 'N/A'}
                         </Text>
                       </View>
-                      
+
                       <View className="flex-row justify-between">
                         <Text className="text-sm text-gray-500">Price</Text>
                         <Text className="text-sm font-semibold text-gray-900">
@@ -1525,7 +1536,7 @@ const MaterialsListScreen = ({ project }) => {
                   {/* Stock Information */}
                   <View className="mb-6">
                     <Text className="text-base font-semibold text-gray-900 mb-4">Stock Information</Text>
-                    
+
                     <View className="flex-row mb-4">
                       <View className="flex-1 mr-2 bg-green-50 p-4 rounded-xl">
                         <Text className="text-xs text-gray-500 mb-1">Minimum Stock</Text>
@@ -1533,7 +1544,7 @@ const MaterialsListScreen = ({ project }) => {
                           {selectedMaterialDetail.minStock || 0} {selectedMaterialDetail.unit}
                         </Text>
                       </View>
-                      
+
                       <View className="flex-1 ml-2 bg-blue-50 p-4 rounded-xl">
                         <Text className="text-xs text-gray-500 mb-1">Current Stock</Text>
                         <Text className="text-lg font-bold text-blue-700">
@@ -1541,39 +1552,37 @@ const MaterialsListScreen = ({ project }) => {
                         </Text>
                       </View>
                     </View>
-                    
+
                     {/* Stock Status Indicator */}
                     <View className="bg-gray-50 p-4 rounded-xl">
                       <View className="flex-row items-center justify-between mb-2">
                         <Text className="text-sm text-gray-700">Stock Status</Text>
-                        <View className={`px-3 py-1 rounded-full ${
-                          selectedMaterialDetail.stock <= (selectedMaterialDetail.minStock || 0) 
-                            ? 'bg-red-100' 
+                        <View className={`px-3 py-1 rounded-full ${selectedMaterialDetail.stock <= (selectedMaterialDetail.minStock || 0)
+                            ? 'bg-red-100'
                             : selectedMaterialDetail.stock <= (selectedMaterialDetail.minStock || 0) * 2
-                            ? 'bg-yellow-100'
-                            : 'bg-green-100'
-                        }`}>
-                          <Text className={`text-xs font-medium ${
-                            selectedMaterialDetail.stock <= (selectedMaterialDetail.minStock || 0) 
-                              ? 'text-red-700' 
-                              : selectedMaterialDetail.stock <= (selectedMaterialDetail.minStock || 0) * 2
-                              ? 'text-yellow-700'
-                              : 'text-green-700'
+                              ? 'bg-yellow-100'
+                              : 'bg-green-100'
                           }`}>
-                            {selectedMaterialDetail.stock <= (selectedMaterialDetail.minStock || 0) 
-                              ? 'Low Stock' 
+                          <Text className={`text-xs font-medium ${selectedMaterialDetail.stock <= (selectedMaterialDetail.minStock || 0)
+                              ? 'text-red-700'
                               : selectedMaterialDetail.stock <= (selectedMaterialDetail.minStock || 0) * 2
-                              ? 'Moderate'
-                              : 'Good'
+                                ? 'text-yellow-700'
+                                : 'text-green-700'
+                            }`}>
+                            {selectedMaterialDetail.stock <= (selectedMaterialDetail.minStock || 0)
+                              ? 'Low Stock'
+                              : selectedMaterialDetail.stock <= (selectedMaterialDetail.minStock || 0) * 2
+                                ? 'Moderate'
+                                : 'Good'
                             }
                           </Text>
                         </View>
                       </View>
-                      
+
                       {/* Stock Progress Bar */}
                       <View className="mt-3">
                         <View className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                          <View 
+                          <View
                             className="h-full bg-green-500"
                             style={{
                               width: `${Math.min(
@@ -1597,7 +1606,7 @@ const MaterialsListScreen = ({ project }) => {
                   {selectedMaterialDetail.__raw && (
                     <View className="mb-6">
                       <Text className="text-base font-semibold text-gray-900 mb-4">Recent Activity</Text>
-                      
+
                       <View className="bg-gray-50 rounded-xl p-4">
                         {selectedMaterialDetail.__raw.lastUpdated && (
                           <View className="flex-row justify-between mb-3">
@@ -1607,7 +1616,7 @@ const MaterialsListScreen = ({ project }) => {
                             </Text>
                           </View>
                         )}
-                        
+
                         {selectedMaterialDetail.__raw.createdAt && (
                           <View className="flex-row justify-between mb-3">
                             <Text className="text-sm text-gray-500">Created On</Text>
@@ -1616,7 +1625,7 @@ const MaterialsListScreen = ({ project }) => {
                             </Text>
                           </View>
                         )}
-                        
+
                         <View className="flex-row justify-between">
                           <Text className="text-sm text-gray-500">Material ID</Text>
                           <Text className="text-sm font-semibold text-gray-900">
@@ -1670,7 +1679,7 @@ const MaterialsListScreen = ({ project }) => {
                 <Ionicons name="create-outline" size={18} color="white" />
                 <Text className="text-base font-semibold text-white ml-2">Edit</Text>
               </TouchableOpacity>
-              
+
               <TouchableOpacity
                 className="flex-1 flex-row items-center justify-center rounded-xl bg-gray-100 py-3.5"
                 onPress={() => setMaterialDetailModalVisible(false)}
@@ -1924,7 +1933,7 @@ const MaterialsListScreen = ({ project }) => {
               <View className="flex-1 px-5">
                 <View className="mb-4 flex-row items-center justify-between">
                   <Text className="text-lg font-bold text-gray-900">Material Request</Text>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     onPress={() => {
                       if (apiLoadingStates.saving) return;
                       setRequestMaterialModalVisible(false);
@@ -1946,7 +1955,7 @@ const MaterialsListScreen = ({ project }) => {
                     <Text className="mb-1 text-sm font-medium text-gray-700">Date</Text>
                     <View className="flex-row items-center justify-between">
                       <Text className="text-base text-gray-900">{requestForm.date}</Text>
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         onPress={() => setShowDatePicker(true)}
                         disabled={apiLoadingStates.saving}
                       >
@@ -2585,8 +2594,8 @@ const MaterialsListScreen = ({ project }) => {
             {showMaterialListInPurchase ? (
               <View className="flex-1 px-5">
                 <View className="flex-row items-center justify-between mb-4">
-                  <TouchableOpacity 
-                    onPress={() => setShowMaterialListInPurchase(false)} 
+                  <TouchableOpacity
+                    onPress={() => setShowMaterialListInPurchase(false)}
                     className="p-2"
                     disabled={apiLoadingStates.saving}
                   >
@@ -2639,8 +2648,8 @@ const MaterialsListScreen = ({ project }) => {
                   ListEmptyComponent={
                     <View className="py-8 items-center">
                       <Text className="text-gray-500">No materials found</Text>
-                      <TouchableOpacity 
-                        onPress={() => fetchMaterials(true)} 
+                      <TouchableOpacity
+                        onPress={() => fetchMaterials(true)}
                         className="mt-2 px-4 py-2 bg-blue-100 rounded-lg"
                         disabled={apiLoadingStates.saving}
                       >
@@ -2677,7 +2686,7 @@ const MaterialsListScreen = ({ project }) => {
                     <Text className="mb-1 text-sm font-medium text-gray-700">Date</Text>
                     <View className="flex-row items-center justify-between">
                       <Text className="text-base text-gray-900">{formatDate(purchaseDate)}</Text>
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         onPress={() => setShowPurchaseDatePicker(true)}
                         disabled={apiLoadingStates.saving}
                       >
@@ -2710,7 +2719,7 @@ const MaterialsListScreen = ({ project }) => {
                         }}
                         editable={!apiLoadingStates.saving}
                       />
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         onPress={() => setShowPartyDropdown(!showPartyDropdown)}
                         disabled={apiLoadingStates.saving}
                       >
@@ -2729,8 +2738,8 @@ const MaterialsListScreen = ({ project }) => {
                     <View className="mb-4">
                       <View className="flex-row items-center justify-between mb-2">
                         <Text className="text-sm font-medium text-gray-700">Material</Text>
-                        <TouchableOpacity 
-                          onPress={() => setShowMaterialListInPurchase(true)} 
+                        <TouchableOpacity
+                          onPress={() => setShowMaterialListInPurchase(true)}
                           className="p-1"
                           disabled={apiLoadingStates.saving}
                         >
@@ -2931,8 +2940,8 @@ const MaterialsListScreen = ({ project }) => {
             {showMaterialListInReceived ? (
               <View className="flex-1 px-5">
                 <View className="flex-row items-center justify-between mb-4">
-                  <TouchableOpacity 
-                    onPress={() => setShowMaterialListInReceived(false)} 
+                  <TouchableOpacity
+                    onPress={() => setShowMaterialListInReceived(false)}
                     className="p-2"
                     disabled={apiLoadingStates.saving}
                   >
@@ -2985,8 +2994,8 @@ const MaterialsListScreen = ({ project }) => {
                   ListEmptyComponent={
                     <View className="py-8 items-center">
                       <Text className="text-gray-500">No materials found</Text>
-                      <TouchableOpacity 
-                        onPress={() => fetchMaterials(true)} 
+                      <TouchableOpacity
+                        onPress={() => fetchMaterials(true)}
                         className="mt-2 px-4 py-2 bg-blue-100 rounded-lg"
                         disabled={apiLoadingStates.saving}
                       >
@@ -3023,7 +3032,7 @@ const MaterialsListScreen = ({ project }) => {
                     <Text className="mb-1 text-sm font-medium text-gray-700">Date</Text>
                     <View className="flex-row items-center justify-between">
                       <Text className="text-base text-gray-900">{formatDate(date)}</Text>
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         onPress={() => setShowDatePicker(true)}
                         disabled={apiLoadingStates.saving}
                       >
@@ -3056,7 +3065,7 @@ const MaterialsListScreen = ({ project }) => {
                         }}
                         editable={!apiLoadingStates.saving}
                       />
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         onPress={() => setShowPartyDropdown(!showPartyDropdown)}
                         disabled={apiLoadingStates.saving}
                       >
@@ -3076,8 +3085,8 @@ const MaterialsListScreen = ({ project }) => {
                     <View className="mb-4">
                       <View className="flex-row items-center justify-between mb-2">
                         <Text className="text-sm font-medium text-gray-700">Material</Text>
-                        <TouchableOpacity 
-                          onPress={() => setShowMaterialListInReceived(true)} 
+                        <TouchableOpacity
+                          onPress={() => setShowMaterialListInReceived(true)}
                           className="p-1"
                           disabled={apiLoadingStates.saving}
                         >
@@ -3341,7 +3350,7 @@ const MaterialsListScreen = ({ project }) => {
               <View className="flex-1 px-5">
                 <View className="mb-4 flex-row items-center justify-between">
                   <Text className="text-lg font-bold text-gray-900">Material Used</Text>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     onPress={() => {
                       if (apiLoadingStates.saving) return;
                       setUsedModalVisible(false);
@@ -3363,7 +3372,7 @@ const MaterialsListScreen = ({ project }) => {
                     <Text className="mb-1 text-sm font-medium text-gray-700">Date</Text>
                     <View className="flex-row items-center justify-between">
                       <Text className="text-base text-gray-900">{usedForm.date}</Text>
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         onPress={() => setShowDatePicker(true)}
                         disabled={apiLoadingStates.saving}
                       >
