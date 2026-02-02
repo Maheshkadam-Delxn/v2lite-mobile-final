@@ -19,7 +19,7 @@ import PlansScreen from '@/screens/Design-Management/PlansScreen';
 import MaterialsListScreen from '@/screens/Materials/MaterialsListScreen';
 import AttendanceScreen from '@/screens/Attendance/AttendaceScreen';
 import RiskCategoriesScreen from '@/screens/Issues/RiskCategoriesScreen';
-
+import Member from '@/screens/Members/members';
 import FilesScreen from '@/screens/Document-Management/FileScreen';
 import PlansTab from '@/screens/plans/planscreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -29,6 +29,7 @@ import SnagListScreen from '@/screens/Snags/SnagListScreen';
 import WorkProgressListScreen from '@/screens/WorkProgress/WorkProgressListScreen';
 import AuditDashboard from '@/screens/Audit/AuditDashboard';
 import HandoverScreen from '@/screens/Handover/HandoverScreen';
+import DocumentsTab from '@/components/Project/DocumentTab';
 const API_URL = `${process.env.BASE_API_URL}`;
 
 const ViewDetailsScreen = () => {
@@ -86,6 +87,7 @@ const ViewDetailsScreen = () => {
   const tabs = [
     { id: 'Details', label: 'Details' },
     { id: 'Sites', label: 'Sites' },
+    {id:"Documents",label:"Documents"},
     { id: 'BOQ', label: 'BOQ' },
     { id: 'Plans', label: 'Plans' },
     { id: 'Task', label: 'Task' },
@@ -99,6 +101,7 @@ const ViewDetailsScreen = () => {
     { id: 'Snags', label: 'Snags' },
     { id: 'Progress', label: 'Progress' },
     { id: 'Audit', label: 'Audit' },
+    { id: 'Members', label: 'Members' },
     { id: 'Handover', label: 'Handover' },
   ];
 
@@ -202,10 +205,14 @@ const ViewDetailsScreen = () => {
 
         return <ApproveSurveyScreen project={siteData} />;
 
-      //   case 'Files':
-      // // Render the PaymentsTransaction component inline
-      // // return <PlansScreen project={project} />;
-      // return <PlansTab/>
+        case 'Documents':
+     
+ 
+        return <DocumentsTab
+          projectId={project._id}
+          documents={project.projectDocuments} />;
+ 
+   
 
       case 'BOQ':
         return <BOQListScreen navigation={navigation} project={project} />;
@@ -232,7 +239,8 @@ const ViewDetailsScreen = () => {
 
       case 'Audit':
         return <AuditDashboard showHeader={false} projectId={project._id} />;
-
+case 'Members':
+return <Member project={project} />;
       case 'Handover':
         return <HandoverScreen project={project} />;
 
