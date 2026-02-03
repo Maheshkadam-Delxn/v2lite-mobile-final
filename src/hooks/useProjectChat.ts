@@ -76,9 +76,29 @@ export const useProjectChat = (projectId: string | null) => {
         const handleNewMessage = (msg: any) => {
             console.log(`[${new Date().toISOString()}] 📩 Received Message:`, JSON.stringify(msg));
             setMessages((prev) => {
-                if (prev.some(m => m.id === msg.id || (m._id && m._id === msg._id))) {
+                // Check if this message already exists by ID
+                if (prev.some(m => (m.id && m.id === msg.id) || (m._id && m._id === msg._id))) {
                     return prev;
                 }
+
+                // If it's a message from "me", check if we have a matching optimistic message
+                // We match by content and type, within a 10-second window
+                const now = new Date().getTime();
+                const matchedOptimisticIdx = prev.findIndex(m =>
+                    m.optimistic &&
+                    m.content === msg.content &&
+                    m.type === msg.type &&
+                    (now - new Date(m.createdAt).getTime() < 10000)
+                );
+
+                if (matchedOptimisticIdx !== -1) {
+                    // Replace the optimistic message with the real one
+                    console.log(`[${new Date().toISOString()}] 🔄 Replacing optimistic message with real message`);
+                    const newMessages = [...prev];
+                    newMessages[matchedOptimisticIdx] = msg;
+                    return newMessages.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+                }
+
                 return [...prev, msg].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
             });
         };
@@ -141,9 +161,6 @@ export const useProjectChat = (projectId: string | null) => {
 
         // Emit standard event
         socket.emit('send_message', payload);
-
-        // Also emit 'message' as a fallback if the server listens for it
-        socket.emit('message', payload);
 
     }, [socket, projectId]);
 
