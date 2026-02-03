@@ -940,7 +940,9 @@ export default function ClientMainPage({ navigation }) {
                   <Text style={styles.chatBtnText}>Chat</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.viewDetailsBtn}>
+                <TouchableOpacity style={styles.viewDetailsBtn}
+                onPress={() => navigation.navigate('Overview', { project: item })}
+                >
                   <Text style={styles.viewDetailsText}>View Details</Text>
                   <Ionicons name="chevron-forward" size={14} color="#2563EB" />
                 </TouchableOpacity>
