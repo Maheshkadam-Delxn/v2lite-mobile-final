@@ -28,6 +28,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as DocumentPicker from "expo-document-picker";
 import * as Crypto from "expo-crypto";
 import Header from "@/components/Header";
+import { useProjectChat } from '@/hooks/useProjectChat';
 
 const CLIENT_API_URL = `${process.env.BASE_API_URL}/api/projects`;
 const CHAT_API_URL = `${process.env.BASE_API_URL}/api/chat/next`;
@@ -142,9 +143,13 @@ export default function ClientMainPage({ navigation }) {
   // Admin Chat State
   const [adminChatModalVisible, setAdminChatModalVisible] = useState(false);
   const [selectedProjectForChat, setSelectedProjectForChat] = useState(null);
-  const [adminChatMessages, setAdminChatMessages] = useState([]);
   const [adminChatInput, setAdminChatInput] = useState("");
   const [suggestions, setSuggestions] = useState([]);
+  const [currentUserId, setCurrentUserId] = useState(null);
+
+  // Hook for Real-time Chat
+  // Hook for Real-time Chat
+  // const { messages: chatMessages, sendMessage: sendProjectMessage } = useProjectChat(selectedProjectForChat?._id || selectedProjectForChat?.id);
 
   // Project Tabs Data for Suggestions
   const PROJECT_TABS = [
@@ -184,18 +189,15 @@ export default function ClientMainPage({ navigation }) {
   };
 
   const openAdminChat = (project) => {
-    setSelectedProjectForChat(project);
-    setAdminChatModalVisible(true);
-    // TODO: Fetch existing chat history for this project
-    setAdminChatMessages([
-      { id: 1, text: `Hello! How can we help you with ${project.name}?`, isUser: false, time: 'Now' }
-    ]);
+    navigation.navigate('ProjectChatScreen', {
+      project: project,
+      currentUserId: currentUserId
+    });
   };
 
   const closeAdminChat = () => {
     setAdminChatModalVisible(false);
     setSelectedProjectForChat(null);
-    setAdminChatMessages([]);
     setSuggestions([]);
   };
 
@@ -225,16 +227,9 @@ export default function ClientMainPage({ navigation }) {
       return;
     }
 
-    const newMessage = {
-      id: Date.now(),
-      text: adminChatInput,
-      isUser: true,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-    setAdminChatMessages(prev => [...prev, newMessage]);
+    sendProjectMessage(adminChatInput);
     setAdminChatInput(prev => ""); // Clear input
     setSuggestions([]);
-    // TODO: Send to backend
   };
 
   // ===============================
@@ -254,6 +249,9 @@ export default function ClientMainPage({ navigation }) {
 
       const stored = await AsyncStorage.getItem("userData");
       const user = stored ? JSON.parse(stored) : null;
+      if (user) {
+        setCurrentUserId(user.id || user._id);
+      }
 
       if (!user) {
         console.log("⚠ No user found in storage");
@@ -941,7 +939,7 @@ export default function ClientMainPage({ navigation }) {
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.viewDetailsBtn}
-                onPress={() => navigation.navigate('Overview', { project: item })}
+                  onPress={() => navigation.navigate('Overview', { project: item })}
                 >
                   <Text style={styles.viewDetailsText}>View Details</Text>
                   <Ionicons name="chevron-forward" size={14} color="#2563EB" />
@@ -1268,107 +1266,7 @@ export default function ClientMainPage({ navigation }) {
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* Admin Chat Modal */}
-      <Modal
-        visible={adminChatModalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={closeAdminChat}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.adminChatContainer}>
-
-            {/* Header */}
-            <View style={styles.adminChatHeader}>
-              <View>
-                <Text style={styles.adminChatTitle}>Chat with Admin</Text>
-                <Text style={styles.adminChatSubtitle}>
-                  {selectedProjectForChat?.name || "Project Support"}
-                </Text>
-              </View>
-              <TouchableOpacity onPress={closeAdminChat} style={styles.closeButtonLight}>
-                <Ionicons name="close" size={24} color="#111827" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Messages */}
-            <ScrollView
-              style={styles.chatList}
-              contentContainerStyle={{ padding: 16 }}
-              keyboardShouldPersistTaps="handled"
-            >
-              {adminChatMessages.map((msg, idx) => (
-                <View
-                  key={msg.id || idx}
-                  style={[
-                    styles.chatBubbleContainer,
-                    msg.isUser ? styles.chatBubbleRight : styles.chatBubbleLeft
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.chatBubble,
-                      msg.isUser ? styles.chatBubbleUser : styles.chatBubbleAdmin
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.chatBubbleText,
-                        msg.isUser ? styles.chatTextUser : styles.chatTextAdmin
-                      ]}
-                    >
-                      {msg.text}
-                    </Text>
-                  </View>
-                  <Text style={styles.chatTime}>{msg.time}</Text>
-                </View>
-              ))}
-            </ScrollView>
-
-            {/* 🔥 Keyboard-safe Input */}
-            <KeyboardAvoidingView
-              behavior={Platform.OS === "ios" ? "padding" : "padding"}
-              keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
-            >
-              {/* Suggestions List */}
-              {suggestions.length > 0 && (
-                <View style={styles.suggestionsContainer}>
-                  <ScrollView keyboardShouldPersistTaps="handled">
-                    {suggestions.map((item) => (
-                      <TouchableOpacity
-                        key={item.id}
-                        style={styles.suggestionItem}
-                        onPress={() => handleSuggestionSelect(item)}
-                      >
-                        <View style={styles.suggestionIcon}>
-                          <Ionicons name={item.icon} size={18} color="#0066FF" />
-                        </View>
-                        <View>
-                          <Text style={styles.suggestionLabel}>{item.label}</Text>
-                          <Text style={styles.suggestionKeyword}>@{item.keyword}</Text>
-                        </View>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                </View>
-              )}
-
-              <View style={styles.adminChatInputContainer}>
-                <TextInput
-                  style={styles.adminChatInput}
-                  placeholder="Type a message... (Type @ for options)"
-                  value={adminChatInput}
-                  onChangeText={handleAdminChatInput}
-                />
-                <TouchableOpacity onPress={sendAdminChatMessage} style={styles.adminChatSendBtn}>
-                  <Ionicons name="send" size={20} color="#fff" />
-                </TouchableOpacity>
-              </View>
-            </KeyboardAvoidingView>
-
-          </View>
-        </View>
-      </Modal>
+      {/* Admin Chat Modal Removed - Moved to ProjectChatScreen */}
 
 
     </GestureHandlerRootView >
