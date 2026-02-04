@@ -29,26 +29,48 @@ const ProjectChatScreen = ({ route, navigation }) => {
     const [suggestions, setSuggestions] = useState([]);
     const [isUploading, setIsUploading] = useState(false);
 
-    // Project Tabs Data for Suggestions
-    const PROJECT_TABS = [
+    // Role-specific Project Tabs Data
+    const ADMIN_TABS = [
         { id: 'Details', label: 'Details', keyword: 'details', icon: 'information-circle-outline' },
         { id: 'Sites', label: 'Sites', keyword: 'sites', icon: 'map-outline' },
-        { id: 'BOQ', label: 'BOQ', keyword: 'boq', icon: 'document-text-outline' },
+        { id: 'Documents', label: 'Documents', keyword: 'documents', icon: 'document-text-outline' },
+        { id: 'BOQ', label: 'BOQ', keyword: 'boq', icon: 'list-outline' },
         { id: 'Plans', label: 'Plans', keyword: 'plans', icon: 'layers-outline' },
         { id: 'Task', label: 'Tasks', keyword: 'tasks', icon: 'checkbox-outline' },
         { id: 'Transaction', label: 'Transactions', keyword: 'transactions', icon: 'cash-outline' },
         { id: 'Material', label: 'Materials', keyword: 'materials', icon: 'cube-outline' },
         { id: 'Attendance', label: 'Attendance', keyword: 'attendance', icon: 'people-outline' },
-        { id: 'Issues', label: 'Issues', keyword: 'issues', icon: 'alert-circle-outline' },
-        { id: 'Reports', label: 'Reports', keyword: 'reports', icon: 'bar-chart-outline' },
+        { id: 'Escalation Matrix', label: 'Escalation', keyword: 'escalation', icon: 'alert-circle-outline' },
+        { id: 'Snags', label: 'Snags', keyword: 'snags', icon: 'bug-outline' },
+        { id: 'Progress', label: 'Progress', keyword: 'progress', icon: 'trending-up-outline' },
+        { id: 'Audit', label: 'Audit', keyword: 'audit', icon: 'analytics-outline' },
+        { id: 'Members', label: 'Members', keyword: 'members', icon: 'person-add-outline' },
+        { id: 'Handover', label: 'Handover', keyword: 'handover', icon: 'key-outline' },
     ];
+
+    const CLIENT_TABS = [
+        { id: 'Overview', label: 'Overview', keyword: 'overview', icon: 'grid-outline' },
+        { id: 'Progress', label: 'Progress', keyword: 'progress', icon: 'trending-up-outline' },
+        { id: 'BOQ', label: 'BOQ', keyword: 'boq', icon: 'document-text-outline' },
+        { id: 'Plans', label: 'Plans', keyword: 'plans', icon: 'folder-outline' },
+        { id: 'Transaction', label: 'Payments', keyword: 'payments', icon: 'card-outline' },
+        { id: 'Survey', label: 'Survey', keyword: 'survey', icon: 'clipboard-outline' },
+        { id: 'Snags', label: 'Snags', keyword: 'snags', icon: 'alert-circle-outline' },
+        { id: 'Issues', label: 'Issues', keyword: 'issues', icon: 'warning-outline' },
+        { id: 'Handover', label: 'Handover', icon: 'key-outline' },
+    ];
+
+    const getAvailableTabs = () => {
+        return userRole === 'client' ? CLIENT_TABS : ADMIN_TABS;
+    };
 
     const handleInputChange = (text) => {
         setChatInput(text);
         const match = text.match(/@(\w*)$/);
         if (match) {
             const query = match[1].toLowerCase();
-            setSuggestions(PROJECT_TABS.filter(tab =>
+            const availableTabs = getAvailableTabs();
+            setSuggestions(availableTabs.filter(tab =>
                 tab.keyword.toLowerCase().startsWith(query) ||
                 tab.label.toLowerCase().startsWith(query)
             ));
@@ -58,8 +80,10 @@ const ProjectChatScreen = ({ route, navigation }) => {
     };
 
     const handleSuggestionSelect = (tab) => {
-        const newText = chatInput.replace(/@(\w*)$/, `@${tab.keyword} `);
-        setChatInput(newText);
+        const words = chatInput.split(' ');
+        words.pop(); // Remove the typed @query
+        const newInput = [...words, `@${tab.keyword} `].join(' ');
+        setChatInput(newInput);
         setSuggestions([]);
     };
 
@@ -118,7 +142,8 @@ const ProjectChatScreen = ({ route, navigation }) => {
         if (!chatInput.trim()) return;
 
         const lowerInput = chatInput.toLowerCase();
-        const targetTab = PROJECT_TABS.find(tab => lowerInput.includes(`@${tab.keyword}`));
+        const availableTabs = getAvailableTabs();
+        const targetTab = availableTabs.find(tab => lowerInput.includes(`@${tab.keyword}`));
 
         if (targetTab) {
             if (!userRole) {
@@ -142,26 +167,17 @@ const ProjectChatScreen = ({ route, navigation }) => {
                     }
                 });
             } else {
-                // For admins/managers, navigate to ViewDetails in ProjectStack
-                // Try direct navigation first as it's often supported if names are unique
-                try {
-                    navigation.navigate("ViewDetails", {
-                        project: project.raw || project,
-                        initialTab: targetTab.id
-                    });
-                } catch (e) {
-                    // Fallback to nested navigation
-                    navigation.navigate('MainApp', {
-                        screen: 'Projects',
+                // For admins/managers, navigate to ViewDetails via explicit nested path
+                navigation.navigate('MainApp', {
+                    screen: 'Projects',
+                    params: {
+                        screen: 'ViewDetails',
                         params: {
-                            screen: 'ViewDetails',
-                            params: {
-                                project: project.raw || project,
-                                initialTab: targetTab.id
-                            }
+                            project: project.raw || project,
+                            initialTab: targetTab.id
                         }
-                    });
-                }
+                    }
+                });
             }
             return;
         }

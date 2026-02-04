@@ -140,10 +140,16 @@ const ProjectsListScreen = () => {
       setAdminChatInput("");
       setSuggestions([]);
 
-      // Navigate to Project Details -> Target Tab
-      navigation.navigate("ViewDetails", {
-        project: selectedProjectForChat.raw || selectedProjectForChat,
-        initialTab: targetTab.id
+      // Navigate to Project Details -> Target Tab via explicit nested path
+      navigation.navigate('MainApp', {
+        screen: 'Projects',
+        params: {
+          screen: 'ViewDetails',
+          params: {
+            project: selectedProjectForChat.raw || selectedProjectForChat,
+            initialTab: targetTab.id
+          }
+        }
       });
       return;
     }
