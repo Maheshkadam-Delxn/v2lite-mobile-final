@@ -9,81 +9,28 @@ import {
     Platform,
     StyleSheet,
     SafeAreaView,
-    Keyboard,
-    Dimensions,
     Image,
     ActivityIndicator,
     Alert,
-    Linking
+    Keyboard
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
-import * as Crypto from 'expo-crypto';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useProjectChat } from '@/hooks/useProjectChat';
+import { uploadToCloudinary } from '@/utils/cloudinary';
 import Header from '@/components/Header';
-
-const CLOUDINARY_CONFIG = {
-    cloudName: 'dmlsgazvr',
-    apiKey: '353369352647425',
-    apiSecret: '8qcz7uAdftDVFNd6IqaDOytg_HI',
-};
-
-const isFileUrl = (text) => {
-    if (!text || typeof text !== 'string') return false;
-    const urlPattern = /^(http|https):\/\/[^ "]+$/;
-    if (!urlPattern.test(text)) return false;
-    const isCloudinary = text.includes('cloudinary.com');
-    const hasFileExt = /\.(pdf|jpg|jpeg|png|gif|webp|doc|docx)$/i.test(text);
-    return isCloudinary || hasFileExt;
-};
-
-const FileAttachment = ({ url, isUser }) => {
-    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(url) || url.includes('cloudinary.com');
-
-    if (isImage) {
-        return (
-            <TouchableOpacity onPress={() => Linking.openURL(url)}>
-                <Image
-                    source={{ uri: url }}
-                    style={{
-                        width: 200,
-                        height: 150,
-                        borderRadius: 12,
-                        marginTop: 4,
-                        backgroundColor: '#eee'
-                    }}
-                    resizeMode="cover"
-                />
-            </TouchableOpacity>
-        );
-    }
-
-    return (
-        <TouchableOpacity
-            onPress={() => Linking.openURL(url)}
-            style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 8,
-                paddingVertical: 4,
-            }}
-        >
-            <Ionicons name="document-text" size={20} color={isUser ? '#fff' : '#0066FF'} />
-            <Text style={{ color: isUser ? '#fff' : '#0066FF', fontSize: 13, fontWeight: '600' }}>View Attachment</Text>
-        </TouchableOpacity>
-    );
-};
 
 const ProjectChatScreen = ({ route, navigation }) => {
     const { project, currentUserId: initialUserId } = route.params || {};
     const [currentUserId, setCurrentUserId] = useState(initialUserId);
-    const [userRole, setUserRole] = useState('admin'); // Default to admin
+    const [userRole, setUserRole] = useState(null);
     const [chatInput, setChatInput] = useState("");
     const [suggestions, setSuggestions] = useState([]);
     const [isUploading, setIsUploading] = useState(false);
 
-    const ADMIN_TABS = [
+    // Project Tabs Data for Suggestions
+    const PROJECT_TABS = [
         { id: 'Details', label: 'Details', keyword: 'details', icon: 'information-circle-outline' },
         { id: 'Sites', label: 'Sites', keyword: 'sites', icon: 'map-outline' },
         { id: 'BOQ', label: 'BOQ', keyword: 'boq', icon: 'document-text-outline' },
@@ -96,59 +43,12 @@ const ProjectChatScreen = ({ route, navigation }) => {
         { id: 'Reports', label: 'Reports', keyword: 'reports', icon: 'bar-chart-outline' },
     ];
 
-    const CLIENT_TABS = [
-        { id: 'Overview', label: 'Overview', keyword: 'overview', icon: 'home-outline' },
-        { id: 'Issues', label: 'Issues', keyword: 'issues', icon: 'alert-circle-outline' },
-        { id: 'BOQ', label: 'BOQ', keyword: 'boq', icon: 'document-text-outline' },
-        { id: 'Plans', label: 'Plans', keyword: 'plans', icon: 'layers-outline' },
-        { id: 'ProjectTimeline', label: 'Timeline', keyword: 'timeline', icon: 'calendar-outline' },
-        { id: 'BudgetTracker', label: 'Budget', keyword: 'budget', icon: 'cash-outline' },
-        { id: 'QualityChecks', label: 'Quality', keyword: 'quality', icon: 'checkmark-circle-outline' },
-        { id: 'ChangeRequests', label: 'Changes', keyword: 'changes', icon: 'swap-horizontal-outline' },
-        { id: 'MaterialStatus', label: 'Materials', keyword: 'materials', icon: 'cube-outline' },
-    ];
-
-    const currentTabs = userRole === 'client' ? CLIENT_TABS : ADMIN_TABS;
-
-    // Use the hook - ensure we pass the correct ID
-    const projectId = project?._id || project?.id;
-    const { messages, sendMessage, isConnected } = useProjectChat(projectId);
-
-    // Scroll to bottom helper
-    const scrollViewRef = useRef(null);
-
-    useEffect(() => {
-        const fetchUser = async () => {
-            const stored = await AsyncStorage.getItem("userData");
-            const user = stored ? JSON.parse(stored) : null;
-            if (user) {
-                if (!currentUserId) setCurrentUserId(user.id || user._id);
-                setUserRole(user.role || 'admin');
-            }
-        };
-        fetchUser();
-
-        // Keyboard listeners for auto-scroll
-        const showSubscription = Keyboard.addListener(
-            Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-            () => {
-                setTimeout(() => {
-                    scrollViewRef.current?.scrollToEnd({ animated: true });
-                }, 100);
-            }
-        );
-
-        return () => {
-            showSubscription.remove();
-        };
-    }, [currentUserId]);
-
     const handleInputChange = (text) => {
         setChatInput(text);
         const match = text.match(/@(\w*)$/);
         if (match) {
             const query = match[1].toLowerCase();
-            setSuggestions(currentTabs.filter(tab =>
+            setSuggestions(PROJECT_TABS.filter(tab =>
                 tab.keyword.toLowerCase().startsWith(query) ||
                 tab.label.toLowerCase().startsWith(query)
             ));
@@ -163,74 +63,106 @@ const ProjectChatScreen = ({ route, navigation }) => {
         setSuggestions([]);
     };
 
-    const generateSignature = async (timestamp) => {
-        const stringToSign = `timestamp=${timestamp}${CLOUDINARY_CONFIG.apiSecret}`;
-        return await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA1, stringToSign);
-    };
+    const projectId = project?._id || project?.id;
+    const { messages, sendMessage, isConnected } = useProjectChat(projectId);
+    const scrollViewRef = useRef(null);
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-    const handleImagePick = async () => {
-        try {
-            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-            if (status !== 'granted') {
-                Alert.alert("Permission Required", "Please allow gallery access to send photos.");
-                return;
-            }
-
-            const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                quality: 0.7,
-            });
-
-            if (result.canceled) return;
-
-            const file = result.assets[0];
-            setIsUploading(true);
-
-            const timestamp = Math.round(Date.now() / 1000);
-            const signature = await generateSignature(timestamp);
-
-            const formData = new FormData();
-            formData.append('file', {
-                uri: file.uri,
-                type: file.mimeType || 'image/jpeg',
-                name: file.fileName || 'chat_image.jpg',
-            });
-            formData.append('timestamp', timestamp.toString());
-            formData.append('signature', signature);
-            formData.append('api_key', CLOUDINARY_CONFIG.apiKey);
-
-            const uploadUrl = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/auto/upload`;
-            const res = await fetch(uploadUrl, {
-                method: 'POST',
-                body: formData,
-                headers: { 'Content-Type': 'multipart/form-data' },
-            });
-
-            const data = await res.json();
-            if (data.secure_url) {
-                sendMessage(data.secure_url);
-            } else {
-                Alert.alert("Upload Failed", "Could not send image.");
-            }
-        } catch (err) {
-            console.error("Image pick error:", err);
-            Alert.alert("Error", "Failed to upload image.");
-        } finally {
-            setIsUploading(false);
+    // Initial scroll to bottom when messages load
+    useEffect(() => {
+        if (messages.length > 0 && isInitialLoad) {
+            // Give layout a moment to settle
+            setTimeout(() => {
+                scrollViewRef.current?.scrollToEnd({ animated: false });
+                setIsInitialLoad(false);
+            }, 500);
         }
-    };
+    }, [messages, isInitialLoad]);
+
+    // Scroll to bottom on new messages
+    useEffect(() => {
+        if (!isInitialLoad) {
+            scrollViewRef.current?.scrollToEnd({ animated: true });
+        }
+    }, [messages.length]);
+
+    // Handle scroll when keyboard opens
+    useEffect(() => {
+        const keyboardDidShowListener = Keyboard.addListener(
+            'keyboardDidShow',
+            () => {
+                scrollViewRef.current?.scrollToEnd({ animated: true });
+            }
+        );
+
+        return () => {
+            keyboardDidShowListener.remove();
+        };
+    }, []);
+
+    useEffect(() => {
+        const fetchUser = async () => {
+            if (!currentUserId || !userRole) {
+                const stored = await AsyncStorage.getItem("userData");
+                const user = stored ? JSON.parse(stored) : null;
+                if (user) {
+                    setCurrentUserId(user.id || user._id);
+                    setUserRole(user.role);
+                }
+            }
+        };
+        fetchUser();
+    }, [currentUserId, userRole]);
 
     const handleSend = () => {
         if (!chatInput.trim()) return;
+
         const lowerInput = chatInput.toLowerCase();
-        const targetTab = currentTabs.find(tab => lowerInput.includes(`@${tab.keyword}`));
+        const targetTab = PROJECT_TABS.find(tab => lowerInput.includes(`@${tab.keyword}`));
 
         if (targetTab) {
-            const targetScreen = userRole === 'client' ? 'Overview' : 'ViewDetails';
-            navigation.navigate(targetScreen, {
-                project: project.raw || project,
-                initialTab: targetTab.id
-            });
+            if (!userRole) {
+                Alert.alert("Loading", "Please wait a moment while we identify your role...");
+                return;
+            }
+
+            if (userRole === 'client') {
+                // For clients, navigate to Overview in ClientStack
+                navigation.navigate('ClientApp', {
+                    screen: 'ClientTabs',
+                    params: {
+                        screen: 'ClientHome',
+                        params: {
+                            screen: 'Overview',
+                            params: {
+                                project: project,
+                                initialTab: targetTab.id
+                            }
+                        }
+                    }
+                });
+            } else {
+                // For admins/managers, navigate to ViewDetails in ProjectStack
+                // Try direct navigation first as it's often supported if names are unique
+                try {
+                    navigation.navigate("ViewDetails", {
+                        project: project.raw || project,
+                        initialTab: targetTab.id
+                    });
+                } catch (e) {
+                    // Fallback to nested navigation
+                    navigation.navigate('MainApp', {
+                        screen: 'Projects',
+                        params: {
+                            screen: 'ViewDetails',
+                            params: {
+                                project: project.raw || project,
+                                initialTab: targetTab.id
+                            }
+                        }
+                    });
+                }
+            }
             return;
         }
 
@@ -238,51 +170,78 @@ const ProjectChatScreen = ({ route, navigation }) => {
         setChatInput("");
     };
 
+    const handleImagePick = async () => {
+        const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (permissionResult.granted === false) {
+            Alert.alert("Permission Required", "You need to allow access to your photos to send images.");
+            return;
+        }
+
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            quality: 0.8,
+        });
+
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+            uploadImage(result.assets[0]);
+        }
+    };
+
+    const uploadImage = async (asset) => {
+        setIsUploading(true);
+        try {
+            const uploadResult = await uploadToCloudinary(asset);
+            if (uploadResult.success) {
+                sendMessage(uploadResult.url, 'image');
+            } else {
+                Alert.alert("Upload Failed", uploadResult.error || "Could not upload image.");
+            }
+        } catch (error) {
+            Alert.alert("Error", "Something went wrong during upload.");
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container} edges={['bottom']}>
+            {/* Professional Shared Header */}
             <Header
                 title={project?.name || "Project Chat"}
                 showBackButton={true}
-                titleStyle={styles.headerTitleOverride}
+                rightIcon="ellipsis-vertical"
+                onRightIconPress={() => { }}
+                titleStyle={{ fontSize: 20 }}
             />
 
+            {/* Connection Status Sub-header */}
+            <View style={styles.statusBanner}>
+                <View style={[styles.statusDot, { backgroundColor: isConnected ? '#10B981' : '#F59E0B' }]} />
+                <Text style={styles.statusText}>{isConnected ? 'Connected' : 'Connecting...'}</Text>
+            </View>
+
+            {/* KeyboardAvoidingView wrapping the main content to fix layout issues */}
             <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
-                keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
                 style={{ flex: 1 }}
+                keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
             >
-                <View style={styles.statusIndicator}>
-                    <View style={[styles.statusDot, { backgroundColor: isConnected ? '#10B981' : '#F59E0B' }]} />
-                    <Text style={styles.statusText}>{isConnected ? 'Active Now' : 'Connecting...'}</Text>
-                    {isUploading && (
-                        <View style={{ marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                            <ActivityIndicator size="small" color="#0066FF" />
-                            <Text style={styles.uploadingText}>Sending picture...</Text>
-                        </View>
-                    )}
-                </View>
-
+                {/* Messages List */}
                 <ScrollView
                     ref={scrollViewRef}
                     style={styles.chatList}
-                    contentContainerStyle={styles.chatListContent}
+                    contentContainerStyle={{ padding: 16, paddingBottom: 24 }}
                     onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
                     keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
                 >
-                    {messages.length === 0 && !isUploading && (
-                        <View style={styles.emptyState}>
-                            <View style={styles.welcomeIcon}>
-                                <Ionicons name="chatbubbles-outline" size={32} color="#0066FF" />
-                            </View>
-                            <Text style={styles.emptyText}>Start a conversation about</Text>
-                            <Text style={styles.emptyProjectName}>{project?.name}</Text>
-                        </View>
-                    )}
-
                     {messages.map((msg, idx) => {
-                        const isMe = msg.sender === currentUserId || msg.sender === 'me' || msg.optimistic;
+                        const msgSender = (typeof msg.sender === 'object' ? msg.sender?._id || msg.sender?.id : msg.sender)
+                            || (typeof msg.senderId === 'object' ? msg.senderId?._id || msg.senderId?.id : msg.senderId);
+
+                        const isMe = msgSender === currentUserId || msg.sender === 'me' || msg.optimistic;
                         const time = msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-                        const hasAttachment = isFileUrl(msg.content);
 
                         return (
                             <View
@@ -292,203 +251,183 @@ const ProjectChatScreen = ({ route, navigation }) => {
                                     isMe ? styles.chatBubbleRight : styles.chatBubbleLeft
                                 ]}
                             >
-                                {!isMe && (
-                                    <View style={styles.senderAvatar}>
-                                        <Text style={styles.avatarText}>{(msg.senderName || 'U').charAt(0)}</Text>
-                                    </View>
-                                )}
-                                <View style={{ flexShrink: 1 }}>
-                                    <View
-                                        style={[
-                                            styles.chatBubble,
-                                            isMe ? styles.chatBubbleUser : styles.chatBubbleOther
-                                        ]}
-                                    >
-                                        {hasAttachment ? (
-                                            <FileAttachment url={msg.content} isUser={isMe} />
-                                        ) : (
-                                            <Text
-                                                style={[
-                                                    styles.chatBubbleText,
-                                                    isMe ? styles.chatTextUser : styles.chatTextOther
-                                                ]}
-                                            >
-                                                {msg.content}
-                                            </Text>
-                                        )}
-                                    </View>
-                                    <Text style={[styles.chatTime, isMe && { textAlign: 'right' }]}>{time}</Text>
+                                <View
+                                    style={[
+                                        styles.chatBubble,
+                                        isMe ? styles.chatBubbleUser : styles.chatBubbleOther,
+                                        msg.type === 'image' && styles.imageBubble
+                                    ]}
+                                >
+                                    {msg.type === 'image' || (typeof msg.content === 'string' && msg.content.includes('cloudinary.com')) ? (
+                                        <View>
+                                            <Image
+                                                source={{ uri: msg.content }}
+                                                style={styles.messageImage}
+                                                resizeMode="cover"
+                                            />
+                                            {msg.optimistic && (
+                                                <View style={styles.imageOverlay}>
+                                                    <ActivityIndicator color="#fff" />
+                                                </View>
+                                            )}
+                                        </View>
+                                    ) : (
+                                        <Text
+                                            style={[
+                                                styles.chatBubbleText,
+                                                isMe ? styles.chatTextUser : styles.chatTextOther
+                                            ]}
+                                        >
+                                            {msg.content}
+                                        </Text>
+                                    )}
                                 </View>
+                                <Text style={styles.chatTime}>{time}</Text>
                             </View>
                         );
                     })}
                 </ScrollView>
 
-                {suggestions.length > 0 && (
-                    <View style={styles.suggestionsContainer}>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.suggestionsScroll}>
-                            {suggestions.map((item) => (
-                                <TouchableOpacity
-                                    key={item.id}
-                                    style={styles.suggestionChip}
-                                    onPress={() => handleSuggestionSelect(item)}
-                                >
-                                    <Ionicons name={item.icon} size={16} color="#0066FF" />
-                                    <Text style={styles.suggestionChipText}>{item.label}</Text>
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
-                    </View>
-                )}
+                {/* Input Area */}
+                <View>
+                    {/* Suggestions List */}
+                    {suggestions.length > 0 && (
+                        <View style={styles.suggestionsContainer}>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.suggestionsScroll}>
+                                {suggestions.map((item) => (
+                                    <TouchableOpacity
+                                        key={item.id}
+                                        style={styles.suggestionItem}
+                                        onPress={() => handleSuggestionSelect(item)}
+                                    >
+                                        <View style={styles.suggestionIcon}>
+                                            <Ionicons name={item.icon} size={14} color="#0066FF" />
+                                        </View>
+                                        <Text style={styles.suggestionLabel}>{item.label}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
+                        </View>
+                    )}
 
-                <View style={styles.inputWrapper}>
-                    <View style={styles.inputOuterContainer}>
-                        <TouchableOpacity style={styles.attachBtn} onPress={handleImagePick}>
-                            <Ionicons name="add-circle-outline" size={24} color="#6B7280" />
-                        </TouchableOpacity>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Type message..."
-                            placeholderTextColor="#9CA3AF"
-                            value={chatInput}
-                            onChangeText={handleInputChange}
-                            multiline
-                            maxHeight={100}
-                        />
-                        <TouchableOpacity
-                            onPress={handleSend}
-                            style={[styles.sendBtn, !chatInput.trim() && styles.sendBtnDisabled]}
-                            disabled={!chatInput.trim()}
-                        >
-                            <Ionicons name="send" size={18} color="#fff" />
-                        </TouchableOpacity>
+                    <View style={styles.inputWrapper}>
+                        <View style={styles.inputContainer}>
+                            <TouchableOpacity
+                                onPress={handleImagePick}
+                                style={styles.attachBtn}
+                                disabled={isUploading}
+                            >
+                                {isUploading ? (
+                                    <ActivityIndicator size="small" color="#6B7280" />
+                                ) : (
+                                    <Ionicons name="add-circle-outline" size={24} color="#6B7280" />
+                                )}
+                            </TouchableOpacity>
+
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Type a message..."
+                                value={chatInput}
+                                onChangeText={handleInputChange}
+                                multiline
+                                maxHeight={100}
+                                returnKeyType="default"
+                                blurOnSubmit={false}
+                            />
+
+                            <TouchableOpacity
+                                onPress={handleSend}
+                                style={[styles.sendBtn, !chatInput.trim() && styles.sendBtnDisabled]}
+                                disabled={!chatInput.trim()}
+                            >
+                                <Ionicons name="send" size={18} color="#fff" />
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
             </KeyboardAvoidingView>
-        </View>
+        </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F9FAFB',
+        backgroundColor: '#FFFFFF',
     },
-    headerTitleOverride: {
-        fontSize: 18,
-        fontFamily: 'Urbanist-Bold',
-        color: '#FFFFFF',
-    },
-    statusIndicator: {
+    statusBanner: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        backgroundColor: '#FFFFFF',
+        justifyContent: 'center',
+        paddingVertical: 4,
+        backgroundColor: '#F9FAFB',
         borderBottomWidth: 1,
         borderBottomColor: '#F3F4F6',
     },
     statusDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        marginRight: 8,
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        marginRight: 6,
     },
     statusText: {
-        fontSize: 12,
-        fontFamily: 'Urbanist-Medium',
+        fontSize: 11,
         color: '#6B7280',
-    },
-    uploadingText: {
-        fontSize: 12,
-        fontFamily: 'Urbanist-SemiBold',
-        color: '#0066FF',
+        fontWeight: '500',
     },
     chatList: {
         flex: 1,
     },
-    chatListContent: {
-        padding: 20,
-        paddingBottom: 40,
-    },
-    emptyState: {
-        alignItems: 'center',
-        marginTop: 60,
-        paddingHorizontal: 40,
-    },
-    welcomeIcon: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
-        backgroundColor: '#EFF6FF',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 16,
-    },
-    emptyText: {
-        fontSize: 14,
-        fontFamily: 'Urbanist-Medium',
-        color: '#9CA3AF',
-        textAlign: 'center',
-    },
-    emptyProjectName: {
-        fontSize: 16,
-        fontFamily: 'Urbanist-Bold',
-        color: '#111827',
-        textAlign: 'center',
-        marginTop: 4,
-    },
     chatBubbleContainer: {
-        marginBottom: 20,
-        flexDirection: 'row',
-        alignItems: 'flex-end',
+        marginBottom: 16,
+        maxWidth: '80%',
     },
     chatBubbleRight: {
         alignSelf: 'flex-end',
-        flexDirection: 'row-reverse', // Reverse for right-aligned avatar if needed, but here it's only for other
+        alignItems: 'flex-end',
     },
     chatBubbleLeft: {
         alignSelf: 'flex-start',
+        alignItems: 'flex-start',
     },
-    senderAvatar: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: '#E5E7EB',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 8,
-    },
-    avatarText: {
-        fontSize: 12,
-        fontFamily: 'Urbanist-Bold',
-        color: '#6B7280',
+    senderName: {
+        fontSize: 11,
+        color: '#9CA3AF',
+        marginBottom: 4,
+        marginLeft: 4,
     },
     chatBubble: {
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        borderRadius: 20,
-        maxWidth: '100%',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 1,
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+        borderRadius: 18,
     },
     chatBubbleUser: {
         backgroundColor: '#0066FF',
-        borderBottomRightRadius: 4,
+        borderBottomRightRadius: 2,
     },
     chatBubbleOther: {
-        backgroundColor: '#FFFFFF',
-        borderBottomLeftRadius: 4,
-        borderWidth: 1,
-        borderColor: '#F3F4F6',
+        backgroundColor: '#F3F4F6',
+        borderBottomLeftRadius: 2,
+    },
+    imageBubble: {
+        padding: 0,
+        overflow: 'hidden',
+        borderRadius: 12,
+    },
+    messageImage: {
+        width: 220,
+        height: 180,
+        borderRadius: 12,
+    },
+    imageOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     chatBubbleText: {
         fontSize: 15,
-        fontFamily: 'Urbanist-Regular',
-        lineHeight: 22,
+        lineHeight: 20,
     },
     chatTextUser: {
         color: '#FFFFFF',
@@ -498,76 +437,70 @@ const styles = StyleSheet.create({
     },
     chatTime: {
         fontSize: 10,
-        fontFamily: 'Urbanist-Medium',
         color: '#9CA3AF',
         marginTop: 4,
         marginHorizontal: 4,
     },
     suggestionsContainer: {
-        backgroundColor: '#FFFFFF',
-        paddingVertical: 12,
+        backgroundColor: '#fff',
+        paddingVertical: 8,
         borderTopWidth: 1,
         borderTopColor: '#F3F4F6',
     },
     suggestionsScroll: {
         paddingHorizontal: 16,
-        gap: 8,
     },
-    suggestionChip: {
+    suggestionItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#EFF6FF',
-        paddingHorizontal: 14,
-        paddingVertical: 8,
+        backgroundColor: '#F3F4F6',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
         borderRadius: 20,
+        marginRight: 8,
         borderWidth: 1,
-        borderColor: '#DBEAFE',
-        gap: 6,
+        borderColor: '#E5E7EB',
     },
-    suggestionChipText: {
-        fontSize: 13,
-        fontFamily: 'Urbanist-SemiBold',
-        color: '#0066FF',
+    suggestionIcon: {
+        marginRight: 4,
+    },
+    suggestionLabel: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#4B5563',
     },
     inputWrapper: {
-        backgroundColor: '#FFFFFF',
         paddingHorizontal: 16,
-        paddingBottom: Platform.OS === 'ios' ? 24 : 16,
-        paddingTop: 8,
+        paddingVertical: 12,
+        backgroundColor: '#fff',
         borderTopWidth: 1,
         borderTopColor: '#F3F4F6',
     },
-    inputOuterContainer: {
+    inputContainer: {
         flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#FFFFFF', // White background for a cleaner look
-        borderRadius: 28,
-        paddingHorizontal: 12,
-        paddingVertical: 4,
+        alignItems: 'flex-end',
+        backgroundColor: '#F9FAFB',
+        borderRadius: 24,
+        paddingHorizontal: 8,
+        paddingVertical: 6,
         borderWidth: 1,
-        borderColor: '#E5E7EB', // Subtle light gray border
+        borderColor: '#E5E7EB',
+    },
+    attachBtn: {
+        padding: 8,
     },
     input: {
         flex: 1,
-        fontFamily: 'Urbanist-Medium',
+        paddingHorizontal: 8,
+        paddingVertical: 8,
         fontSize: 15,
         color: '#111827',
-        paddingHorizontal: 8,
-        paddingVertical: Platform.OS === 'ios' ? 12 : 8,
-        maxHeight: 120,
+        maxHeight: 100,
     },
-    attachBtn: {
+    sendBtn: {
         width: 36,
         height: 36,
         borderRadius: 18,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 4,
-    },
-    sendBtn: {
-        width: 42,
-        height: 42,
-        borderRadius: 21,
         backgroundColor: '#0066FF',
         justifyContent: 'center',
         alignItems: 'center',
@@ -575,11 +508,6 @@ const styles = StyleSheet.create({
     },
     sendBtnDisabled: {
         backgroundColor: '#E5E7EB',
-        shadowOpacity: 0,
-        elevation: 0,
-    },
-    keyboardAvoidingView: {
-        width: '100%',
     },
 });
 

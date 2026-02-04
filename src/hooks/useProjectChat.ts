@@ -74,31 +74,35 @@ export const useProjectChat = (projectId: string | null) => {
 
         // 3. Listen for Incoming Messages
         const handleNewMessage = (msg: any) => {
-            console.log(`[${new Date().toISOString()}] 📩 Received Message:`, JSON.stringify(msg));
+            console.log(`[${new Date().toISOString()}] 📩 Incoming Message Data:`, JSON.stringify(msg));
+
             setMessages((prev) => {
-                // Check if this message already exists by ID
-                if (prev.some(m => (m.id && m.id === msg.id) || (m._id && m._id === msg._id))) {
+                const newId = msg._id || msg.id;
+                const msgSender = (typeof msg.sender === 'object' ? msg.sender?._id || msg.sender?.id : msg.sender)
+                    || (typeof msg.senderId === 'object' ? msg.senderId?._id || msg.senderId?.id : msg.senderId);
+
+                // Check for duplicates (existing server message with same ID)
+                if (newId && prev.some(m => (m._id === newId || m.id === newId) && !m.optimistic)) {
+                    console.log(`[${new Date().toISOString()}] ⏭️ Skipping duplicate server message: ${newId}`);
                     return prev;
                 }
 
-                // If it's a message from "me", check if we have a matching optimistic message
-                // We match by content and type, within a 10-second window
-                const now = new Date().getTime();
-                const matchedOptimisticIdx = prev.findIndex(m =>
+                // Identify if this official message matches any optimistic message we already have
+                const optimisticMatchIndex = prev.findIndex(m =>
                     m.optimistic &&
                     m.content === msg.content &&
-                    m.type === msg.type &&
-                    (now - new Date(m.createdAt).getTime() < 10000)
+                    (m.sender === msgSender || m.senderId === msgSender)
                 );
 
-                if (matchedOptimisticIdx !== -1) {
-                    // Replace the optimistic message with the real one
-                    console.log(`[${new Date().toISOString()}] 🔄 Replacing optimistic message with real message`);
-                    const newMessages = [...prev];
-                    newMessages[matchedOptimisticIdx] = msg;
-                    return newMessages.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+                if (optimisticMatchIndex !== -1) {
+                    console.log(`[${new Date().toISOString()}] 🔄 Replacing optimistic message with official one`);
+                    const updated = [...prev];
+                    updated[optimisticMatchIndex] = msg;
+                    return updated.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
                 }
 
+                // If it's a completely new message (not an optimistic match and not a duplicate server message)
+                console.log(`[${new Date().toISOString()}] ✅ Adding new message to state`);
                 return [...prev, msg].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
             });
         };
@@ -161,6 +165,9 @@ export const useProjectChat = (projectId: string | null) => {
 
         // Emit standard event
         socket.emit('send_message', payload);
+
+        // Also emit 'message' as a fallback if the server listens for it
+        socket.emit('message', payload);
 
     }, [socket, projectId]);
 

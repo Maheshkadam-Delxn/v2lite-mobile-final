@@ -1,4 +1,3 @@
-
 import {
   View,
   Text,
@@ -16,6 +15,7 @@ import {
   Platform,
   Dimensions,
   Linking,
+  useWindowDimensions,
 } from "react-native";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -28,11 +28,10 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as DocumentPicker from "expo-document-picker";
 import * as Crypto from "expo-crypto";
 import Header from "@/components/Header";
-import { useProjectChat } from '@/hooks/useProjectChat';
 
 const CLIENT_API_URL = `${process.env.BASE_API_URL}/api/projects`;
 const CHAT_API_URL = `${process.env.BASE_API_URL}/api/chat/next`;
-const { width } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const CLOUDINARY_CONFIG = {
   cloudName: 'dmlsgazvr',
@@ -114,6 +113,27 @@ const FileAttachment = ({ url, isUser }) => {
 };
 
 export default function ClientMainPage({ navigation }) {
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const isSmallScreen = windowWidth < 375;
+  const isLargeScreen = windowWidth > 768;
+  
+  // Responsive calculations
+  const responsiveWidth = (value) => {
+    const scale = windowWidth / 375; // Base width (iPhone 12)
+    return value * Math.min(scale, 1.5); // Cap scaling for tablets
+  };
+
+  const responsiveHeight = (value) => {
+    const scale = windowHeight / 812; // Base height (iPhone 12)
+    return value * Math.min(scale, 1.5);
+  };
+
+  const responsiveFont = (size) => {
+    const scale = windowWidth / 375;
+    const newSize = size * scale;
+    return Math.max(newSize, size * 0.9); // Minimum 90% of original size
+  };
+
   const [dataList, setDataList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -128,7 +148,7 @@ export default function ClientMainPage({ navigation }) {
   const [showSubmitButton, setShowSubmitButton] = useState(false);
   const [proposalData, setProposalData] = useState(null);
 
-  const slideAnim = useRef(new Animated.Value(300)).current;
+  const slideAnim = useRef(new Animated.Value(windowHeight)).current;
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const scrollViewRef = useRef(null);
 
@@ -140,14 +160,90 @@ export default function ClientMainPage({ navigation }) {
     { id: 2, icon: "business-outline", text: "Commercial", color: "#10B981" },
   ];
 
-  // No longer needed: Admin Chat State moved to ProjectChatScreen
+  // Admin Chat State
+  const [adminChatModalVisible, setAdminChatModalVisible] = useState(false);
+  const [selectedProjectForChat, setSelectedProjectForChat] = useState(null);
+  const [adminChatInput, setAdminChatInput] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
   const [currentUserId, setCurrentUserId] = useState(null);
+
+  // Project Tabs Data for Suggestions
+  const PROJECT_TABS = [
+    { id: 'Overview', label: 'Overview', keyword: 'overview', icon: 'home-outline' },
+    { id: 'Issues', label: 'Issues', keyword: 'issues', icon: 'alert-circle-outline' },
+    { id: 'BOQ', label: 'BOQ', keyword: 'boq', icon: 'document-text-outline' },
+    { id: 'Plans', label: 'Plans', keyword: 'plans', icon: 'layers-outline' },
+    { id: 'ProjectTimeline', label: 'Timeline', keyword: 'timeline', icon: 'calendar-outline' },
+    { id: 'BudgetTracker', label: 'Budget', keyword: 'budget', icon: 'cash-outline' },
+    { id: 'QualityChecks', label: 'Quality', keyword: 'quality', icon: 'checkmark-circle-outline' },
+    { id: 'ChangeRequests', label: 'Changes', keyword: 'changes', icon: 'swap-horizontal-outline' },
+    { id: 'MaterialStatus', label: 'Materials', keyword: 'materials', icon: 'cube-outline' },
+  ];
+
+  const handleAdminChatInput = (text) => {
+    setAdminChatInput(text);
+
+    // Check if user is typing a keyword starting with @
+    const match = text.match(/@(\w*)$/);
+    if (match) {
+      const query = match[1].toLowerCase();
+      const filtered = PROJECT_TABS.filter(tab =>
+        tab.keyword.toLowerCase().startsWith(query) ||
+        tab.label.toLowerCase().startsWith(query)
+      );
+      setSuggestions(filtered);
+    } else {
+      setSuggestions([]);
+    }
+  };
+
+  const handleSuggestionSelect = (tab) => {
+    // Replace the @query with the full @keyword
+    const newText = adminChatInput.replace(/@(\w*)$/, `@${tab.keyword} `);
+    setAdminChatInput(newText);
+    setSuggestions([]);
+  };
 
   const openAdminChat = (project) => {
     navigation.navigate('ProjectChatScreen', {
       project: project,
       currentUserId: currentUserId
     });
+  };
+
+  const closeAdminChat = () => {
+    setAdminChatModalVisible(false);
+    setSelectedProjectForChat(null);
+    setSuggestions([]);
+  };
+
+  const sendAdminChatMessage = () => {
+    if (!adminChatInput.trim()) return;
+
+    const lowerInput = adminChatInput.toLowerCase();
+
+    // generalized Navigation Logic using PROJECT_TABS
+    const targetTab = PROJECT_TABS.find(tab => lowerInput.includes(`@${tab.keyword}`));
+
+    if (targetTab) {
+      console.log(`Keyword @${targetTab.keyword} detected! Navigating to ${targetTab.label}...`);
+
+      // Close the modal
+      setAdminChatModalVisible(false);
+      setSelectedProjectForChat(null);
+      setAdminChatInput("");
+      setSuggestions([]);
+
+      // Navigate to Project Overview -> Target Tab
+      navigation.navigate("Overview", {
+        project: selectedProjectForChat,
+        initialTab: targetTab.id
+      });
+      return;
+    }
+
+    setAdminChatInput(prev => ""); // Clear input
+    setSuggestions([]);
   };
 
   // ===============================
@@ -232,14 +328,21 @@ export default function ClientMainPage({ navigation }) {
     ]);
   };
 
-  const renderRightActions = (progress, dragX, item) => (
-    <View style={styles.deleteAction}>
-      <TouchableOpacity style={styles.deleteBtn} onPress={() => confirmDelete(item)}>
-        <Ionicons name="trash-outline" size={24} color="#fff" />
-        <Text style={styles.deleteText}>Delete</Text>
-      </TouchableOpacity>
-    </View>
-  );
+  const renderRightActions = (progress, dragX, item) => {
+    const trans = progress.interpolate({
+      inputRange: [0, 1],
+      outputRange: [responsiveWidth(100), 0],
+    });
+
+    return (
+      <Animated.View style={[styles.deleteAction, { transform: [{ translateX: trans }] }]}>
+        <TouchableOpacity style={styles.deleteButton} onPress={() => confirmDelete(item)}>
+          <Ionicons name="trash-outline" size={24} color="white" />
+          <Text style={styles.deleteText}>Delete</Text>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
 
   // ===============================
   // Navigation
@@ -270,6 +373,8 @@ export default function ClientMainPage({ navigation }) {
         return { bg: "#FEF3C7", dot: "#F59E0B", text: "#D97706" };
       case "on hold":
         return { bg: "#FEE2E2", dot: "#EF4444", text: "#DC2626" };
+      case "proposal under approval":
+        return { bg: "#F5F3FF", dot: "#8B5CF6", text: "#7C3AED" };
       default:
         return { bg: "#F3F4F6", dot: "#6B7280", text: "#4B5563" };
     }
@@ -308,7 +413,7 @@ export default function ClientMainPage({ navigation }) {
   const closeAIModal = () => {
     Animated.parallel([
       Animated.timing(slideAnim, {
-        toValue: 300,
+        toValue: windowHeight,
         duration: 250,
         useNativeDriver: true,
       }),
@@ -471,7 +576,6 @@ export default function ClientMainPage({ navigation }) {
 
       if (response.ok) {
         Alert.alert("Success", "Proposal submitted successfully!");
-        //navigation.navigate("ViewCustomerProposal", { payload: data });
         navigation.navigate("ClientTabs");
       } else {
         Alert.alert("Error", data.message || "Something went wrong.");
@@ -599,6 +703,29 @@ export default function ClientMainPage({ navigation }) {
 
   const handleQuickAction = (actionText) => {
     sendMessage(actionText);
+  };
+
+  // ===============================
+  // Calculate Progress based on Status
+  // ===============================
+  const getProgressValue = (status) => {
+    const statusLower = (status || "").toLowerCase();
+    switch (statusLower) {
+      case "completed":
+        return 100;
+      case "in progress":
+        return 65;
+      case "active":
+        return 50;
+      case "pending":
+        return 30;
+      case "proposal under approval":
+        return 20;
+      case "on hold":
+        return 10;
+      default:
+        return 40;
+    }
   };
 
   // ===============================
@@ -756,13 +883,14 @@ export default function ClientMainPage({ navigation }) {
   };
 
   // ===============================
-  // Card Component
+  // Responsive Premium Card Component
   // ===============================
   const Card = ({ item, index }) => {
     const statusColors = getStatusColor(item.status);
+    const progress = getProgressValue(item.status);
 
     return (
-      <View style={{ marginBottom: 20 }}>
+      <View style={{ marginBottom: responsiveHeight(16) }}>
         <Swipeable
           ref={(ref) => ref && openSwipeRefs.current.set(item._id, ref)}
           renderRightActions={(progress, dragX) =>
@@ -773,70 +901,162 @@ export default function ClientMainPage({ navigation }) {
               if (id !== item._id) ref?.close();
             });
           }}
-          containerStyle={{ overflow: 'visible' }} // Allow shadow to show if outside
         >
           <TouchableOpacity
-            style={styles.card}
+            style={[
+              styles.enhancedCard,
+              { 
+                padding: responsiveHeight(isSmallScreen ? 16 : 20),
+                borderRadius: responsiveWidth(isSmallScreen ? 16 : 20),
+              }
+            ]}
             activeOpacity={0.9}
             onPress={() => navigation.navigate('Overview', { project: item })}
           >
-            {/* Top Row: Type & Status */}
-            <View style={styles.cardTopRow}>
-              <View style={styles.projectTypeBadge}>
-                <Text style={styles.projectTypeText}>
-                  {item.projectType?.projectTypeName || item.category || "General"}
-                </Text>
-              </View>
-              <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
-                <View style={[styles.statusDot, { backgroundColor: statusColors.dot }]} />
-                <Text style={[styles.statusText, { color: statusColors.text }]}>
-                  {item.status || "Active"}
-                </Text>
-              </View>
-            </View>
-
-            {/* Main Content */}
-            <View style={styles.cardContent}>
-              <View style={styles.projectIconContainer}>
+            {/* Card Header with Image and Basic Info */}
+            <View style={styles.cardHeader}>
+              <View style={[
+                styles.imageContainer,
+                { 
+                  width: responsiveWidth(isSmallScreen ? 50 : 60),
+                  height: responsiveWidth(isSmallScreen ? 50 : 60),
+                  marginRight: responsiveWidth(isSmallScreen ? 12 : 16),
+                }
+              ]}>
                 {item.projectImage ? (
                   <Image
                     source={{ uri: item.projectImage }}
                     style={styles.projectImage}
                     resizeMode="cover"
                   />
+                ) : item.projectType?.image ? (
+                  <Image
+                    source={{ uri: item.projectType.image }}
+                    style={styles.projectImage}
+                    resizeMode="cover"
+                  />
                 ) : (
-                  <LinearGradient
-                    colors={['#EFF6FF', '#DBEAFE']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.projectIconGradient}
-                  >
-                    <Ionicons name="business" size={24} color="#2563EB" />
-                  </LinearGradient>
+                  <View style={styles.imagePlaceholder}>
+                    <LinearGradient
+                      colors={['#EFF6FF', '#DBEAFE']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.projectIconGradient}
+                    >
+                      <Ionicons 
+                        name={item.category?.includes('Residential') ? 'home' : 
+                              item.category?.includes('Commercial') ? 'business' : 
+                              item.projectType?.projectTypeName?.includes('Residential') ? 'home' :
+                              item.projectType?.projectTypeName?.includes('Commercial') ? 'business' : 
+                              'construct'} 
+                        size={responsiveWidth(isSmallScreen ? 24 : 28)} 
+                        color="#2563EB" 
+                      />
+                    </LinearGradient>
+                  </View>
                 )}
               </View>
-
-              <View style={styles.cardMainInfo}>
-                <Text style={styles.projectName} numberOfLines={1}>
-                  {item.name || "Untitled Project"}
-                </Text>
+              
+              <View style={styles.headerInfo}>
+                <View style={styles.titleRow}>
+                  <Text style={[
+                    styles.projectName,
+                    { fontSize: responsiveFont(isSmallScreen ? 16 : 18) }
+                  ]} numberOfLines={2}>
+                    {item.name || "Untitled Project"}
+                  </Text>
+                  
+                  {/* Top Right Chat Button */}
+                  <TouchableOpacity
+                    style={styles.headerChatBtn}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      openAdminChat(item);
+                    }}
+                  >
+                    <Ionicons name="chatbubble-ellipses-outline" size={responsiveWidth(20)} color="#0066FF" />
+                  </TouchableOpacity>
+                </View>
+                
                 <View style={styles.locationRow}>
-                  <Ionicons name="location-outline" size={14} color="#6B7280" />
-                  <Text style={styles.locationText} numberOfLines={1}>
+                  <Ionicons name="location-outline" size={responsiveWidth(14)} color="#6B7280" />
+                  <Text style={[
+                    styles.locationText,
+                    { fontSize: responsiveFont(isSmallScreen ? 13 : 14) }
+                  ]} numberOfLines={1}>
                     {item.location || "No location set"}
                   </Text>
                 </View>
+                
+                <View style={styles.projectTypeRow}>
+                  <View style={styles.projectTypeBadge}>
+                    <Ionicons 
+                      name={item.category?.includes('Residential') ? 'home-outline' : 
+                            item.category?.includes('Commercial') ? 'business-outline' : 
+                            item.projectType?.projectTypeName?.includes('Residential') ? 'home-outline' :
+                            item.projectType?.projectTypeName?.includes('Commercial') ? 'business-outline' : 
+                            'cube-outline'} 
+                      size={responsiveWidth(12)} 
+                      color="#4B5563" 
+                    />
+                    <Text style={[
+                      styles.projectTypeText,
+                      { fontSize: responsiveFont(11) }
+                    ]}>
+                      {item.projectType?.projectTypeName || item.category || "General"}
+                    </Text>
+                  </View>
+                  
+                  <View style={styles.statusContainer}>
+                    <View style={[styles.statusDot, { backgroundColor: statusColors.dot }]} />
+                    <Text style={[
+                      styles.statusText,
+                      { color: statusColors.text, fontSize: responsiveFont(11) }
+                    ]}>
+                      {item.status || "Active"}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* Progress Section */}
+            <View style={styles.progressSection}>
+              <View style={styles.progressHeader}>
+                <Text style={[
+                  styles.progressLabel,
+                  { fontSize: responsiveFont(isSmallScreen ? 13 : 14) }
+                ]}>
+                  Progress
+                </Text>
+                <Text style={[
+                  styles.progressPercentage,
+                  { fontSize: responsiveFont(isSmallScreen ? 14 : 15) }
+                ]}>
+                  {progress}%
+                </Text>
+              </View>
+              <View style={styles.progressBar}>
+                <LinearGradient
+                  colors={['#0066FF', '#3B82F6']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={[styles.progressFill, { width: `${progress}%` }]}
+                />
               </View>
             </View>
 
             {/* Divider */}
             <View style={styles.cardDivider} />
 
-            {/* Footer */}
+            {/* Footer with Date and View Details */}
             <View style={styles.cardFooter}>
-              <View style={styles.footerItem}>
-                <Ionicons name="calendar-clear-outline" size={14} color="#9CA3AF" />
-                <Text style={styles.footerText}>
+              <View style={styles.dateContainer}>
+                <Ionicons name="calendar-outline" size={responsiveWidth(14)} color="#9CA3AF" />
+                <Text style={[
+                  styles.dateText,
+                  { fontSize: responsiveFont(isSmallScreen ? 12 : 13) }
+                ]}>
                   Created: {item.createdAt
                     ? new Date(item.createdAt).toLocaleDateString('en-US', {
                       month: 'short',
@@ -846,27 +1066,230 @@ export default function ClientMainPage({ navigation }) {
                     : 'N/A'}
                 </Text>
               </View>
-
-              <View style={styles.cardActions}>
-                <TouchableOpacity
-                  style={styles.chatBtn}
-                  onPress={() => openAdminChat(item)}
-                >
-                  <Ionicons name="chatbubble-ellipses-outline" size={16} color="#0066FF" />
-                  <Text style={styles.chatBtnText}>Chat</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.viewDetailsBtn}
-                  onPress={() => navigation.navigate('Overview', { project: item })}
-                >
-                  <Text style={styles.viewDetailsText}>View Details</Text>
-                  <Ionicons name="chevron-forward" size={14} color="#2563EB" />
-                </TouchableOpacity>
-              </View>
+              
+              <TouchableOpacity 
+                style={styles.viewDetailsBtn}
+                onPress={() => navigation.navigate('Overview', { project: item })}
+                activeOpacity={0.7}
+              >
+                <Text style={[
+                  styles.viewDetailsText,
+                  { fontSize: responsiveFont(isSmallScreen ? 13 : 14) }
+                ]}>
+                  View Details
+                </Text>
+                <Ionicons name="chevron-forward" size={responsiveWidth(16)} color="#2563EB" />
+              </TouchableOpacity>
             </View>
           </TouchableOpacity>
         </Swipeable>
       </View>
+    );
+  };
+
+  // ===============================
+  // Responsive Skeleton Component
+  // ===============================
+  const SkeletonCard = ({ index }) => {
+    const shimmerAnimation = useRef(new Animated.Value(0)).current;
+    const pulseAnimation = useRef(new Animated.Value(1)).current;
+
+    useEffect(() => {
+      // Gentle shimmer effect
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(shimmerAnimation, {
+            toValue: 1,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(shimmerAnimation, {
+            toValue: 0,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+
+      // Subtle pulse effect
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnimation, {
+            toValue: 0.98,
+            duration: 1500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnimation, {
+            toValue: 1,
+            duration: 1500,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+
+      return () => {
+        shimmerAnimation.stopAnimation();
+        pulseAnimation.stopAnimation();
+      };
+    }, []);
+
+    const shimmerOpacity = shimmerAnimation.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0.3, 0.7],
+    });
+
+    return (
+      <Animated.View style={[
+        styles.skeletonCard,
+        { 
+          transform: [{ scale: pulseAnimation }],
+          padding: responsiveHeight(isSmallScreen ? 16 : 18),
+          marginBottom: responsiveHeight(14),
+        }
+      ]}>
+        <View style={styles.skeletonCardHeader}>
+          <Animated.View style={[
+            styles.skeletonImage,
+            { 
+              opacity: shimmerOpacity,
+              width: responsiveWidth(isSmallScreen ? 48 : 56),
+              height: responsiveWidth(isSmallScreen ? 48 : 56),
+              marginRight: responsiveWidth(isSmallScreen ? 12 : 14),
+            }
+          ]} />
+          <View style={styles.skeletonHeaderInfo}>
+            <Animated.View
+              style={[
+                styles.skeletonTextLine,
+                { 
+                  width: '70%', 
+                  height: responsiveHeight(isSmallScreen ? 16 : 18),
+                  marginBottom: responsiveHeight(8),
+                  opacity: shimmerOpacity 
+                }
+              ]}
+            />
+            <View style={styles.skeletonLocationRow}>
+              <Animated.View
+                style={[
+                  styles.skeletonIcon,
+                  { 
+                    width: responsiveWidth(14),
+                    height: responsiveWidth(14),
+                    opacity: shimmerOpacity 
+                  }
+                ]}
+              />
+              <Animated.View
+                style={[
+                  styles.skeletonTextLine,
+                  { 
+                    width: '80%', 
+                    height: responsiveHeight(14),
+                    marginLeft: responsiveWidth(6),
+                    opacity: shimmerOpacity 
+                  }
+                ]}
+              />
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.skeletonMetaRow}>
+          <View style={styles.skeletonDueDateContainer}>
+            <Animated.View
+              style={[
+                styles.skeletonIcon,
+                { 
+                  width: responsiveWidth(16),
+                  height: responsiveWidth(16),
+                  opacity: shimmerOpacity 
+                }
+              ]}
+            />
+            <Animated.View
+              style={[
+                styles.skeletonTextLine,
+                { 
+                  width: responsiveWidth(100),
+                  height: responsiveHeight(14),
+                  marginLeft: responsiveWidth(6),
+                  opacity: shimmerOpacity 
+                }
+              ]}
+            />
+          </View>
+          <Animated.View
+            style={[
+              styles.skeletonBadge,
+              { 
+                width: responsiveWidth(90),
+                height: responsiveHeight(28),
+                opacity: shimmerOpacity 
+              }
+            ]}
+          />
+        </View>
+
+        <View style={styles.skeletonProgressSection}>
+          <View style={styles.skeletonProgressHeader}>
+            <Animated.View
+              style={[
+                styles.skeletonTextLine,
+                { 
+                  width: responsiveWidth(60),
+                  height: responsiveHeight(12),
+                  opacity: shimmerOpacity 
+                }
+              ]}
+            />
+            <Animated.View
+              style={[
+                styles.skeletonTextLine,
+                { 
+                  width: responsiveWidth(35),
+                  height: responsiveHeight(12),
+                  opacity: shimmerOpacity 
+                }
+              ]}
+            />
+          </View>
+          <View style={styles.skeletonProgressBar}>
+            <Animated.View
+              style={[
+                styles.skeletonProgressFill,
+                {
+                  width: `${(index % 4) * 20 + 40}%`,
+                  opacity: shimmerOpacity
+                }
+              ]}
+            />
+          </View>
+        </View>
+
+        <View style={styles.skeletonDetailsButton}>
+          <Animated.View
+            style={[
+              styles.skeletonTextLine,
+              { 
+                width: responsiveWidth(100),
+                height: responsiveHeight(14),
+                opacity: shimmerOpacity 
+              }
+            ]}
+          />
+          <Animated.View
+            style={[
+              styles.skeletonIcon,
+              { 
+                width: responsiveWidth(20),
+                height: responsiveWidth(20),
+                opacity: shimmerOpacity 
+              }
+            ]}
+          />
+        </View>
+      </Animated.View>
     );
   };
 
@@ -875,7 +1298,9 @@ export default function ClientMainPage({ navigation }) {
       <View style={styles.loading}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#0066FF" />
-          <Text style={styles.loadingText}>Loading Projects...</Text>
+          <Text style={[styles.loadingText, { fontSize: responsiveFont(15) }]}>
+            Loading Projects...
+          </Text>
         </View>
       </View>
     );
@@ -894,74 +1319,145 @@ export default function ClientMainPage({ navigation }) {
         showsVerticalScrollIndicator={false}
       >
         {/* Search + Add Button + AI Button */}
-        <View style={styles.searchContainer}>
-          <View style={styles.searchBar}>
-            <Ionicons name="search" size={20} color="#9CA3AF" />
+        <View style={[
+          styles.searchContainer,
+          { 
+            paddingHorizontal: responsiveWidth(16),
+            paddingTop: responsiveHeight(16),
+            paddingBottom: responsiveHeight(12),
+            gap: responsiveWidth(12),
+          }
+        ]}>
+          <View style={[
+            styles.searchBar,
+            {
+              paddingHorizontal: responsiveWidth(16),
+              paddingVertical: responsiveHeight(14),
+            }
+          ]}>
+            <Ionicons name="search" size={responsiveWidth(20)} color="#9CA3AF" />
             <TextInput
               placeholder="Search Projects..."
               placeholderTextColor="#9CA3AF"
-              style={styles.searchInput}
+              style={[
+                styles.searchInput,
+                {
+                  marginLeft: responsiveWidth(10),
+                  fontSize: responsiveFont(15),
+                }
+              ]}
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
             {searchQuery.length > 0 && (
               <TouchableOpacity onPress={() => setSearchQuery("")}>
-                <Ionicons name="close-circle" size={20} color="#9CA3AF" />
+                <Ionicons name="close-circle" size={responsiveWidth(20)} color="#9CA3AF" />
               </TouchableOpacity>
             )}
           </View>
 
-          {/* <TouchableOpacity style={styles.addButton} onPress={handleAddProject}>
-            <Ionicons name="add" size={28} color="white" />
-          </TouchableOpacity> */}
-
-          <TouchableOpacity style={styles.aiButton} onPress={openAIModal}>
+          <TouchableOpacity 
+            style={[
+              styles.aiButton,
+              {
+                width: responsiveWidth(isSmallScreen ? 50 : 54),
+                height: responsiveWidth(isSmallScreen ? 50 : 54),
+                borderRadius: responsiveWidth(12),
+              }
+            ]} 
+            onPress={openAIModal}
+          >
             <LinearGradient
               colors={["#10B981", "#059669"]}
               style={styles.aiButtonGradient}
             >
-              <Ionicons name="sparkles" size={24} color="white" />
+              <Ionicons name="sparkles" size={responsiveWidth(24)} color="white" />
             </LinearGradient>
           </TouchableOpacity>
         </View>
 
         {/* List Header */}
         {filteredList.length > 0 && (
-          <View style={styles.listHeader}>
-            <Text style={styles.listHeaderText}>
+          <View style={[
+            styles.listHeader,
+            { 
+              paddingHorizontal: responsiveWidth(16),
+              paddingBottom: responsiveHeight(12),
+            }
+          ]}>
+            <Text style={[
+              styles.listHeaderText,
+              { fontSize: responsiveFont(17) }
+            ]}>
               {searchQuery ? `${filteredList.length} Result${filteredList.length !== 1 ? 's' : ''}` : 'Your Projects'}
             </Text>
           </View>
         )}
 
         {/* List */}
-        <View style={styles.listContainer}>
-          {filteredList.map((item, index) => (
-            <Card key={item._id} item={item} index={index} />
-          ))}
-
-          {filteredList.length === 0 && (
-            <View style={styles.empty}>
-              <View style={styles.emptyIconContainer}>
-                <Ionicons name="folder-open-outline" size={64} color="#0066FF" />
+        <View style={[
+          styles.listContainer,
+          { paddingHorizontal: responsiveWidth(16) }
+        ]}>
+          {isLoading ? (
+            Array.from({ length: 4 }).map((_, index) => (
+              <SkeletonCard key={`skeleton-${index}`} index={index} />
+            ))
+          ) : filteredList.length === 0 ? (
+            <View style={[
+              styles.empty,
+              { 
+                paddingVertical: responsiveHeight(60),
+                paddingHorizontal: responsiveWidth(32),
+              }
+            ]}>
+              <View style={[
+                styles.emptyIconContainer,
+                { 
+                  width: responsiveWidth(120),
+                  height: responsiveWidth(120),
+                  marginBottom: responsiveHeight(24),
+                }
+              ]}>
+                <Ionicons name="folder-open-outline" size={responsiveWidth(64)} color="#0066FF" />
               </View>
-              <Text style={styles.emptyTitle}>No Projects Found</Text>
-              <Text style={styles.emptySubtitle}>
+              <Text style={[
+                styles.emptyTitle,
+                { fontSize: responsiveFont(22) }
+              ]}>
+                No Projects Found
+              </Text>
+              <Text style={[
+                styles.emptySubtitle,
+                { fontSize: responsiveFont(15) }
+              ]}>
                 {searchQuery
                   ? "Try adjusting your search terms or clear the search to see all proposals"
                   : "Get started by creating your first proposal and begin managing your projects efficiently"}
               </Text>
               {!searchQuery && (
-                <TouchableOpacity style={styles.emptyButton} onPress={handleAddProject}>
-                  <Ionicons name="add-circle" size={22} color="white" />
-                  <Text style={styles.emptyButtonText}>Create New Proposal</Text>
+                <TouchableOpacity 
+                  style={styles.emptyButton} 
+                  onPress={openAIModal}
+                >
+                  <Ionicons name="sparkles" size={responsiveWidth(22)} color="white" />
+                  <Text style={[
+                    styles.emptyButtonText,
+                    { fontSize: responsiveFont(15) }
+                  ]}>
+                    Create with AI Assistant
+                  </Text>
                 </TouchableOpacity>
               )}
             </View>
+          ) : (
+            filteredList.map((item, index) => (
+              <Card key={item._id} item={item} index={index} />
+            ))
           )}
         </View>
 
-        <View style={{ height: 40 }} />
+        <View style={{ height: responsiveHeight(40) }} />
       </ScrollView>
 
       {/* ENHANCED AI Chat Modal */}
@@ -978,7 +1474,10 @@ export default function ClientMainPage({ navigation }) {
           <Animated.View
             style={[
               styles.modalContainer,
-              { transform: [{ translateY: slideAnim }] },
+              { 
+                transform: [{ translateY: slideAnim }],
+                height: windowHeight * 0.85,
+              },
             ]}
           >
             {/* Enhanced Modal Header */}
@@ -986,27 +1485,56 @@ export default function ClientMainPage({ navigation }) {
               colors={["#0066FF", "#3B82F6"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
-              style={styles.modalHeader}
+              style={[
+                styles.modalHeader,
+                {
+                  paddingHorizontal: responsiveWidth(20),
+                  paddingTop: responsiveHeight(20),
+                  paddingBottom: responsiveHeight(20),
+                }
+              ]}
             >
               <View style={styles.modalHeaderContent}>
                 <View style={styles.aiAvatarContainer}>
                   <LinearGradient
                     colors={["#10B981", "#059669"]}
-                    style={styles.aiAvatar}
+                    style={[
+                      styles.aiAvatar,
+                      {
+                        width: responsiveWidth(48),
+                        height: responsiveWidth(48),
+                      }
+                    ]}
                   >
-                    <Ionicons name="sparkles" size={24} color="white" />
+                    <Ionicons name="sparkles" size={responsiveWidth(24)} color="white" />
                   </LinearGradient>
                 </View>
                 <View style={styles.modalHeaderText}>
-                  <Text style={styles.modalTitle}>AI Assistant</Text>
-                  <Text style={styles.modalSubtitle}>Building Construction Expert</Text>
+                  <Text style={[
+                    styles.modalTitle,
+                    { fontSize: responsiveFont(19) }
+                  ]}>
+                    AI Assistant
+                  </Text>
+                  <Text style={[
+                    styles.modalSubtitle,
+                    { fontSize: responsiveFont(13) }
+                  ]}>
+                    Building Construction Expert
+                  </Text>
                 </View>
               </View>
               <TouchableOpacity
-                style={styles.closeButton}
+                style={[
+                  styles.closeButton,
+                  {
+                    width: responsiveWidth(36),
+                    height: responsiveWidth(36),
+                  }
+                ]}
                 onPress={closeAIModal}
               >
-                <Ionicons name="close" size={24} color="#FFFFFF" />
+                <Ionicons name="close" size={responsiveWidth(24)} color="#FFFFFF" />
               </TouchableOpacity>
             </LinearGradient>
 
@@ -1014,7 +1542,10 @@ export default function ClientMainPage({ navigation }) {
             <ScrollView
               ref={scrollViewRef}
               style={styles.chatContainer}
-              contentContainerStyle={styles.chatContent}
+              contentContainerStyle={[
+                styles.chatContent,
+                { padding: responsiveWidth(20) }
+              ]}
               showsVerticalScrollIndicator={false}
             >
               {showWelcome ? (
@@ -1026,42 +1557,82 @@ export default function ClientMainPage({ navigation }) {
                 >
                   <LinearGradient
                     colors={["#F0F9FF", "#E0F2FE"]}
-                    style={styles.welcomeGradient}
+                    style={[
+                      styles.welcomeGradient,
+                      { padding: responsiveWidth(28) }
+                    ]}
                   >
                     <View style={styles.welcomeIconContainer}>
                       <LinearGradient
                         colors={["#0066FF", "#3B82F6"]}
-                        style={styles.welcomeIcon}
+                        style={[
+                          styles.welcomeIcon,
+                          {
+                            width: responsiveWidth(72),
+                            height: responsiveWidth(72),
+                          }
+                        ]}
                       >
-                        <Ionicons name="construct" size={32} color="white" />
+                        <Ionicons name="construct" size={responsiveWidth(32)} color="white" />
                       </LinearGradient>
                     </View>
 
-                    <Text style={styles.welcomeTitle}>
+                    <Text style={[
+                      styles.welcomeTitle,
+                      { fontSize: responsiveFont(22) }
+                    ]}>
                       Welcome to AI Building Assistant! 🏗️
                     </Text>
-                    <Text style={styles.welcomeMessage}>
+                    <Text style={[
+                      styles.welcomeMessage,
+                      { fontSize: responsiveFont(15) }
+                    ]}>
                       I'm here to help you with construction planning, cost estimation, material selection, and project management.
                     </Text>
 
                     {/* Quick Actions */}
                     <View style={styles.quickActionsContainer}>
-                      <Text style={styles.quickActionsTitle}>Quick Actions</Text>
-                      <View style={styles.quickActionsGrid}>
+                      <Text style={[
+                        styles.quickActionsTitle,
+                        { fontSize: responsiveFont(14) }
+                      ]}>
+                        Quick Actions
+                      </Text>
+                      <View style={[
+                        styles.quickActionsGrid,
+                        { gap: responsiveWidth(12) }
+                      ]}>
                         {quickActions.map((action) => (
                           <TouchableOpacity
                             key={action.id}
-                            style={styles.quickActionCard}
+                            style={[
+                              styles.quickActionCard,
+                              { 
+                                width: (windowWidth - responsiveWidth(80)) / 3,
+                                padding: responsiveWidth(12),
+                              }
+                            ]}
                             onPress={() => handleQuickAction(action.text)}
                             activeOpacity={0.7}
                           >
                             <LinearGradient
                               colors={[action.color, action.color + "CC"]}
-                              style={styles.quickActionIconContainer}
+                              style={[
+                                styles.quickActionIconContainer,
+                                {
+                                  width: responsiveWidth(48),
+                                  height: responsiveWidth(48),
+                                }
+                              ]}
                             >
-                              <Ionicons name={action.icon} size={22} color="white" />
+                              <Ionicons name={action.icon} size={responsiveWidth(22)} color="white" />
                             </LinearGradient>
-                            <Text style={styles.quickActionText}>{action.text}</Text>
+                            <Text style={[
+                              styles.quickActionText,
+                              { fontSize: responsiveFont(13) }
+                            ]}>
+                              {action.text}
+                            </Text>
                           </TouchableOpacity>
                         ))}
                       </View>
@@ -1071,21 +1642,27 @@ export default function ClientMainPage({ navigation }) {
               ) : (
                 <>
                   {messages.map((msg, index) => (
-                    <View key={msg.id} style={{ marginBottom: 16 }}>
+                    <View key={msg.id} style={{ marginBottom: responsiveHeight(16) }}>
 
                       {/* Message Bubble + Avatar Row */}
                       <View style={[
                         styles.messageWrapper,
                         msg.isUser ? styles.userMessageWrapper : styles.aiMessageWrapper,
-                        { marginBottom: (msg.options?.length > 0 || msg.cards?.length > 0) ? 4 : 0 }
+                        { marginBottom: (msg.options?.length > 0 || msg.cards?.length > 0) ? responsiveHeight(4) : 0 }
                       ]}>
                         {!msg.isUser && (
                           <View style={styles.aiMessageAvatar}>
                             <LinearGradient
                               colors={["#10B981", "#059669"]}
-                              style={styles.messageAvatar}
+                              style={[
+                                styles.messageAvatar,
+                                {
+                                  width: responsiveWidth(32),
+                                  height: responsiveWidth(32),
+                                }
+                              ]}
                             >
-                              <Ionicons name="sparkles" size={16} color="white" />
+                              <Ionicons name="sparkles" size={responsiveWidth(16)} color="white" />
                             </LinearGradient>
                           </View>
                         )}
@@ -1095,11 +1672,13 @@ export default function ClientMainPage({ navigation }) {
                             style={[
                               styles.messageBubble,
                               msg.isUser ? styles.userMessage : styles.aiMessage,
+                              { padding: responsiveWidth(14) }
                             ]}
                           >
                             <Text style={[
                               styles.messageText,
-                              msg.isUser ? styles.userMessageText : styles.aiMessageText
+                              msg.isUser ? styles.userMessageText : styles.aiMessageText,
+                              { fontSize: responsiveFont(15) }
                             ]}>
                               {isFileUrl(msg.text) ? (
                                 <FileAttachment url={msg.text} isUser={msg.isUser} />
@@ -1110,7 +1689,8 @@ export default function ClientMainPage({ navigation }) {
                           </View>
                           <Text style={[
                             styles.messageTime,
-                            msg.isUser ? styles.userMessageTime : styles.aiMessageTime
+                            msg.isUser ? styles.userMessageTime : styles.aiMessageTime,
+                            { fontSize: responsiveFont(11) }
                           ]}>
                             {msg.timestamp}
                           </Text>
@@ -1118,8 +1698,14 @@ export default function ClientMainPage({ navigation }) {
 
                         {msg.isUser && (
                           <View style={styles.userMessageAvatar}>
-                            <View style={styles.messageAvatar}>
-                              <Ionicons name="person" size={16} color="#0066FF" />
+                            <View style={[
+                              styles.messageAvatar,
+                              {
+                                width: responsiveWidth(32),
+                                height: responsiveWidth(32),
+                              }
+                            ]}>
+                              <Ionicons name="person" size={responsiveWidth(16)} color="#0066FF" />
                             </View>
                           </View>
                         )}
@@ -1127,16 +1713,32 @@ export default function ClientMainPage({ navigation }) {
 
                       {/* Options & Cards Container */}
                       {!msg.isUser && (
-                        <View style={{ marginLeft: 42 }}>
+                        <View style={{ marginLeft: responsiveWidth(42) }}>
                           {msg.options?.length > 0 && (
-                            <View style={styles.optionRow}>
+                            <View style={[
+                              styles.optionRow,
+                              { 
+                                gap: responsiveWidth(8),
+                                marginTop: responsiveHeight(8),
+                              }
+                            ]}>
                               {msg.options.map((opt, i) => (
                                 <TouchableOpacity
                                   key={opt.value + i}
-                                  style={styles.optionBtn}
+                                  style={[
+                                    styles.optionBtn,
+                                    {
+                                      paddingHorizontal: responsiveWidth(14),
+                                      paddingVertical: responsiveHeight(10),
+                                    }
+                                  ]}
                                   onPress={() => sendMessage(opt.value)}
                                 >
-                                  <Text style={{ color: "#2563EB", fontWeight: "600" }}>
+                                  <Text style={{ 
+                                    color: "#2563EB", 
+                                    fontWeight: "600",
+                                    fontSize: responsiveFont(14)
+                                  }}>
                                     {opt.label}
                                   </Text>
                                 </TouchableOpacity>
@@ -1148,19 +1750,43 @@ export default function ClientMainPage({ navigation }) {
                             <ScrollView
                               horizontal
                               showsHorizontalScrollIndicator={false}
-                              contentContainerStyle={{ paddingVertical: 5 }}
-                              style={{ marginTop: 8 }}
+                              contentContainerStyle={{ paddingVertical: responsiveHeight(5) }}
+                              style={{ marginTop: responsiveHeight(8) }}
                             >
                               {msg.cards.map((c) => (
                                 <TouchableOpacity
                                   key={c.id}
-                                  style={styles.templateCard}
+                                  style={[
+                                    styles.templateCard,
+                                    {
+                                      width: responsiveWidth(200),
+                                      padding: responsiveWidth(14),
+                                      marginRight: responsiveWidth(12),
+                                    }
+                                  ]}
                                   onPress={() => sendMessage(c.id, false, undefined, c.title)}
-
                                 >
-                                  <Text style={{ fontWeight: "700", marginBottom: 4 }}>{c.title}</Text>
-                                  <Text style={{ fontSize: 12, color: "#4B5563", marginBottom: 2 }}>Size: {c.landArea}</Text>
-                                  <Text style={{ fontSize: 12, color: "#10B981", fontWeight: "600" }}>{c.budget}</Text>
+                                  <Text style={{ 
+                                    fontWeight: "700", 
+                                    marginBottom: responsiveHeight(4),
+                                    fontSize: responsiveFont(16)
+                                  }}>
+                                    {c.title}
+                                  </Text>
+                                  <Text style={{ 
+                                    fontSize: responsiveFont(12), 
+                                    color: "#4B5563", 
+                                    marginBottom: responsiveHeight(2) 
+                                  }}>
+                                    Size: {c.landArea}
+                                  </Text>
+                                  <Text style={{ 
+                                    fontSize: responsiveFont(12), 
+                                    color: "#10B981", 
+                                    fontWeight: "600" 
+                                  }}>
+                                    {c.budget}
+                                  </Text>
                                 </TouchableOpacity>
                               ))}
                             </ScrollView>
@@ -1177,22 +1803,25 @@ export default function ClientMainPage({ navigation }) {
             </ScrollView>
 
             {/* Enhanced Input Container */}
-            <View style={styles.inputWrapper}>
+            <View style={[
+              styles.inputWrapper,
+              {
+                paddingTop: responsiveHeight(12),
+                paddingBottom: Platform.OS === "ios" ? responsiveHeight(24) : responsiveHeight(12),
+                paddingHorizontal: responsiveWidth(16),
+              }
+            ]}>
               {renderInputSection()}
             </View>
           </Animated.View>
         </KeyboardAvoidingView>
       </Modal>
-
-      {/* Admin Chat Modal Removed - Moved to ProjectChatScreen */}
-
-
-    </GestureHandlerRootView >
+    </GestureHandlerRootView>
   );
 }
 
 // ===============================
-// ENHANCED STYLES
+// RESPONSIVE STYLES WITH MINIMAL BORDERS
 // ===============================
 const styles = StyleSheet.create({
   loading: {
@@ -1208,7 +1837,6 @@ const styles = StyleSheet.create({
   },
 
   loadingText: {
-    fontSize: 15,
     color: "#6B7280",
     fontWeight: "500",
   },
@@ -1227,10 +1855,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
-    gap: 12,
   },
 
   searchBar: {
@@ -1238,33 +1862,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "white",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
     borderRadius: 12,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: "#E5E7EB",
   },
 
   searchInput: {
-    marginLeft: 10,
     flex: 1,
-    fontSize: 15,
     color: "#111827",
   },
 
-  addButton: {
-    width: 54,
-    height: 54,
-    borderRadius: 12,
-    backgroundColor: "#0066FF",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
   aiButton: {
-    width: 54,
-    height: 54,
-    borderRadius: 12,
     overflow: "hidden",
   },
 
@@ -1277,93 +1885,40 @@ const styles = StyleSheet.create({
 
   // List Header
   listHeader: {
-    paddingHorizontal: 16,
     paddingBottom: 12,
   },
 
   listHeaderText: {
-    fontSize: 17,
     fontWeight: "700",
     color: "#111827",
   },
 
   // List Container
   listContainer: {
-    paddingHorizontal: 16,
   },
 
-  // Card Styles
-  card: {
-    backgroundColor: "#FFFFFF",
+  // ===============================
+  // ENHANCED PREMIUM CARD STYLES
+  // ===============================
+  enhancedCard: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 0.5,
+    borderColor: '#E5E7EB',
+  },
+
+  // Card Header
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 18,
+  },
+
+  imageContainer: {
     borderRadius: 16,
-    // marginBottom handled by wrapper
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    overflow: "hidden", // clip content
-  },
-
-  cardTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    marginBottom: 12,
-  },
-
-  projectTypeBadge: {
-    backgroundColor: '#F3F4F6',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-
-  projectTypeText: {
-    fontSize: 11,
-    color: '#4B5563',
-    fontWeight: '600',
-    textTransform: 'uppercase',
-  },
-
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 6,
-    gap: 6,
-  },
-
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-
-  statusText: {
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-
-  cardContent: {
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    marginBottom: 16,
-  },
-
-  projectIconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: '#F3F4F6',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    backgroundColor: '#F8FAFC',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   projectImage: {
@@ -1371,97 +1926,182 @@ const styles = StyleSheet.create({
     height: '100%',
   },
 
-  projectIconGradient: {
+  imagePlaceholder: {
     width: '100%',
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },
 
-  cardMainInfo: {
-    flex: 1,
+  projectIconGradient: {
+    width: '100%',
+    height: '100%',
     justifyContent: 'center',
-    gap: 4,
+    alignItems: 'center',
+    borderRadius: 16,
+  },
+
+  headerInfo: {
+    flex: 1,
+  },
+
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 6,
   },
 
   projectName: {
-    fontSize: 18,
     fontWeight: '700',
     color: '#111827',
-    letterSpacing: -0.4,
+    flex: 1,
+    marginRight: 12,
     lineHeight: 24,
+  },
+
+  headerChatBtn: {
+    backgroundColor: '#EFF6FF',
+    padding: 8,
+    borderRadius: 20,
+    borderWidth: 0.5,
+    borderColor: '#DBEAFE',
   },
 
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    marginBottom: 10,
   },
 
   locationText: {
-    fontSize: 14,
     color: '#6B7280',
     flex: 1,
+  },
+
+  projectTypeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+
+  projectTypeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    gap: 6,
+    borderWidth: 0.5,
+    borderColor: '#E5E7EB',
+  },
+
+  projectTypeText: {
+    color: '#4B5563',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: -0.2,
+  },
+
+  statusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+
+  statusText: {
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+
+  // Progress Section
+  progressSection: {
+    marginBottom: 18,
+  },
+
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+
+  progressLabel: {
+    color: '#6B7280',
     fontWeight: '500',
   },
 
-  cardDivider: {
-    height: 1,
-    backgroundColor: '#F3F4F6',
+  progressPercentage: {
+    color: '#0066FF',
+    fontWeight: '700',
   },
 
+  progressBar: {
+    height: 8,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+
+  progressFill: {
+    height: '100%',
+    borderRadius: 6,
+  },
+
+  // Divider
+  cardDivider: {
+    height: 0.5,
+    backgroundColor: '#F3F4F6',
+    marginBottom: 16,
+  },
+
+  // Footer
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    backgroundColor: '#FAFAFA',
   },
 
-  footerItem: {
+  dateContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    backgroundColor: '#F9FAFB',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    gap: 8,
+    borderWidth: 0.5,
+    borderColor: '#F3F4F6',
   },
 
-  footerText: {
-    fontSize: 13,
+  dateText: {
     color: '#6B7280',
     fontWeight: '500',
-  },
-
-  cardActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-
-  chatBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    backgroundColor: '#EFF6FF',
-    borderRadius: 8,
-  },
-
-  chatBtnText: {
-    fontSize: 12,
-    color: '#0066FF',
-    fontWeight: '600',
   },
 
   viewDetailsBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: '#EFF6FF',
+    borderRadius: 12,
+    borderWidth: 0.5,
+    borderColor: '#DBEAFE',
   },
 
   viewDetailsText: {
-    fontSize: 13,
-    color: '#2563EB',
+    color: '#0066FF',
     fontWeight: '600',
   },
 
@@ -1469,52 +2109,120 @@ const styles = StyleSheet.create({
   deleteAction: {
     justifyContent: "center",
     alignItems: "flex-end",
-    // marginBottom removed as spacing is handled by card wrapper
+    marginBottom: 16,
   },
 
-  deleteBtn: {
-    width: 90,
-    height: "100%",
+  deleteButton: {
     backgroundColor: "#EF4444",
     justifyContent: "center",
     alignItems: "center",
-    borderTopRightRadius: 20, // Match updated card radius
+    width: 90,
+    height: "100%",
+    borderTopRightRadius: 20,
     borderBottomRightRadius: 20,
-    gap: 6,
   },
 
   deleteText: {
-    color: "#fff",
-    fontSize: 13,
-    fontWeight: "700",
+    color: "white",
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: 4,
+  },
+
+  // ===============================
+  // SKELETON LOADING STYLES
+  // ===============================
+  skeletonCard: {
+    backgroundColor: 'white',
+    borderWidth: 0.5,
+    borderColor: '#F3F4F6',
+  },
+  skeletonCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  skeletonImage: {
+    borderRadius: 14,
+    backgroundColor: '#F1F5F9',
+  },
+  skeletonHeaderInfo: {
+    flex: 1,
+  },
+  skeletonLocationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  skeletonIcon: {
+    borderRadius: 4,
+    backgroundColor: '#F1F5F9',
+  },
+  skeletonTextLine: {
+    backgroundColor: '#F1F5F9',
+    borderRadius: 6,
+  },
+  skeletonMetaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  skeletonDueDateContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  skeletonBadge: {
+    backgroundColor: '#F1F5F9',
+    borderRadius: 20,
+  },
+  skeletonProgressSection: {
+    marginBottom: 16,
+  },
+  skeletonProgressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  skeletonProgressBar: {
+    height: 8,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  skeletonProgressFill: {
+    height: '100%',
+    backgroundColor: '#E2E8F0',
+    borderRadius: 6,
+  },
+  skeletonDetailsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 16,
+    borderTopWidth: 0.5,
+    borderTopColor: '#F3F4F6',
   },
 
   // Empty State
   empty: {
     alignItems: "center",
-    paddingVertical: 60,
-    paddingHorizontal: 32,
   },
 
   emptyIconContainer: {
-    width: 120,
-    height: 120,
     borderRadius: 60,
     backgroundColor: "#EFF6FF",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 24,
   },
 
   emptyTitle: {
-    fontSize: 22,
     fontWeight: "700",
     color: "#111827",
     marginBottom: 8,
   },
 
   emptySubtitle: {
-    fontSize: 15,
     color: "#6B7280",
     textAlign: "center",
     lineHeight: 22,
@@ -1524,7 +2232,7 @@ const styles = StyleSheet.create({
   emptyButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#0066FF",
+    backgroundColor: "#10B981",
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 12,
@@ -1532,13 +2240,12 @@ const styles = StyleSheet.create({
   },
 
   emptyButtonText: {
-    fontSize: 15,
     color: "#FFFFFF",
     fontWeight: "700",
   },
 
   // ===============================
-  // ENHANCED AI MODAL STYLES
+  // AI MODAL STYLES
   // ===============================
   modalOverlay: {
     flex: 1,
@@ -1550,21 +2257,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    height: "85%",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 20,
   },
 
   modalHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 20,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
   },
@@ -1576,19 +2274,13 @@ const styles = StyleSheet.create({
   },
 
   aiAvatarContainer: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
   },
 
   aiAvatar: {
-    width: 48,
-    height: 48,
     borderRadius: 24,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 3,
+    borderWidth: 0.5,
     borderColor: "rgba(255,255,255,0.3)",
   },
 
@@ -1597,20 +2289,16 @@ const styles = StyleSheet.create({
   },
 
   modalTitle: {
-    fontSize: 19,
     fontWeight: "700",
     color: "#FFFFFF",
   },
 
   modalSubtitle: {
-    fontSize: 13,
     color: "rgba(255,255,255,0.85)",
     fontWeight: "500",
   },
 
   closeButton: {
-    width: 36,
-    height: 36,
     borderRadius: 18,
     backgroundColor: "rgba(255,255,255,0.2)",
     justifyContent: "center",
@@ -1623,7 +2311,6 @@ const styles = StyleSheet.create({
   },
 
   chatContent: {
-    padding: 20,
     paddingBottom: 10,
   },
 
@@ -1634,33 +2321,25 @@ const styles = StyleSheet.create({
 
   welcomeGradient: {
     width: "100%",
-    padding: 28,
     borderRadius: 20,
     alignItems: "center",
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: "#E0F2FE",
   },
 
   welcomeIconContainer: {
     marginBottom: 20,
-    shadowColor: "#0066FF",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
   },
 
   welcomeIcon: {
-    width: 72,
-    height: 72,
     borderRadius: 36,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 4,
+    borderWidth: 0.5,
     borderColor: "rgba(255,255,255,0.5)",
   },
 
   welcomeTitle: {
-    fontSize: 22,
     fontWeight: "700",
     color: "#111827",
     textAlign: "center",
@@ -1668,7 +2347,6 @@ const styles = StyleSheet.create({
   },
 
   welcomeMessage: {
-    fontSize: 15,
     color: "#6B7280",
     textAlign: "center",
     lineHeight: 22,
@@ -1681,7 +2359,6 @@ const styles = StyleSheet.create({
   },
 
   quickActionsTitle: {
-    fontSize: 14,
     fontWeight: "700",
     color: "#111827",
     marginBottom: 16,
@@ -1691,36 +2368,25 @@ const styles = StyleSheet.create({
   quickActionsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
     justifyContent: "center",
   },
 
   quickActionCard: {
-    width: (width - 80) / 3,
     backgroundColor: "white",
-    padding: 12,
     borderRadius: 14,
     alignItems: "center",
     gap: 8,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: "#E5E7EB",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
   },
 
   quickActionIconContainer: {
-    width: 48,
-    height: 48,
     borderRadius: 24,
     justifyContent: "center",
     alignItems: "center",
   },
 
   quickActionText: {
-    fontSize: 13,
     fontWeight: "600",
     color: "#374151",
     textAlign: "center",
@@ -1747,13 +2413,9 @@ const styles = StyleSheet.create({
   },
 
   messageBubble: {
-    padding: 14,
     borderRadius: 18,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
+    borderWidth: 0.5,
+    borderColor: "#E5E7EB",
   },
 
   userMessage: {
@@ -1764,12 +2426,9 @@ const styles = StyleSheet.create({
   aiMessage: {
     backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 4,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
   },
 
   messageText: {
-    fontSize: 15,
     lineHeight: 21,
   },
 
@@ -1782,7 +2441,6 @@ const styles = StyleSheet.create({
   },
 
   messageTime: {
-    fontSize: 11,
     fontWeight: "500",
   },
 
@@ -1797,8 +2455,6 @@ const styles = StyleSheet.create({
   },
 
   messageAvatar: {
-    width: 32,
-    height: 32,
     borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
@@ -1806,17 +2462,9 @@ const styles = StyleSheet.create({
   },
 
   aiMessageAvatar: {
-    shadowColor: "#10B981",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
   },
 
   userMessageAvatar: {
-    shadowColor: "#0066FF",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
   },
 
   // Typing Indicator
@@ -1833,7 +2481,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 4,
     padding: 16,
     paddingVertical: 14,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: "#E5E7EB",
   },
 
@@ -1853,10 +2501,7 @@ const styles = StyleSheet.create({
   // Input Container
   inputWrapper: {
     backgroundColor: "#FFFFFF",
-    paddingTop: 12,
-    paddingBottom: Platform.OS === "ios" ? 24 : 12,
-    paddingHorizontal: 16,
-    borderTopWidth: 1,
+    borderTopWidth: 0.5,
     borderTopColor: "#E5E7EB",
   },
 
@@ -1868,7 +2513,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     paddingHorizontal: 8,
     paddingVertical: 8,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: "#E5E7EB",
   },
 
@@ -1882,7 +2527,6 @@ const styles = StyleSheet.create({
 
   chatInput: {
     flex: 1,
-    fontSize: 15,
     color: "#111827",
     maxHeight: 100,
     paddingVertical: 8,
@@ -1902,7 +2546,6 @@ const styles = StyleSheet.create({
 
   uploadButtonText: {
     color: "#FFFFFF",
-    fontSize: 15,
     fontWeight: "600",
   },
 
@@ -1939,13 +2582,11 @@ const styles = StyleSheet.create({
   },
 
   inputFooterText: {
-    fontSize: 11,
     color: "#10B981",
     fontWeight: "600",
   },
 
   characterCount: {
-    fontSize: 11,
     color: "#9CA3AF",
     fontWeight: "500",
   },
@@ -1953,34 +2594,21 @@ const styles = StyleSheet.create({
   optionRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
-    marginTop: 8,
     marginLeft: 42,
   },
 
   optionBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
     borderRadius: 10,
     backgroundColor: "#EFF6FF",
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: "#BFDBFE",
   },
 
   templateCard: {
-    width: 200,
-    padding: 14,
     backgroundColor: "#fff",
     borderRadius: 14,
-    marginRight: 12,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: "#E5E7EB",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-    marginTop: 8,
   },
 
   // Submit Section Styles
@@ -1992,11 +2620,6 @@ const styles = StyleSheet.create({
   submitButton: {
     borderRadius: 12,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
 
   submitButtonGradient: {
@@ -2009,7 +2632,6 @@ const styles = StyleSheet.create({
 
   submitButtonText: {
     color: '#FFFFFF',
-    fontSize: 17,
     fontWeight: '700',
   },
 
@@ -2020,43 +2642,6 @@ const styles = StyleSheet.create({
 
   editButtonText: {
     color: '#6B7280',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  editButtonText: {
-    color: '#6B7280',
-    fontSize: 15,
     fontWeight: '600',
   },
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
