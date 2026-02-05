@@ -58,19 +58,19 @@ useEffect(() => {
 
   const fetchUserProfile = async () => {
     try {
-      console.log('[Profile] 🔄 Fetching user data...');
+      // console.log('[Profile] 🔄 Fetching user data...');
       const token = await AsyncStorage.getItem('userToken');
       const userInfo = await AsyncStorage.getItem('userData');
 
       if (!token || !userInfo) {
-        console.log('[Profile] ⚠️ No token or user data found');
+        // console.log('[Profile] ⚠️ No token or user data found');
         return;
       }
 
       const parsedUser = JSON.parse(userInfo);
       const userId = parsedUser?._id || parsedUser?.id;
 
-      console.log('[Profile] 👤 User ID:', userId);
+      // console.log('[Profile] 👤 User ID:', userId);
 
       const response = await fetch(`${API_URL}/${userId}`, {
         method: 'GET',
@@ -80,11 +80,11 @@ useEffect(() => {
         },
       });
 
-      console.log('[Profile] 🌐 Status:', response.status);
+      // console.log('[Profile] 🌐 Status:', response.status);
       if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
 
       const json = await response.json();
-      console.log('[Profile] ✅ User Data Response:', json);
+      // console.log('[Profile] ✅ User Data Response:', json);
       setUserData(json?.data);
     } catch (error) {
       console.error('[Profile] ❌ Fetch Error:', error);

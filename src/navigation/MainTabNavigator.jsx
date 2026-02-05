@@ -33,7 +33,7 @@ const MainTabNavigator = () => {
                         parsedUser.permissions.payment.view
                     )
                 );
-                console.log("Payment Access",parsedUser?.permissions);
+                // console.log("Payment Access",parsedUser?.permissions);
 
             const canAccessSiteSurveys =
                 parsedUser?.role !== "admin" &&

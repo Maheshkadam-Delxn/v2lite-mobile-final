@@ -1658,6 +1658,7 @@ const RolesMembersScreen = () => {
     siteSurvey: { create: false, read: false, update: false, delete: false },
     project: { create: false, read: true, update: false, delete: false },
     plan: { create: false, read: true, update: false, delete: false },
+    risk: { create: false, read: true, update: false, delete: false },
     task: { create: false, read: true, update: false, delete: false, approve: false } // Added task module
   };
 
@@ -1692,6 +1693,12 @@ const RolesMembersScreen = () => {
       key: 'indent',
       label: 'Indent Management',
       description: 'Manage material indents and requests',
+      actions: ['create', 'read', 'update', 'delete']
+    },
+    {
+      key: 'risk',
+      label: 'Risk Management',
+      description: 'Manage risks and issues',
       actions: ['create', 'read', 'update', 'delete']
     },
     {

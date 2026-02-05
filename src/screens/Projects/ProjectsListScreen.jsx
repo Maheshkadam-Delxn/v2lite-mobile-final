@@ -221,55 +221,122 @@ const ProjectsListScreen = () => {
   };
 
   // Fetch projects
-  const fetchProjects = useCallback(async (showLoading = true) => {
-    setError(null);
-    try {
-      if (showLoading) {
-        setIsLoading(true);
-      }
+//   const fetchProjects = useCallback(async (showLoading = true) => {
+//     setError(null);
+//     try {
+//       if (showLoading) {
+//         setIsLoading(true);
+//       }
 
-      const token = await AsyncStorage.getItem(TOKEN_KEY);
+//       const token = await AsyncStorage.getItem(TOKEN_KEY);
+// const userInfo = await AsyncStorage.getItem('userData');
+// const parsedUser = JSON.parse(userInfo);
+// console.log("user info", parsedUser.assignedProjects);
+//       const response = await fetch(API_URL, {
+//         method: 'GET',
+//         headers: {
+//           'Content-Type': 'application/json',
+//           ...(token && { Authorization: `Bearer ${token}` }),
+//         },
+//       });
 
-      const response = await fetch(API_URL, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-      });
+//       const json = await response.json().catch(() => ({}));
+//       const items = Array.isArray(json) ? json : Array.isArray(json.data) ? json.data : [];
 
-      const json = await response.json().catch(() => ({}));
-      const items = Array.isArray(json) ? json : Array.isArray(json.data) ? json.data : [];
-
-      if (!Array.isArray(items) || items.length === 0) {
-        setProjects([]);
-      } else {
-        const filtered = items.filter(
-          (item) =>
-            item.status !== "Proposal Under Approval" &&
-            item.status !== "Initialize" && item.status !== "Rejected"
-        );
-
-
-        const mapped = filtered.map(mapItemToProject);
-        setProjects(mapped);
-        // console.log("Fetched Projects:", JSON.stringify(mapped, null, 2));
-        // console.log(mapped.raw)
+//       if (!Array.isArray(items) || items.length === 0) {
+//         setProjects([]);
+//       } else {
+//         const filtered = items.filter(
+//           (item) =>
+//             item.status !== "Proposal Under Approval" &&
+//             item.status !== "Initialize" && item.status !== "Rejected"
+//         );
 
 
-      }
-    } catch (err) {
-      console.error('[Projects] fetch error:', err);
-      setError('Failed to fetch projects');
+//         const mapped = filtered.map(mapItemToProject);
+//         setProjects(mapped);
+      
+
+
+//       }
+//     } catch (err) {
+//       console.error('[Projects] fetch error:', err);
+//       setError('Failed to fetch projects');
+//       setProjects([]);
+//     } finally {
+//       setIsLoading(false);
+//       setRefreshing(false);
+//       if (initialLoad) {
+//         setInitialLoad(false);
+//       }
+//     }
+//   }, []);
+const fetchProjects = useCallback(async (showLoading = true) => {
+  setError(null);
+
+  try {
+    if (showLoading) setIsLoading(true);
+
+    const token = await AsyncStorage.getItem(TOKEN_KEY);
+    const userInfo = await AsyncStorage.getItem("userData");
+    const parsedUser = userInfo ? JSON.parse(userInfo) : null;
+
+    const userRole = parsedUser?.role;
+    const assignedProjects = parsedUser?.assignedProjects || [];
+
+    console.log("User role:", userRole);
+    console.log("Assigned projects:", assignedProjects);
+
+    const response = await fetch(API_URL, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    });
+
+    const json = await response.json().catch(() => ({}));
+    const items = Array.isArray(json)
+      ? json
+      : Array.isArray(json.data)
+      ? json.data
+      : [];
+
+    if (!Array.isArray(items) || items.length === 0) {
       setProjects([]);
-    } finally {
-      setIsLoading(false);
-      setRefreshing(false);
-      if (initialLoad) {
-        setInitialLoad(false);
-      }
+      return;
     }
-  }, []);
+
+    // ❌ Status filtering (common for all roles)
+    const filteredByStatus = items.filter(
+      (item) =>
+        item.status !== "Proposal Under Approval" &&
+        item.status !== "Initialize" &&
+        item.status !== "Rejected"
+    );
+
+    let finalProjects = filteredByStatus;
+
+    // 🔐 ROLE-BASED PROJECT FILTER
+    if (userRole !== "admin" && userRole !== "client") {
+      finalProjects = filteredByStatus.filter((item) =>
+        assignedProjects.includes(item._id)
+      );
+    }
+
+    const mapped = finalProjects.map(mapItemToProject);
+    setProjects(mapped);
+
+  } catch (err) {
+    console.error("[Projects] fetch error:", err);
+    setError("Failed to fetch projects");
+    setProjects([]);
+  } finally {
+    setIsLoading(false);
+    setRefreshing(false);
+    if (initialLoad) setInitialLoad(false);
+  }
+}, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -434,7 +501,7 @@ const ProjectsListScreen = () => {
             parsedUser.permissions.payment.view
           )
         );
-      console.log("Payment Access", parsedUser);
+      // console.log("Payment Access", parsedUser);
       setPermissions(parsedUser);
       // const canAccessSiteSurveys =
       //     parsedUser?.role !== "admin" &&

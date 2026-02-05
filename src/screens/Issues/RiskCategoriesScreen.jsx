@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { Swipeable, GestureHandlerRootView } from "react-native-gesture-handler";
+import { useFocusEffect } from '@react-navigation/native';
+
 import {
 
   View,
@@ -9,10 +12,12 @@ import {
   Modal,
   TouchableWithoutFeedback,
   KeyboardAvoidingView,
+
   Platform,
   Alert,
   ActivityIndicator,
   FlatList,
+  RefreshControl,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -26,50 +31,75 @@ const getScoreColor = (score) => {
   if (score >= 3) return '#FF9500'; // Orange (Medium)
   return '#10b981'; // Green (Low)
 };
+const renderRightActions = (onDelete) => {
+  return (
+    <TouchableOpacity
+      onPress={onDelete}
+      style={{
+        backgroundColor: "#EF4444",
+        justifyContent: "center",
+        alignItems: "center",
+        width: 80,
+        marginVertical: 6,
+        borderRadius: 12,
+      }}
+    >
+      <Feather name="trash-2" size={22} color="#fff" />
+      <Text style={{ color: "#fff", fontSize: 10, marginTop: 4 }}>
+        Delete
+      </Text>
+    </TouchableOpacity>
+  );
+};
+
 
 /* ——— Risk Item Component ——— */
-const RiskItem = ({ item, onPress }) => {
+const RiskItem = ({ item, onPress, onDelete }) => {
   const scoreColor = getScoreColor(item.score);
 
   return (
-    <TouchableOpacity onPress={() => onPress(item)} className="flex-row items-center rounded-xl bg-white p-4 mb-3 border border-slate-100 shadow-sm">
-      {/* Icon Badge */}
-      <View
-        className="mr-4 h-12 w-12 items-center justify-center rounded-xl"
-        style={{ backgroundColor: (item.color || '#FF9500') + '15' }}>
-        <Feather name={item.icon || 'alert-triangle'} size={22} color={item.color || '#FF9500'} />
-      </View>
-
-      {/* Content */}
-      <View className="flex-1">
-        <View className="flex-row justify-between items-start">
-          <Text className="text-base font-bold text-slate-800 flex-1 mr-2" numberOfLines={1}>{item.title}</Text>
-          {/* Score Badge */}
-          <View className="flex-row items-center bg-slate-100 px-2 py-1 rounded-md">
-            <Text className="text-xs font-bold text-slate-600 mr-1">Score:</Text>
-            <Text style={{ color: scoreColor }} className="text-xs font-bold">{item.score}</Text>
-          </View>
+    <Swipeable
+      renderRightActions={() => renderRightActions(() => onDelete(item))}
+    >
+      <TouchableOpacity onPress={() => onPress(item)} className="flex-row items-center rounded-xl bg-white p-4 mb-3 border border-slate-100 shadow-sm">
+        {/* Icon Badge */}
+        <View
+          className="mr-4 h-12 w-12 items-center justify-center rounded-xl"
+          style={{ backgroundColor: (item.color || '#FF9500') + '15' }}>
+          <Feather name={item.icon || 'alert-triangle'} size={22} color={item.color || '#FF9500'} />
         </View>
 
-        <Text className="mt-1 text-sm text-slate-500" numberOfLines={1}>{item.description || item.subtitle}</Text>
-
-        <View className="mt-3 flex-row items-center">
-          <View className={`px-2 py-0.5 rounded text-[10px] items-center justify-center border`}
-            style={{
-              borderColor: item.status === 'Open' ? '#3b82f6' : item.status === 'Mitigating' ? '#f59e0b' : '#10b981',
-              backgroundColor: item.status === 'Open' ? '#3b82f610' : item.status === 'Mitigating' ? '#f59e0b10' : '#10b98110'
-            }}>
-            <Text style={{
-              color: item.status === 'Open' ? '#3b82f6' : item.status === 'Mitigating' ? '#f59e0b' : '#10b981',
-              fontSize: 10, fontWeight: '600'
-            }}>
-              {item.status ? item.status.toUpperCase() : 'OPEN'}
-            </Text>
+        {/* Content */}
+        <View className="flex-1">
+          <View className="flex-row justify-between items-start">
+            <Text className="text-base font-bold text-slate-800 flex-1 mr-2" numberOfLines={1}>{item.title}</Text>
+            {/* Score Badge */}
+            <View className="flex-row items-center bg-slate-100 px-2 py-1 rounded-md">
+              <Text className="text-xs font-bold text-slate-600 mr-1">Score:</Text>
+              <Text style={{ color: scoreColor }} className="text-xs font-bold">{item.score}</Text>
+            </View>
           </View>
-          <Text className="text-xs text-slate-400 ml-auto">{new Date(item.date).toLocaleDateString()}</Text>
+
+          <Text className="mt-1 text-sm text-slate-500" numberOfLines={1}>{item.description || item.subtitle}</Text>
+
+          <View className="mt-3 flex-row items-center">
+            <View className={`px-2 py-0.5 rounded text-[10px] items-center justify-center border`}
+              style={{
+                borderColor: item.status === 'Open' ? '#3b82f6' : item.status === 'Pending Review' ? '#f59e0b' : '#10b981',
+                backgroundColor: item.status === 'Open' ? '#3b82f610' : item.status === 'Pending Review' ? '#f59e0b10' : '#10b98110'
+              }}>
+              <Text style={{
+                color: item.status === 'Open' ? '#3b82f6' : item.status === 'Pending Review' ? '#f59e0b' : '#10b981',
+                fontSize: 10, fontWeight: '600'
+              }}>
+                {item.status ? item.status.toUpperCase() : 'OPEN'}
+              </Text>
+            </View>
+            <Text className="text-xs text-slate-400 ml-auto">{new Date(item.date).toLocaleDateString()}</Text>
+          </View>
         </View>
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+    </Swipeable>
   );
 };
 
@@ -215,11 +245,12 @@ const AddRiskModal = ({ visible, onClose, onSubmit, members = [] }) => {
 
               {/* Member Picker Dropdown */}
               {showMemberPicker && (
-                <View className="mt-2 rounded-xl border border-gray-200 bg-white max-h-40">
-                  <ScrollView nestedScrollEnabled>
-                    {members.map(member => (
+                <View className="mt-2 rounded-xl border border-gray-200 bg-white" style={{ maxHeight: 160 }}>
+                  <FlatList
+                    data={members}
+                    keyExtractor={(member) => member._id}
+                    renderItem={({ item: member }) => (
                       <TouchableOpacity
-                        key={member._id}
                         className="p-3 border-b border-gray-50 flex-row items-center"
                         onPress={() => {
                           setAssignedTo(member);
@@ -233,11 +264,11 @@ const AddRiskModal = ({ visible, onClose, onSubmit, members = [] }) => {
                           {member.name || member.fullName || `${member.firstName || ''} ${member.lastName || ''}`.trim() || member._id || member.id}
                         </Text>
                       </TouchableOpacity>
-                    ))}
-                    {members.length === 0 && (
-                      <Text className="p-3 text-sm text-slate-400 text-center">No members found</Text>
                     )}
-                  </ScrollView>
+                    ListEmptyComponent={
+                      <Text className="p-3 text-sm text-slate-400 text-center">No members found</Text>
+                    }
+                  />
                 </View>
               )}
             </View>
@@ -297,12 +328,13 @@ const AddRiskModal = ({ visible, onClose, onSubmit, members = [] }) => {
 const RiskCategoriesScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  console.log("route",route);
+  console.log("route", route);
   const { project } = route.params || {};
 
   const [modalVisible, setModalVisible] = useState(false);
   const [risks, setRisks] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Member fetching
   const [members, setMembers] = useState([]);
@@ -328,27 +360,78 @@ const RiskCategoriesScreen = () => {
     }
   };
 
-  const fetchMembers = async () => {
-    console.log("projectId",project._id);
-    if (!project._id) return;
-    setLoadingMembers(true);
-    try {
-      const token = await AsyncStorage.getItem('userToken');
-      // Generic endpoint + client-side filtering as per instruction
-      const response = await fetch(`${API_URL}/users`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const json = await response.json();
-      console.log("members",json);
-      const list = Array.isArray(json) ? json : Array.isArray(json.data) ? json.data : [];
+  // const fetchMembers = async () => {
+  //   console.log("projectId",project._id);
+  //   if (!project._id) return;
+  //   setLoadingMembers(true);
+  //   try {
+  //     const token = await AsyncStorage.getItem('userToken');
+  //     // Generic endpoint + client-side filtering as per instruction
+  //     const response = await fetch(`${API_URL}/users`, {
+  //       headers: { 'Authorization': `Bearer ${token}` }
+  //     });
+  //     const json = await response.json();
+  //     console.log("members",json);
+  //     const list = Array.isArray(json) ? json : Array.isArray(json.data) ? json.data : [];
 
-      // Filter members assigned to this projectId
-      const membersAssignedToProject = list.filter(member =>
-        Array.isArray(member.assignedProjects) &&
-        member.assignedProjects.some(pid => String(pid) === String(project._id))
-      );
-      console.log("members",list);
+  //     // Filter members assigned to this projectId
+  //     const membersAssignedToProject = list.filter(member =>
+  //       Array.isArray(member.assignedProjects) &&
+  //       member.assignedProjects.some(pid => String(pid) === String(project._id))
+  //     );
+
+  //     setMembers(membersAssignedToProject);
+  //     console.log("proper",membersAssignedToProject)
+  //   } catch (error) {
+  //     console.error("Failed to fetch members", error);
+  //   } finally {
+  //     setLoadingMembers(false);
+  //   }
+  // };
+  const fetchMembers = async () => {
+    console.log("projectId", project._id);
+    if (!project._id) return;
+
+    setLoadingMembers(true);
+
+    try {
+      const token = await AsyncStorage.getItem("userToken");
+
+      const response = await fetch(`${API_URL}/users`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const json = await response.json();
+      console.log("members", json);
+
+      const list = Array.isArray(json)
+        ? json
+        : Array.isArray(json.data)
+          ? json.data
+          : [];
+
+      const membersAssignedToProject = list.filter((member) => {
+        // ✅ Project assignment check
+        const isAssigned =
+          Array.isArray(member.assignedProjects) &&
+          member.assignedProjects.some(
+            (pid) => String(pid) === String(project._id)
+          );
+
+        if (!isAssigned) return false;
+
+        // ✅ Risk permission check
+        const riskPerm = member.permissions?.risk;
+
+        const hasRiskAccess =
+          riskPerm?.read === true || riskPerm?.update === true;
+
+        return hasRiskAccess;
+      });
+
       setMembers(membersAssignedToProject);
+      console.log("proper", membersAssignedToProject);
+
     } catch (error) {
       console.error("Failed to fetch members", error);
     } finally {
@@ -363,6 +446,66 @@ const RiskCategoriesScreen = () => {
     }
   }, [project._id]);
 
+  // Refresh data when screen comes into focus (e.g., returning from detail screen)
+  useFocusEffect(
+    React.useCallback(() => {
+      if (project._id) {
+        fetchRisks();
+      }
+    }, [project._id])
+  );
+
+  // Pull to refresh handler
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    await fetchRisks();
+    setRefreshing(false);
+  }, [project._id]);
+
+  const handleDeleteRisk = (risk) => {
+    Alert.alert(
+      "Delete Risk",
+      "Are you sure you want to delete this risk?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const token = await AsyncStorage.getItem("userToken");
+
+              const response = await fetch(
+                `${API_URL}/risks/${risk._id}`,
+                {
+                  method: "DELETE",
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                }
+              );
+
+              // ✅ explicitly validate response
+              if (!response.ok) {
+                throw new Error(`Delete failed: ${response.status}`);
+              }
+
+              // ✅ update UI only after success
+              setRisks((prev) =>
+                prev.filter((r) => r._id !== risk._id)
+              );
+            } catch (err) {
+              console.error("Delete risk error:", err);
+              Alert.alert(
+                "Error",
+                "Failed to delete risk. Please try again."
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const handleCreateRisk = async (newRiskData) => {
     if (!newRiskData.title) {
@@ -414,76 +557,86 @@ const RiskCategoriesScreen = () => {
   };
 
   return (
-   <SafeAreaView style={{ flex: 1 }} className="bg-slate-50">
-      {/* Header Search */}
-      <View className="mx-4 mb-4 mt-3 h-12 flex-row items-center rounded-xl bg-white px-4 border border-slate-100 shadow-sm">
-        <Feather name="search" size={20} color="#94a3b8" className="mr-3" />
-        <TextInput
-          placeholder="Search risks..."
-          placeholderTextColor="#94a3b8"
-          className="flex-1 text-base text-slate-800"
-        />
-        <Feather name="filter" size={20} color="#94a3b8" />
-      </View>
-
-      {loading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#0066FF" />
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaView style={{ flex: 1 }} className="bg-slate-50">
+        {/* Header Search */}
+        <View className="mx-4 mb-4 mt-3 h-12 flex-row items-center rounded-xl bg-white px-4 border border-slate-100 shadow-sm">
+          <Feather name="search" size={20} color="#94a3b8" className="mr-3" />
+          <TextInput
+            placeholder="Search risks..."
+            placeholderTextColor="#94a3b8"
+            className="flex-1 text-base text-slate-800"
+          />
+          <Feather name="filter" size={20} color="#94a3b8" />
         </View>
-      ) : (
-        <FlatList
-          data={risks}
-          keyExtractor={item => item._id || item.id}
-          renderItem={({ item }) => <RiskItem item={item} onPress={handleCardPress} />}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
-          ListHeaderComponent={
-            <Text className="mb-4 text-sm font-bold text-slate-400 tracking-wider">ACTIVE RISKS</Text>
-          }
-          ListEmptyComponent={
-            <View className="items-center justify-center py-20">
-              <Text className="text-slate-400">No risks identified yet.</Text>
-            </View>
-          }
-        />
-      )}
 
-      {/* FAB */}
-      {/* <TouchableOpacity
+        {loading ? (
+          <View className="flex-1 items-center justify-center">
+            <ActivityIndicator size="large" color="#0066FF" />
+          </View>
+        ) : (
+          <FlatList
+            data={risks}
+            keyExtractor={item => item._id || item.id}
+            renderItem={({ item }) => <RiskItem item={item} onPress={handleCardPress} onDelete={handleDeleteRisk} />}
+            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={['#0066FF']}
+                tintColor="#0066FF"
+              />
+            }
+            ListHeaderComponent={
+              <Text className="mb-4 text-sm font-bold text-slate-400 tracking-wider">ACTIVE RISKS</Text>
+            }
+            ListEmptyComponent={
+              <View className="items-center justify-center py-20">
+                <Text className="text-slate-400">No risks identified yet.</Text>
+              </View>
+            }
+          />
+        )}
+
+        {/* FAB */}
+        {/* <TouchableOpacity
         className="absolute bottom-6 right-6 h-16 w-16 items-center justify-center rounded-full bg-slate-900 shadow-xl shadow-slate-900/30"
         onPress={() => setModalVisible(true)}>
         <Feather name="plus" size={32} color="white" />
       </TouchableOpacity> */}
-{/* Floating Action Button */}
-<TouchableOpacity
-  onPress={() => setModalVisible(true)}
-  style={{
-    position: 'absolute',
-    bottom: 24,
-    right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#2563EB', // ✅ Blue
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 8, // ✅ Android shadow
-    zIndex: 999, // ✅ Stay above FlatList
-    shadowColor: '#000', // iOS shadow
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-  }}
->
-  <Feather name="plus" size={28} color="#FFFFFF" /> {/* ✅ White icon */}
-</TouchableOpacity>
+        {/* Floating Action Button */}
+        <TouchableOpacity
+          onPress={() => setModalVisible(true)}
+          style={{
+            position: 'absolute',
+            bottom: 24,
+            right: 24,
+            width: 56,
+            height: 56,
+            borderRadius: 28,
+            backgroundColor: '#2563EB', // ✅ Blue
+            justifyContent: 'center',
+            alignItems: 'center',
+            elevation: 8, // ✅ Android shadow
+            zIndex: 999, // ✅ Stay above FlatList
+            shadowColor: '#000', // iOS shadow
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: 4,
+          }}
+        >
+          <Feather name="plus" size={28} color="#FFFFFF" /> {/* ✅ White icon */}
+        </TouchableOpacity>
 
-      <AddRiskModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        onSubmit={handleCreateRisk}
-        members={members}
-      />
-    </SafeAreaView>
+        <AddRiskModal
+          visible={modalVisible}
+          onClose={() => setModalVisible(false)}
+          onSubmit={handleCreateRisk}
+          members={members}
+        />
+      </SafeAreaView>
+    </GestureHandlerRootView>
   );
 };
 

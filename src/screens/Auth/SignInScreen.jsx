@@ -61,7 +61,7 @@ const ModernSignInScreen = () => {
         console.log('Login successful:', data)
 
          setEmail('');
-
+console.log("data",data);
         if (data.data?.token) {
           await AsyncStorage.setItem('userToken', data.data.token)
         }
