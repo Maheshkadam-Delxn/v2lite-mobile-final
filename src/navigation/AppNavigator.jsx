@@ -12,6 +12,7 @@ import CustomerCreateProposal from '../screens/HomeOwner/CustomerCreateProposal'
 import CustomerSupport from '../screens/Profile/CustomerSupport';
 import FeedDetailsScreen from '../screens/Feeds/FeedDetailsScreen';
 import ChatScreen from '../screens/Feeds/ChatScreen';
+import ProjectChatScreen from '../screens/Chat/ProjectChatScreen';
 import RiskDetail from '../screens/Issues/RiskDetail';
 import EscalationMatrixScreen from '../screens/Issues/EscalationMatrixScreen';
 import DesignApprovals from '../screens/HomeOwner/DesignApprovals';
@@ -42,6 +43,7 @@ const AppNavigator = ({ initialRoute }) => {
             <Stack.Screen name="CustomerSupport" component={CustomerSupport} />
             <Stack.Screen name="FeedDetails" component={FeedDetailsScreen} />
             <Stack.Screen name="ChatScreen" component={ChatScreen} />
+            <Stack.Screen name="ProjectChatScreen" component={ProjectChatScreen} />
             <Stack.Screen name="RiskDetail" component={RiskDetail} />
             <Stack.Screen name="EscalationMatrixScreen" component={EscalationMatrixScreen} />
             <Stack.Screen name="DesignApprovals" component={DesignApprovals} />

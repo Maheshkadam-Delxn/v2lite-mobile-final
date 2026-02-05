@@ -19,8 +19,8 @@ import CustomerSupport from '../../Profile/CustomerSupport';
 //const API_URL = 'https://skystruct-lite-backend.vercel.app/api/users';
 
 const API_URL = `${process.env.BASE_API_URL}/api/users`;
-export default function clientProfilePage() {
-     const navigation = useNavigation();
+export default function ClientProfilePage() {
+  const navigation = useNavigation();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [userData, setUserData] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -131,9 +131,8 @@ export default function clientProfilePage() {
         </View>
         <Text
           style={{ fontFamily: 'Urbanist-SemiBold' }}
-          className={`ml-4 text-base ${
-            isLogout ? 'text-[#FF3B30]' : 'text-[#1C1C1E]'
-          }`}
+          className={`ml-4 text-base ${isLogout ? 'text-[#FF3B30]' : 'text-[#1C1C1E]'
+            }`}
         >
           {title}
         </Text>
@@ -210,7 +209,7 @@ export default function clientProfilePage() {
               end={{ x: 1, y: 1 }}
               className="h-24"
             />
-            
+
             {/* Profile Content */}
             <View className="px-5 pb-6" style={{ marginTop: -40 }}>
               <View className="flex-row items-end">
@@ -229,13 +228,13 @@ export default function clientProfilePage() {
                       uri:
                         userData?.profilePhoto ||
                         'https://ui-avatars.com/api/?name=' +
-                          encodeURIComponent(userData?.name || 'User') +
-                          '&background=4A7CFF&color=fff&size=200',
+                        encodeURIComponent(userData?.name || 'User') +
+                        '&background=4A7CFF&color=fff&size=200',
                     }}
                     className="w-full h-full rounded-full"
                   />
                 </View>
-                
+
                 <TouchableOpacity
                   onPress={() => navigation.navigate('EditProfileScreen')}
                   className="ml-auto mb-1 bg-[#4A7CFF] rounded-full px-5 py-2.5 flex-row items-center"
@@ -250,7 +249,7 @@ export default function clientProfilePage() {
                   </Text>
                 </TouchableOpacity>
               </View>
-              
+
               <View className="mt-3">
                 <Text
                   style={{ fontFamily: 'Urbanist-Bold' }}
@@ -318,16 +317,16 @@ export default function clientProfilePage() {
             iconBg="#F0F4FF"
             iconColor="#4A7CFF"
           />
-         
+
           <View className="h-[0.5px] bg-[#E5E5EA] ml-[70px]" />
-           <MenuItem
+          <MenuItem
             icon="bell"
             title="Notifications"
             onPress={() => navigation.navigate('Notification')}
             iconBg="#FFF9E6"
             iconColor="#F59E0B"
           />
-         
+
           <View className="h-[0.5px] bg-[#E5E5EA] ml-[70px]" />
           <MenuItem
             icon="globe"
@@ -337,11 +336,11 @@ export default function clientProfilePage() {
             iconBg="#E6F7FF"
             iconColor="#06B6D4"
           />
-         
+
         </View>
 
-       
-       
+
+
 
         {/* Support Section */}
         <SectionHeader title="Support" />

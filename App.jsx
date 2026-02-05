@@ -7,6 +7,7 @@ import { NavigationContainer, createNavigationContainerRef } from '@react-naviga
 
 import { StoreProvider } from './src/context/StoreProvider';
 import { PermissionProvider } from './src/context/PermissionContext';
+import { SocketProvider } from './src/context/SocketContext';
 import AppNavigator from './src/navigation/AppNavigator';
 
 // Global Styles
@@ -71,12 +72,14 @@ export default function App() {
   return (
     <StoreProvider>
       <PermissionProvider>
-        <View style={{ flex: 1 }}>
-          <StatusBar style="light" backgroundColor="#ffffff" />
-          <NavigationContainer ref={navigationRef}>
-            <AppNavigator initialRoute={initialRoute} />
-          </NavigationContainer>
-        </View>
+        <SocketProvider>
+          <View style={{ flex: 1 }}>
+            <StatusBar style="light" backgroundColor="#ffffff" />
+            <NavigationContainer ref={navigationRef}>
+              <AppNavigator initialRoute={initialRoute} />
+            </NavigationContainer>
+          </View>
+        </SocketProvider>
       </PermissionProvider>
     </StoreProvider>
   );
